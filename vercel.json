@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "rewrites": [
+    { "source": "/css/(.*)", "destination": "/web/css/$1" },
+    { "source": "/js/(.*)", "destination": "/web/js/$1" },
+    { "source": "/img/(.*)", "destination": "/web/img/$1" },
+    { "source": "/nucleo/(.*)", "destination": "/api" },
+    { "source": "/salud", "destination": "/api" },
+    { "source": "/catalogo", "destination": "/api" },
+    { "source": "/cuentas(.*)", "destination": "/api" },
+    { "source": "/imagenes/(.*)", "destination": "/api" },
+    { "source": "/piezas/(.*)", "destination": "/api" },
+    { "source": "/", "destination": "/web/index.html" },
+    { "source": "/index.html", "destination": "/web/index.html" }
+  ]
+}

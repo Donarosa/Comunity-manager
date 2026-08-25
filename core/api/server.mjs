@@ -31,7 +31,7 @@ const TOKEN = process.env.CM_TOKEN || null
 const LIMITE_NORMAL = 2 * 1024 * 1024   // alcanza para un SVG o un plan
 const LIMITE_IMAGEN = 20 * 1024 * 1024  // una foto de celular en base64
 
-if (!TOKEN && HOST !== '127.0.0.1' && HOST !== 'localhost') {
+if (!TOKEN && HOST !== '127.0.0.1' && HOST !== 'localhost' && !process.env.VERCEL) {
   console.error('Definí CM_TOKEN antes de escuchar fuera de localhost.')
   process.exit(1)
 }
@@ -117,8 +117,10 @@ const urlDePieza = ruta => '/piezas/' + relative(PIEZAS, ruta).split(sep).join('
 
 /* ── ruteo ───────────────────────────────────────────────── */
 
-const server = createServer(async (req, res) => {
-  const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`)
+export async function manejador(req, res) {
+  let reqUrl = req.url || '/'
+  if (reqUrl.startsWith('/api/')) reqUrl = reqUrl.replace(/^\/api/, '')
+  const url = new URL(reqUrl, `http://${req.headers.host || 'localhost'}`)
   const partes = url.pathname.split('/').filter(Boolean)
   const m = req.method
 
@@ -221,20 +223,30 @@ const server = createServer(async (req, res) => {
     console.error(e)
     json(res, 500, { error: e.message })
   }
-})
+}
 
-server.listen(PUERTO, HOST, () => {
-  console.log(`\n  Community manager en http://${HOST}:${PUERTO}`)
-  console.log(`  ${TOKEN ? 'auth: Bearer token activo' : 'auth: sin token (solo localhost)'}`)
+export const server = createServer(manejador)
 
-  // Qué bancos de imágenes hay conectados. Esto es información para quien opera
-  // el servicio, no para el cliente final: a una panadería no se le pide que
-  // consiga una clave de API.
-  const { activos, faltantes } = svc.catalogo().bancos
-  console.log(`  imágenes: ${activos.map(b => b.nombre).join(', ')}`)
-  if (faltantes.length) {
-    console.log(`  sin conectar — mejoran mucho la calidad de las fotos:`)
-    for (const f of faltantes) console.log(`    ${f.clave.padEnd(20)} ${f.alta}`)
-  }
-  console.log()
-})
+const esEjecutadoDirectamente = process.argv[1] && (
+  resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url)) ||
+  process.argv[1].endsWith('server.mjs')
+)
+
+if (esEjecutadoDirectamente && !process.env.VERCEL) {
+  server.listen(PUERTO, HOST, () => {
+    console.log(`\n  Community manager en http://${HOST}:${PUERTO}`)
+    console.log(`  ${TOKEN ? 'auth: Bearer token activo' : 'auth: sin token (solo localhost)'}`)
+
+    // Qué bancos de imágenes hay conectados. Esto es información para quien opera
+    // el servicio, no para el cliente final: a una panadería no se le pide que
+    // consiga una clave de API.
+    const { activos, faltantes } = svc.catalogo().bancos
+    console.log(`  imágenes: ${activos.map(b => b.nombre).join(', ')}`)
+    if (faltantes.length) {
+      console.log(`  sin conectar — mejoran mucho la calidad de las fotos:`)
+      for (const f of faltantes) console.log(`    ${f.clave.padEnd(20)} ${f.alta}`)
+    }
+    console.log()
+  })
+}
+

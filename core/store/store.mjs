@@ -11,7 +11,7 @@ import { fileURLToPath } from 'url'
 import { randomUUID } from 'crypto'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
-export const DATA_DIR = process.env.CM_DATA || resolve(HERE, '../../data')
+export const DATA_DIR = process.env.CM_DATA || (process.env.VERCEL ? '/tmp/cm-data' : resolve(HERE, '../../data'))
 const CUENTAS = join(DATA_DIR, 'cuentas')
 
 function asegurarDirs() {
