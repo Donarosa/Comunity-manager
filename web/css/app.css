@@ -1,0 +1,339 @@
+/* Sistema visual.
+ *
+ * La referencia no es una app de Silicon Valley: es una imprenta. Papel tibio,
+ * tinta, filetes de un pixel, tipografía con carácter. Tres decisiones
+ * deliberadas y sus razones:
+ *
+ * 1. El cromo de la aplicación es neutro y austero a propósito. El único color
+ *    fuerte de la pantalla tiene que ser el de la marca del cliente: si la app
+ *    también grita, el usuario no puede juzgar su propia placa.
+ * 2. Filetes en vez de sombras. Una sombra sobre cada caja es la firma visual
+ *    de lo hecho a las apuradas; un filete de 1px es lo que usa un formulario
+ *    impreso desde hace un siglo y sigue funcionando.
+ * 3. Nada de Inter, nada de degradés violeta-celeste, nada de que todo sea una
+ *    tarjeta. Son los tres tics que delatan una interfaz generada.
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+:root {
+  --papel: #FAF7F0;
+  --papel-2: #F3EEE3;
+  --tinta: #16140F;
+  --tinta-2: #46423A;
+  --tinta-3: #7C7668;
+  --linea: #DED7C7;
+  --linea-fuerte: #C4BBA6;
+  --acento: #A83A1C;
+  --acento-2: #7E2A12;
+  --acento-suave: #F6E7E0;
+  --ok: #2E6B45;
+  --alerta: #96631A;
+
+  --ui: 'Archivo', system-ui, sans-serif;
+  --display: 'Fraunces', Georgia, serif;
+  --mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --r: 3px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--ui);
+  background: var(--papel);
+  color: var(--tinta);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── tipografía ─────────────────────────────────────────── */
+
+h1, h2, h3 { font-family: var(--display); font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; }
+h1 { font-size: clamp(2.1rem, 4.4vw, 3.4rem); }
+h2 { font-size: clamp(1.5rem, 2.6vw, 2.1rem); }
+h3 { font-size: 1.16rem; letter-spacing: -0.01em; }
+p { max-width: 62ch; }
+a { color: var(--acento); text-underline-offset: 3px; }
+
+.rotulo {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--tinta-3);
+}
+.apunte { color: var(--tinta-2); font-size: 0.9rem; }
+.chico { font-size: 0.83rem; }
+em.i { font-family: var(--display); font-style: italic; color: var(--acento); }
+
+/* ── estructura ─────────────────────────────────────────── */
+
+.marco { max-width: 1180px; margin: 0 auto; padding: 0 28px; }
+.oculto { display: none !important; }
+
+.barra {
+  border-bottom: 1px solid var(--linea);
+  background: var(--papel);
+  position: sticky; top: 0; z-index: 30;
+}
+.barra .marco { display: flex; align-items: center; justify-content: space-between; height: 62px; gap: 20px; }
+.logotipo { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: -0.02em; font-size: 1.02rem; }
+.logotipo svg { width: 22px; height: 22px; color: var(--acento); }
+.barra nav { display: flex; align-items: center; gap: 18px; }
+
+/* ── botones ────────────────────────────────────────────── */
+
+.btn {
+  font-family: var(--ui);
+  font-size: 0.93rem;
+  font-weight: 600;
+  padding: 10px 18px;
+  border: 1px solid var(--tinta);
+  border-radius: var(--r);
+  background: var(--tinta);
+  color: var(--papel);
+  cursor: pointer;
+  transition: background .12s, color .12s, border-color .12s;
+  line-height: 1.3;
+}
+.btn:hover:not(:disabled) { background: var(--acento-2); border-color: var(--acento-2); }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn.fantasma { background: transparent; color: var(--tinta); border-color: var(--linea-fuerte); }
+.btn.fantasma:hover:not(:disabled) { background: var(--papel-2); border-color: var(--tinta); color: var(--tinta); }
+.btn.chico { padding: 6px 12px; font-size: 0.83rem; }
+.btn.texto { background: none; border: none; color: var(--tinta-2); padding: 6px 2px; text-decoration: underline; text-underline-offset: 3px; }
+.btn.texto:hover { color: var(--acento); background: none; }
+
+/* ── formularios ────────────────────────────────────────── */
+
+.campo { margin-bottom: 20px; }
+.campo label { display: block; font-weight: 600; font-size: 0.92rem; margin-bottom: 4px; }
+.campo .ayuda { display: block; color: var(--tinta-3); font-size: 0.83rem; margin-bottom: 8px; line-height: 1.45; }
+input[type=text], input[type=email], textarea, select {
+  width: 100%;
+  font-family: var(--ui);
+  font-size: 0.97rem;
+  color: var(--tinta);
+  background: #fff;
+  border: 1px solid var(--linea-fuerte);
+  border-radius: var(--r);
+  padding: 10px 12px;
+}
+textarea { resize: vertical; min-height: 76px; line-height: 1.5; }
+input:focus, textarea:focus, select:focus { outline: 2px solid var(--acento); outline-offset: -1px; border-color: var(--acento); }
+input::placeholder, textarea::placeholder { color: #A9A292; }
+
+/* ── landing ────────────────────────────────────────────── */
+
+.portada { padding: 84px 0 64px; border-bottom: 1px solid var(--linea); }
+.portada .cols { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 56px; align-items: center; }
+.portada h1 { margin: 14px 0 20px; }
+.portada h1 em { font-style: italic; color: var(--acento); }
+.portada .bajada { font-size: 1.1rem; color: var(--tinta-2); margin-bottom: 28px; }
+.portada .acciones { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+
+/* La muestra: tres placas reales, apiladas como en un escritorio. No es un
+   mockup de laptop flotando — son las piezas que el producto entrega. */
+.muestra { position: relative; height: 372px; }
+.muestra .placa {
+  position: absolute; border: 1px solid var(--linea-fuerte); border-radius: 2px;
+  background: #fff; overflow: hidden;
+}
+.muestra .placa:nth-child(1) { width: 202px; height: 253px; left: 6px;   top: 52px; transform: rotate(-4deg); }
+.muestra .placa:nth-child(2) { width: 202px; height: 253px; left: 136px; top: 14px; transform: rotate(1.5deg); z-index: 2; }
+.muestra .placa:nth-child(3) { width: 162px; height: 288px; left: 288px; top: 58px; transform: rotate(4.5deg); }
+.muestra .placa img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.seccion { padding: 62px 0; border-bottom: 1px solid var(--linea); }
+.seccion h2 { margin-bottom: 8px; }
+
+/* Los pasos van como una lista numerada de imprenta, no como tres tarjetas. */
+.pasos { counter-reset: p; margin-top: 34px; display: grid; gap: 0; }
+.pasos li { counter-increment: p; list-style: none; display: grid; grid-template-columns: 54px 1fr; gap: 22px; padding: 22px 0; border-top: 1px solid var(--linea); align-items: start; }
+.pasos li:last-child { border-bottom: 1px solid var(--linea); }
+.pasos li::before { content: counter(p, decimal-leading-zero); font-family: var(--mono); font-size: 0.9rem; color: var(--acento); font-weight: 700; padding-top: 3px; }
+.pasos h3 { margin-bottom: 3px; }
+.pasos p { color: var(--tinta-2); font-size: 0.95rem; }
+
+.doscol { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; }
+.lista-limpia { list-style: none; }
+.lista-limpia li { padding: 9px 0; border-bottom: 1px solid var(--linea); font-size: 0.95rem; color: var(--tinta-2); }
+.lista-limpia li:last-child { border-bottom: none; }
+.lista-limpia b { color: var(--tinta); }
+
+.pie { padding: 34px 0 54px; color: var(--tinta-3); font-size: 0.86rem; }
+
+/* ── wizard ─────────────────────────────────────────────── */
+
+.wizard { display: grid; grid-template-columns: 244px 1fr; gap: 56px; padding: 44px 0 80px; align-items: start; }
+
+.riel { position: sticky; top: 90px; }
+.riel ol { list-style: none; counter-reset: w; }
+.riel li {
+  counter-increment: w;
+  display: grid; grid-template-columns: 26px 1fr; gap: 12px;
+  padding: 11px 0; color: var(--tinta-3); font-size: 0.91rem;
+  border-top: 1px solid var(--linea);
+}
+.riel li::before {
+  content: counter(w); font-family: var(--mono); font-size: 0.76rem; font-weight: 700;
+  width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--linea-fuerte);
+  display: grid; place-items: center; color: var(--tinta-3);
+}
+.riel li.actual { color: var(--tinta); font-weight: 600; }
+.riel li.actual::before { background: var(--tinta); border-color: var(--tinta); color: var(--papel); }
+.riel li.hecho::before { content: '✓'; background: var(--ok); border-color: var(--ok); color: #fff; font-size: 0.7rem; }
+.riel li.hecho { color: var(--tinta-2); }
+
+.paso { max-width: 720px; }
+.paso > .rotulo { margin-bottom: 10px; }
+.paso h2 { margin-bottom: 6px; }
+.paso .intro { color: var(--tinta-2); margin-bottom: 30px; }
+.acciones-paso { display: flex; gap: 12px; align-items: center; margin-top: 30px; padding-top: 22px; border-top: 1px solid var(--linea); }
+
+/* ── opciones (elegir entre alternativas) ───────────────── */
+
+.opciones { display: grid; gap: 10px; }
+.opciones.dos { grid-template-columns: 1fr 1fr; }
+.opcion {
+  text-align: left; background: #fff; border: 1px solid var(--linea-fuerte);
+  border-radius: var(--r); padding: 15px 17px; cursor: pointer; font-family: var(--ui);
+  color: var(--tinta); transition: border-color .12s, background .12s;
+}
+.opcion:hover { border-color: var(--tinta-3); }
+.opcion.elegida { border-color: var(--tinta); border-width: 2px; padding: 14px 16px; background: var(--papel-2); }
+.opcion b { display: block; font-size: 0.98rem; margin-bottom: 2px; }
+.opcion span { color: var(--tinta-2); font-size: 0.87rem; line-height: 1.45; display: block; }
+
+/* ── selector de color ──────────────────────────────────── */
+
+.familias { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 22px; }
+.familia { border: 1px solid var(--linea-fuerte); border-radius: var(--r); padding: 0; cursor: pointer; overflow: hidden; background: #fff; }
+.familia .tono { height: 44px; display: block; }
+.familia .nom { display: block; font-size: 0.74rem; padding: 5px 4px; color: var(--tinta-2); font-family: var(--mono); letter-spacing: .02em; }
+.familia.elegida { border-color: var(--tinta); border-width: 2px; }
+
+/* Seis columnas: una por nivel de luz. Tiene que coincidir con LUCES en color.js. */
+.tonos { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-bottom: 22px; max-width: 560px; }
+.tono-btn { aspect-ratio: 1.15; border: 1px solid rgba(0,0,0,.10); border-radius: 2px; cursor: pointer; padding: 0; }
+.tono-btn.elegido { outline: 2px solid var(--tinta); outline-offset: 2px; }
+
+.tira { display: flex; border: 1px solid var(--linea-fuerte); border-radius: var(--r); overflow: hidden; }
+.tira div { flex: 1; height: 54px; display: grid; place-items: end center; padding-bottom: 5px; font-family: var(--mono); font-size: 0.6rem; }
+
+.pestanas { display: flex; gap: 3px; border-bottom: 1px solid var(--linea); margin-bottom: 22px; }
+.pestana { background: none; border: none; border-bottom: 2px solid transparent; padding: 9px 14px; cursor: pointer; font-family: var(--ui); font-size: 0.9rem; font-weight: 600; color: var(--tinta-3); }
+.pestana.activa { color: var(--tinta); border-bottom-color: var(--acento); }
+
+/* ── logos sugeridos ────────────────────────────────────── */
+
+.logos { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.logo-op { background: #fff; border: 1px solid var(--linea-fuerte); border-radius: var(--r); padding: 16px; cursor: pointer; text-align: center; }
+.logo-op.elegida { border-color: var(--tinta); border-width: 2px; padding: 15px; }
+.logo-op svg { width: 62px; height: 62px; color: var(--tinta); margin-bottom: 10px; }
+.logo-op .concepto { font-size: 0.8rem; color: var(--tinta-2); line-height: 1.4; text-align: left; }
+
+/* ── editor ─────────────────────────────────────────────── */
+
+.editor { display: grid; grid-template-columns: 1fr 440px; gap: 44px; padding: 30px 0 80px; align-items: start; }
+.editor-form { min-width: 0; }
+.editor-vista { position: sticky; top: 86px; }
+
+.lienzo {
+  border: 1px solid var(--linea-fuerte); border-radius: var(--r);
+  background: #fff; overflow: hidden; position: relative;
+}
+.lienzo iframe { border: 0; display: block; transform-origin: 0 0; }
+.lienzo.cargando::after {
+  content: ''; position: absolute; inset: 0; background: rgba(250,247,240,.55);
+}
+
+.tira-placas { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+.mini {
+  width: 46px; height: 58px; border: 1px solid var(--linea-fuerte); border-radius: 2px;
+  background: #fff; cursor: pointer; font-family: var(--mono); font-size: 0.66rem;
+  color: var(--tinta-3); display: grid; place-items: center; padding: 0;
+}
+.mini.activa { border-color: var(--tinta); border-width: 2px; color: var(--tinta); font-weight: 700; }
+.mini.historia { width: 38px; height: 66px; }
+
+.galeria { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 14px; max-height: 340px; overflow-y: auto; padding-right: 4px; }
+.galeria button { padding: 0; border: 1px solid var(--linea-fuerte); border-radius: 2px; background: var(--papel-2); cursor: pointer; aspect-ratio: 1; overflow: hidden; }
+.galeria button.elegida { outline: 2px solid var(--tinta); outline-offset: 1px; }
+.galeria img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.credito { font-family: var(--mono); font-size: 0.72rem; color: var(--tinta-3); margin-top: 8px; line-height: 1.5; }
+
+/* ── panel de valor ─────────────────────────────────────── */
+
+/* Dos cifras y su procedencia. Sin tarjeta, sin sombra, sin icono: son dos
+   datos, y lo que los hace creíbles es la línea de abajo que dice de dónde
+   salen. Una cifra grande sin contexto es exactamente el patrón que hay que
+   evitar. */
+/* Solo filete arriba: la sección que sigue trae el suyo, y dos filetes
+   separados por un margen se leen como un error de maquetación. */
+.panel-valor {
+  display: grid; grid-template-columns: auto 1fr; gap: 44px;
+  padding: 22px 0 26px; border-top: 1px solid var(--linea);
+  margin-top: 26px; align-items: start;
+}
+.panel-valor .cifra {
+  font-family: var(--display); font-weight: 600; font-size: 2.05rem;
+  letter-spacing: -0.03em; line-height: 1.05; display: block; color: var(--tinta);
+}
+.panel-valor .apunte { max-width: 42ch; }
+
+/* ── avisos ─────────────────────────────────────────────── */
+
+.aviso { border-left: 2px solid var(--alerta); background: #FBF3E2; padding: 11px 14px; font-size: 0.88rem; border-radius: 0 var(--r) var(--r) 0; margin-bottom: 14px; color: #5B4517; }
+.aviso.malo { border-color: var(--acento); background: var(--acento-suave); color: var(--acento-2); }
+.aviso.bien { border-color: var(--ok); background: #E9F2EC; color: #1F4E31; }
+
+.medidor { font-family: var(--mono); font-size: 0.74rem; color: var(--tinta-3); }
+.medidor b { color: var(--tinta); font-weight: 500; }
+
+.cargando-txt { font-family: var(--mono); font-size: 0.8rem; color: var(--tinta-3); }
+.cargando-txt::after { content: '·'; animation: puntos 1.2s steps(4) infinite; }
+@keyframes puntos { 0% { content: '·'; } 33% { content: '··'; } 66% { content: '···'; } }
+
+@media (max-width: 900px) {
+  .portada .cols, .doscol, .editor { grid-template-columns: 1fr; gap: 34px; }
+  .wizard { grid-template-columns: 1fr; gap: 26px; }
+  .riel { position: static; }
+  .riel ol { display: flex; overflow-x: auto; gap: 4px; }
+  .riel li { border-top: none; border-bottom: 2px solid var(--linea); white-space: nowrap; padding: 8px 12px 8px 0; }
+  .familias { grid-template-columns: repeat(4, 1fr); }
+  .logos { grid-template-columns: repeat(2, 1fr); }
+  .editor-vista { position: static; }
+  .editor-vista .lienzo { max-width: 100%; }
+}
+
+@media (max-width: 760px) {
+  /* En el celular la barra se queda solo con lo imprescindible: el nombre y el
+     botón. Los anclas y el medidor de cuota apretaban el botón fuera de la
+     pantalla, que es el único elemento que la barra tiene que garantizar. */
+  .barra nav a, #chip-cuenta { display: none; }
+  .marco { padding: 0 20px; }
+
+  /* La pila de placas superpuestas necesita 460px de ancho. Abajo de eso deja
+     de ser una pila y pasa a ser una fila: mismo contenido, sin desbordar. */
+  .muestra { height: auto; display: flex; gap: 8px; overflow: hidden; align-items: flex-start; }
+  /* El :nth-child(n) no filtra nada: está para igualar la especificidad de las
+     reglas de posición de arriba, que si no ganan y dejan las placas apiladas.
+     align-items en flex-start es lo que hace que cada una conserve su
+     proporción — estiradas todas a la altura de la fila, las de 4:5 quedaban
+     recortadas por los costados. */
+  .muestra .placa:nth-child(n) { position: static; transform: none; width: 32%; height: auto; aspect-ratio: 4 / 5; }
+  .muestra .placa:nth-child(3) { aspect-ratio: 9 / 16; }
+
+  .opciones.dos { grid-template-columns: 1fr; }
+  .familias { grid-template-columns: repeat(3, 1fr); }
+  .tonos { grid-template-columns: repeat(6, 1fr); gap: 4px; }
+  .galeria { grid-template-columns: repeat(3, 1fr); }
+  h1 { font-size: 2rem; }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "cm-pymes",
+  "version": "2.0.0",
+  "description": "Community manager para micro pymes: contenido de Instagram con la marca del cliente, renderizado en PNG reales",
+  "type": "module",
+  "license": "ISC",
+  "scripts": {
+    "cm": "node --env-file-if-exists=.env cm.mjs",
+    "web": "node --env-file-if-exists=.env core/api/server.mjs",
+    "api": "node --env-file-if-exists=.env core/api/server.mjs",
+    "placa": "node render-placa.mjs",
+    "prueba": "node --env-file-if-exists=.env pruebas/smoke.mjs",
+    "muestras": "node pruebas/muestras.mjs",
+    "ejemplo": "node render-placa.mjs spec-ejemplo.json"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.117.1",
+    "puppeteer-core": "^25.0.4"
+  }
+}

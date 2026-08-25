@@ -1,0 +1,20 @@
+node_modules/
+
+# PNG generados — se regeneran desde el spec
+placas/
+
+# Datos de clientes: cuentas, marcas, consumo y piezas generadas.
+# Nunca se versionan.
+data/
+
+# Claves. Nunca se versionan — la plantilla es .env.ejemplo
+.env
+
+# Marcas o specs locales que no querés versionar
+*.local.json
+
+# Capturas de las pruebas de navegador
+.playwright-mcp/
+
+.DS_Store
+.wrangler/

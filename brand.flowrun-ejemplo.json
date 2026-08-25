@@ -1,0 +1,66 @@
+{
+  "_comment": "Identidad de marca. El motor (render-placa.mjs) no tiene nada de marca adentro: todo sale de acá. Para otro proyecto, copiá este archivo y cambiá los valores.",
+
+  "wordmark": {
+    "base": "flow",
+    "accent": "run",
+    "_comment": "El wordmark se arma como base+accent, con accent en color de acento. Si tu marca es una sola palabra, dejá accent en \"\"."
+  },
+
+  "handle": "@flowrun20",
+  "site": "flowrun.fun",
+  "altSite": "app.flowrun.fun",
+
+  "logo": {
+    "viewBox": "0 0 100 100",
+    "inner": "<path d=\"M 14 84 L 72 80 C 88 79 88 63 72 62 L 28 58 C 12 57 12 41 28 40 L 72 36 C 88 35 88 19 72 18 L 42 14\"/><circle cx=\"42\" cy=\"14\" r=\"5\"/>",
+    "strokeWidth": 8,
+    "strokeWidthSmall": 7,
+    "_comment": "inner = solo las formas, sin atributos de presentación (el CSS pone fill/stroke con currentColor). Sirve cualquier logo hecho de <path> y <circle>. strokeWidthSmall se usa en el estilo foto."
+  },
+
+  "fonts": {
+    "sans": "Inter",
+    "serif": "Fraunces",
+    "mono": "JetBrains Mono",
+    "importUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Fraunces:ital,wght@0,400;0,500;1,400;1,500&family=JetBrains+Mono:wght@400;500;600;700&display=swap",
+    "_comment": "importUrl tiene que cubrir las tres familias con los pesos que uses. sans se usa en flat y foto, serif solo en los headlines de vector, mono en kickers y datos."
+  },
+
+  "colors": {
+    "flat": {
+      "accent": "#3D6B3F",
+      "accentDeep": "#2B4F2D",
+      "accentOnDark": "oklch(88% 0.022 145)",
+      "darkBg": "oklch(26% 0.08 145)",
+      "bg": "oklch(98% 0.006 90)",
+      "tint": "oklch(94% 0.018 145)",
+      "paper": "#ffffff",
+      "ink": "#1B1F1B",
+      "fg": "oklch(24% 0.012 145)",
+      "muted": "oklch(46% 0.012 145)",
+      "soft": "oklch(70% 0.010 145)",
+      "hair": "oklch(92% 0.008 90)"
+    },
+    "vector": {
+      "bg": "#4A5D3A",
+      "accent": "#7A9E6B",
+      "paper": "#F5F2ED"
+    },
+    "foto": {
+      "bg": "#1c3320",
+      "accent": "#9ec79a"
+    }
+  },
+
+  "scene": "<svg class=\"scene\" viewBox=\"0 0 1080 640\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\" preserveAspectRatio=\"xMidYMax meet\"><path d=\"M0,300 L170,250 L330,308 L520,205 L700,292 L880,224 L1080,286 L1080,640 L0,640 Z\" fill=\"#7A9E6B\" fill-opacity=\"0.22\"/><path d=\"M0,430 L240,338 L470,418 L690,300 L905,394 L1080,344 L1080,640 L0,640 Z\" fill=\"#3A4A2D\"/><path d=\"M0,566 L165,505 L325,548 L460,476 L575,250 L705,470 L865,524 L1080,492 L1080,640 L0,640 Z\" fill=\"#2C3A22\"/><path d=\"M 360 632 L 520 588 L 432 548 L 575 506 L 470 464 L 600 422 L 505 384 L 600 344 L 545 312 L 575 270\" fill=\"none\" stroke=\"#F5F2ED\" stroke-opacity=\"0.18\" stroke-width=\"7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M 360 632 L 520 588 L 432 548 L 575 506 L 470 464 L 600 422 L 505 384 L 600 344 L 545 312 L 575 270\" fill=\"none\" stroke=\"#F5F2ED\" stroke-opacity=\"0.92\" stroke-width=\"7\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"2 22\"/><circle cx=\"575\" cy=\"250\" r=\"11\" fill=\"#7A9E6B\"/><circle cx=\"575\" cy=\"250\" r=\"20\" fill=\"none\" stroke=\"#7A9E6B\" stroke-opacity=\"0.45\" stroke-width=\"3\"/></svg>",
+  "_sceneComment": "Ilustración de fondo del estilo vector (montañas + sendero). Poné null si tu marca no la usa: el estilo vector queda con fondo plano. El SVG dibuja sobre un lienzo de 1080×640 anclado abajo.",
+
+  "hints": {
+    "cover": "Deslizá →",
+    "trial": "Empezá gratis →"
+  },
+
+  "voiceFile": "content/voice.md",
+  "_voiceComment": "Archivo con la voz de marca que el skill lee antes de escribir copy. Si no existe, el skill pide el copy en vez de inventarlo."
+}

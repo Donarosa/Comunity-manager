@@ -1,0 +1,77 @@
+{
+  "_comment": "Spec de demostración: cada placa explica el template que usa. Corré 'node render-placa.mjs spec-ejemplo.json' y mirá placas/ejemplo/ para ver los 7 templates con tu brand.json aplicado.",
+  "outDir": "placas/ejemplo",
+  "slides": [
+    {
+      "name": "01-cover",
+      "style": "flat",
+      "type": "cover",
+      "kick": "Template · cover",
+      "title": "La <span class=\"acc\">portada</span> del carrusel",
+      "body": "Fondo oscuro, título grande y una línea de fuentes opcional abajo. Es la placa que decide si alguien desliza o sigue scrolleando.",
+      "src": "Campos: kick · title · body · src? · hint? · idx?",
+      "idx": "01/07"
+    },
+    {
+      "name": "02-body",
+      "style": "flat",
+      "type": "body",
+      "kick": "Template · body",
+      "title": "Una idea <span class=\"acc\">por placa</span>",
+      "body": "Kicker, título y párrafo. El caballo de batalla del carrusel. Acepta <b>negrita</b> y una cita de fuente al pie.",
+      "fuente": "Campos: kick · title · body · fuente? · theme? · idx?",
+      "idx": "02/07"
+    },
+    {
+      "name": "03-steps",
+      "style": "flat",
+      "type": "steps",
+      "kick": "Template · steps",
+      "title": "Cuando hay un proceso",
+      "steps": [
+        { "n": "1", "k": "Primero", "t": "Un paso por fila", "d": "Cada paso lleva número, kicker corto, título y descripción." },
+        { "n": "2", "k": "Después", "t": "Tres o cuatro máximo", "d": "Con más de cuatro pasos la placa se apreta y deja de leerse." },
+        { "n": "3", "k": "Al final", "t": "Cerrá con la acción", "d": "El último paso conviene que sea algo que la persona pueda hacer hoy." }
+      ],
+      "idx": "03/07"
+    },
+    {
+      "name": "04-pista",
+      "style": "flat",
+      "type": "pista",
+      "emoji": "🧭",
+      "kick": "Template · pista",
+      "title": "Para presentar una opción",
+      "body": "Emoji grande, título, descripción y chips con los datos duros. Sirve para planes, servicios o rutas de producto.",
+      "chips": ["Chip uno", "Chip dos", "Chip tres"],
+      "idx": "04/07"
+    },
+    {
+      "name": "05-trial",
+      "style": "flat",
+      "type": "trial",
+      "pill": "Template · trial",
+      "title": "La placa de oferta",
+      "body": "Fondo con el color tinte, un pill arriba y el remate del pie. Es la que cierra el carrusel con la propuesta."
+    },
+    {
+      "name": "06-biblio",
+      "style": "flat",
+      "type": "biblio",
+      "kick": "Template · biblio",
+      "title": "Referencias",
+      "refs": [
+        "<em>Cuando afirmás un dato duro</em> — esta placa lista las fuentes numeradas",
+        "<em>Fondo oscuro</em> — cierra bien un carrusel de contenido informativo",
+        "<em>Las itálicas</em> — se marcan con la etiqueta em dentro de cada referencia"
+      ],
+      "idx": "06/07"
+    },
+    {
+      "name": "07-vector",
+      "style": "vector",
+      "eyebrow": "Template · vector",
+      "headline": "Para la frase que <em>no necesita</em> explicación."
+    }
+  ]
+}

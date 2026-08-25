@@ -1,0 +1,67 @@
+{
+  "_comment": "Identidad de marca. El motor (render-placa.mjs) no tiene marca adentro: todo sale de acá. Estos son valores placeholder que renderizan bien de entrada — cambialos por los de tu marca. Ver brand.flowrun-ejemplo.json para una marca real completa (incluye ilustración de fondo y colores en oklch).",
+
+  "wordmark": {
+    "base": "tu",
+    "accent": "marca",
+    "_comment": "Se arma base+accent, con accent en color de acento — así ves el efecto de dos tonos. Si tu marca es una sola palabra, poné todo en base y dejá accent en \"\"."
+  },
+
+  "handle": "@tumarca",
+  "site": "tumarca.com",
+  "altSite": "app.tumarca.com",
+
+  "logo": {
+    "viewBox": "0 0 100 100",
+    "inner": "<path d=\"M 22 22 L 78 22 L 78 62 C 78 74 68 78 56 78 L 22 78 Z\"/><circle cx=\"34\" cy=\"50\" r=\"7\"/>",
+    "strokeWidth": 8,
+    "strokeWidthSmall": 7,
+    "_comment": "Placeholder geométrico. Reemplazalo por las formas de tu SVG SIN atributos de presentación (sin fill ni stroke): el CSS se los pone con currentColor, así el logo toma el color correcto en fondo claro y oscuro. Sirve cualquier logo hecho de <path> y <circle>. Ajustá viewBox al de tu SVG."
+  },
+
+  "fonts": {
+    "sans": "Inter",
+    "serif": "Fraunces",
+    "mono": "JetBrains Mono",
+    "importUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Fraunces:ital,wght@0,400;0,500;1,400;1,500&family=JetBrains+Mono:wght@400;500;600;700&display=swap",
+    "_comment": "OJO: si cambiás las familias tenés que actualizar importUrl para que las traiga, con los pesos que uses. Si no, el render sale con fuentes de sistema y no es obvio por qué."
+  },
+
+  "colors": {
+    "flat": {
+      "accent": "#4F46E5",
+      "accentDeep": "#3730A3",
+      "accentOnDark": "#A5B4FC",
+      "darkBg": "#1E1B4B",
+      "bg": "#FAFAFF",
+      "tint": "#EEF2FF",
+      "paper": "#FFFFFF",
+      "ink": "#14121F",
+      "fg": "#1F1B33",
+      "muted": "#55507A",
+      "soft": "#9490B8",
+      "hair": "#E6E4F2",
+      "_comment": "accent es el color de marca. accentOnDark es su versión clara, para los temas oscuros (cover y biblio): tiene que contrastar sobre darkBg."
+    },
+    "vector": {
+      "bg": "#1E1B4B",
+      "accent": "#A5B4FC",
+      "paper": "#F7F7FF"
+    },
+    "foto": {
+      "bg": "#1E1B4B",
+      "accent": "#A5B4FC"
+    }
+  },
+
+  "scene": null,
+  "_sceneComment": "SVG de fondo del estilo vector, sobre un lienzo de 1080×640 anclado abajo. En null el estilo queda con fondo plano (no se rompe). Mirá brand.flowrun-ejemplo.json para ver uno armado.",
+
+  "hints": {
+    "cover": "Deslizá →",
+    "trial": "Empezá →"
+  },
+
+  "voiceFile": "content/voice.md",
+  "_voiceComment": "Mientras este archivo no exista, el skill te pide el copy en vez de inventarse un tono. Cuando lo escribas (hay una plantilla en content/voice.template.md), empieza a redactar solo."
+}
