@@ -203,13 +203,13 @@ export function placaToSlide(p, { nombre, idx = '', formato = 'feed', foto = nul
         steps: (p.pasos || []).map(s => ({ n: s.numero, k: s.etiqueta, t: s.titulo, d: s.detalle })),
       }
     case 'oferta':
-      return { ...base, style: 'flat', type: 'pista', emoji: p.emoji || '✦', kick: p.kicker, title: p.titulo, body: p.cuerpo, chips: p.chips || [], idx }
+      return { ...base, style: 'flat', type: 'promo', badge: p.kicker || 'BENEFICIO EXCLUSIVO', title: p.titulo, cifra: p.emoji || '2 × 1', body: p.cuerpo, cta: p.fuente || undefined, idx }
     case 'cierre':
       return { ...base, style: 'flat', type: 'trial', pill: p.kicker, title: p.titulo, body: p.cuerpo }
     case 'frase':
-      return { ...base, style: 'vector', eyebrow: p.kicker, headline: p.titulo }
+      return { ...base, style: 'flat', type: 'quote', title: p.titulo, body: p.cuerpo, idx }
     case 'foto':
-      return { ...base, style: 'foto', kick: p.kicker, eyebrow: '', line1: p.titulo, line2: p.linea2, photo: foto || null, src: p.fuente || '' }
+      return { ...base, style: 'foto', kick: p.kicker, eyebrow: p.kicker || '', badge: p.emoji || undefined, line1: p.titulo, line2: p.linea2, body: p.cuerpo, cta: p.fuente || undefined, photo: foto || null, src: p.fuente || '' }
     default:
       throw new Error(`plantilla desconocida: ${p.plantilla}`)
   }

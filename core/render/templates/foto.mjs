@@ -58,18 +58,26 @@ ${markCss('.mark', LOGO.strokeWidthSmall ?? LOGO.strokeWidth)}
 .top{position:absolute;top:${fmt.id === 'story' ? 200 : 64}px;left:72px;right:72px;display:flex;align-items:center;justify-content:space-between;color:#fff;z-index:5}
 .top .kick{font-family:var(--mono);font-size:19px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.62)}
 .headline{position:absolute;left:72px;right:72px;bottom:${fmt.fotoHeadlineBottom}px;color:#fff;z-index:5}
-.headline .ey{font-family:var(--mono);font-size:23px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin-bottom:26px}
-.headline h1{font-size:${Math.round(fmt.fotoHeadline * disp.titulo)}px;font-weight:800;line-height:1.0;letter-spacing:-.035em}
+.headline .ey{font-family:var(--mono);font-size:22px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:24px}
+.headline .badge-flotante{display:inline-block;background:var(--accent);color:#111;font-family:var(--mono);font-size:20px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:8px 20px;border-radius:999px;margin-bottom:24px;box-shadow:0 8px 20px rgba(0,0,0,.35)}
+.headline h1{font-size:${Math.round(fmt.fotoHeadline * disp.titulo)}px;font-weight:800;line-height:1.02;letter-spacing:-.035em;text-shadow:0 4px 16px rgba(0,0,0,.45)}
 .headline h1 .l1{color:#fff}.headline h1 .l2{color:var(--accent)}
+.headline p{font-size:26px;line-height:1.4;color:rgba(255,255,255,.9);margin-top:18px;max-width:840px;text-shadow:0 2px 8px rgba(0,0,0,.5)}
+.headline .btn-cta{display:inline-flex;align-items:center;gap:12px;background:var(--accent);color:#111;font-weight:750;font-size:24px;padding:16px 32px;border-radius:999px;box-shadow:0 6px 0 rgba(0,0,0,.35);margin-top:24px;text-decoration:none}
 ${extra}
 .footer{position:absolute;left:72px;right:72px;bottom:${fmt.fotoFooterBottom}px;display:flex;align-items:center;justify-content:space-between;color:#fff;z-index:5}
-.footer .src{font-family:var(--mono);font-size:19px;font-weight:500;letter-spacing:.08em;color:rgba(255,255,255,.62)}.footer .src b{color:#fff;font-weight:600}
+.footer .src{font-family:var(--mono);font-size:19px;font-weight:500;letter-spacing:.08em;color:rgba(255,255,255,.7)}.footer .src b{color:#fff;font-weight:600}
 </style></head><body>
 <div class="post">
   <img class="photo" src="${bg}" alt="">
   <div class="scrim"></div>
   <div class="top"><div class="lockup">${mark(48)}<span class="wm">${wordmarkHTML('run')}</span></div>${s.kick ? '<span class="kick">' + s.kick + '</span>' : ''}</div>
-  <div class="headline">${s.eyebrow ? '<div class="ey">' + s.eyebrow + '</div>' : ''}<h1><span class="l1">${s.line1 || ''}</span>${s.line2 ? '<br><span class="l2">' + s.line2 + '</span>' : ''}</h1></div>
+  <div class="headline">
+    ${s.badge ? `<div class="badge-flotante">${s.badge}</div>` : (s.eyebrow ? `<div class="ey">${s.eyebrow}</div>` : '')}
+    <h1><span class="l1">${s.line1 || s.title || ''}</span>${s.line2 ? '<br><span class="l2">' + s.line2 + '</span>' : ''}</h1>
+    ${s.body ? `<p>${s.body}</p>` : ''}
+    ${s.cta ? `<div class="btn-cta">${s.cta}</div>` : ''}
+  </div>
   <div class="footer"><span class="src">${s.src || ''}</span><div class="lockup">${mark(34)}</div></div>
 </div></body></html>`
 }
