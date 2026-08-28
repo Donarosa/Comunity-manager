@@ -425,12 +425,11 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, marca = null, mo
         )
       )
     } else if (modulo === 'disposicion') {
-      const contDisp = el('div')
-      pasoListo(contDisp)
       wrapper.append(
         el('span.rotulo', {}, 'Edición de Disposición'),
-        contDisp
+        el('h2', {}, 'Disposición del texto')
       )
+      pasoListo(wrapper)
     }
   }
 
@@ -612,6 +611,40 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, marca = null, mo
       ayuda && el('span.ayuda', { style: 'margin-bottom:14px' }, ayuda),
       ...hijos
     ))
+  }
+
+  /* ── SECCIÓN COLOR (wrapper de selectorDeColor) ── */
+  function seccionColor(cont) {
+    const sel = selectorDeColor({
+      inicial: st.color || '#A83A1C',
+      delLogo: st.coloresDelLogo || [],
+      onCambio: hex => { st.color = hex },
+    })
+    bloque(cont, 'Color de tu marca', 'Elegí el color que ya usás o dejate guiar por las propuestas.', sel.nodo)
+  }
+
+  /* ── SECCIÓN TIPOGRAFÍA ── */
+  function seccionTipografia(cont) {
+    if (!catalogo.tipografias?.length) return
+    cargarFuentesDeMuestra(catalogo)
+
+    const grupo = el('div.opciones', {})
+    for (const t of catalogo.tipografias) {
+      const [pal, ser] = FUENTES_MUESTRA[t.id] || ['Inter', 'Fraunces']
+      const muestra = el('button.opcion', {
+        onclick: () => {
+          st.tipografia = t.id
+          elegirEnGrupo(grupo, muestra)
+        },
+        style: 'flex-direction:column;align-items:flex-start;gap:6px;padding:14px 16px'
+      },
+        el('b', { style: `font-family:'${pal}',sans-serif;font-size:1.05rem` }, t.label || t.id),
+        el('span', { style: `font-family:'${ser}',serif;font-style:italic;font-size:1.35rem;opacity:0.75;line-height:1.1` }, t.muestra || 'Una frase de impacto')
+      )
+      if (t.id === st.tipografia) muestra.classList.add('elegida')
+      grupo.append(muestra)
+    }
+    bloque(cont, 'Tipografía', 'Determina cómo se ven los titulares, frases y volantas en cada placa.', grupo)
   }
 
   function seccionIdentidadYFirma(cont) {
@@ -860,19 +893,26 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, marca = null, mo
       { id: 'palabra-simbolo', label: 'Nombre y símbolo', desc: st.logo ? 'Tu nombre junto a tu logo subido.' : 'Tu nombre con monograma de iniciales.' },
       { id: 'palabra', label: 'Solo el nombre', desc: 'Firma tipografiada limpia y directa.' },
       { id: 'sello', label: 'Sello circular', desc: 'Emblema redondo de autor.' },
-      { id: 'simbolo', label: 'Solo el símbolo', desc: st.logo ? 'Tu logo sin texto.' : 'Monograma de iniciales sin texto.' },
+      { id: 'simbolo', label: 'Solo el logo', desc: st.logo ? 'Tu logo sin texto.' : null, soloConLogo: true },
     ]
     for (const t of tiposLimpios) {
+      const deshabilitado = t.soloConLogo && !st.logo
+      const desc = deshabilitado
+        ? '↑ Subí tu logo primero para usar esta opción'
+        : t.desc
       const b = el('button.opcion', {
-        onclick: () => {
+        onclick: deshabilitado ? null : () => {
           st.logotipoTipo = t.id
           elegirEnGrupo(grupoTipos, b)
           pintarTratamientos()
           pintarSimbolos()
           refrescarMuestra()
         },
-      }, el('b', {}, t.label), el('span', {}, t.desc))
-      if (t.id === st.logotipoTipo) b.classList.add('elegida')
+        disabled: deshabilitado || undefined,
+        title: deshabilitado ? 'Subí un logo primero para habilitar esta opción' : '',
+        style: deshabilitado ? 'opacity:0.45;cursor:not-allowed;pointer-events:none' : '',
+      }, el('b', {}, t.label), el('span', { style: deshabilitado ? 'color:var(--color-accent-1);font-style:italic;font-size:12px' : '' }, desc))
+      if (t.id === st.logotipoTipo && !deshabilitado) b.classList.add('elegida')
       grupoTipos.append(b)
     }
 
@@ -1026,16 +1066,26 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, marca = null, mo
         listo.textContent = 'Guardando…'
         try {
           await api.guardarMarca(st.cuentaId, { disposicion: st.disposicion })
-          alTerminar()
+          if (st.modoEdicion) {
+            st.subModuloActivo = null
+            st.mensajeExito = '✓ Disposición guardada con éxito.'
+            pintar()
+          } else {
+            alTerminar()
+          }
         } catch (e) {
           vaciar(errorVista).append(aviso(e.message, 'malo'))
           listo.disabled = false
           listo.textContent = 'Empezar a publicar'
         }
       },
-    }, 'Empezar a publicar ➔')
+    }, st.modoEdicion ? 'Guardar disposición ➔' : 'Empezar a publicar ➔')
 
-    const btnVolver = el('button.btn.btn--outline.btn--mint', { onclick: () => ir(2) }, '← Volver a identidad')
+    const fnVolver = st.modoEdicion
+      ? () => { st.subModuloActivo = null; pintar() }
+      : () => ir(2)
+    const btnVolver = el('button.btn.btn--outline.btn--mint', { onclick: fnVolver },
+      st.modoEdicion ? '← Volver a opciones' : '← Volver a identidad')
     acciones.append(listo, btnVolver)
 
     panel.append(gridCont, errorVista, acciones)
