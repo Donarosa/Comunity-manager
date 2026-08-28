@@ -47,7 +47,7 @@ export function fotoHTML(s, ctx, fmt) {
   return `<!DOCTYPE html><html><head><meta charset="utf-8">
 ${fontsLink}
 <style>
-:root{--bg:${P.bg};--accent:${P.accent};--font:'${F.sans}',sans-serif;--mono:'${F.mono}',monospace}
+:root{--bg:${P.bg};--accent:${P.accent};--font:'${F.sans}',sans-serif;--font-logo:'${F.logo.family}',sans-serif;--font-mono-marca:'${F.logo.monogramaFamily}',sans-serif;--track-logo:${F.logo.tracking};--mono:'${F.mono}',monospace}
 *{box-sizing:border-box;margin:0;padding:0}body{font-family:var(--font);-webkit-font-smoothing:antialiased}
 .post{width:${fmt.w}px;height:${fmt.h}px;position:relative;overflow:hidden;background:var(--bg)}
 .photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:${pos};transform:scale(${scale});transform-origin:${pos}}

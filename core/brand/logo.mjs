@@ -1,113 +1,205 @@
-// Generación de logo por IA.
-//
-// El logo no se genera como imagen sino como geometría SVG: el modelo escribe
-// los <path> y <circle> directamente. Eso tiene tres consecuencias buenas:
-// cuesta lo mismo que un texto (centavos, no dólares por imagen), sale
-// vectorial —escala a cualquier tamaño sin pixelarse— y entra tal cual en el
-// motor, que ya dibuja el logo con currentColor sobre fondo claro y oscuro.
+// Generador y Compositor de Logos de Diseñador.
+// Genera las 4 grandes familias de identidad de marca:
+// 1. Firma / Caligráfico (tipo Harrods, Coca-Cola)
+// 2. Pastilla / Caja de Marca (tipo LEGO, OXO)
+// 3. Sello / Medallón Circular (tipo Starbucks, Shell)
+// 4. Monograma de Autor (tipo Marcas de Diseñador, Estudios)
 
-import { pedirJSON } from '../ai/claude.mjs'
 import { sanitizeLogoInner } from './schema.mjs'
+import { proponerIsotiposParaNegocio, buscarIsotipos } from './repositorio.mjs'
 
-export const REGLAS_LOGO = `Sos un diseñador de identidad especializado en isotipos monolineales para micro y pequeñas empresas. Diseñás en SVG crudo: escribís la geometría a mano, con criterio de diseñador, no de programador.
+export const FAMILIAS_LOGO = [
+  { id: 'firma', nombre: 'Firma / Caligráfico', desc: 'Tipografía de autor continua. La palabra es el logo (tipo Harrods / Coca-Cola).' },
+  { id: 'pastilla', nombre: 'Pastilla / Caja de Marca', desc: 'Bloque sólido de alto impacto con contraste pleno (tipo LEGO / OXO).' },
+  { id: 'sello', nombre: 'Sello / Medallón Circular', desc: 'Insignia tradicional con texto en arco y símbolo central (tipo Starbucks / Shell).' },
+  { id: 'monograma', nombre: 'Monograma de Diseñador', desc: 'Iniciales entrelazadas en marco geométrico + Serif editorial.' },
+]
 
-RESTRICCIONES TÉCNICAS — son absolutas, un logo que las viole se descarta:
-- El lienzo es un viewBox "0 0 100 100". Toda la geometría vive ahí adentro, con un margen de al menos 8 unidades en los cuatro lados.
-- Solo podés usar elementos <path> y <circle>. Nada de <rect>, <line>, <polygon>, <g>, <text> ni <defs>.
-- <path> lleva únicamente el atributo d. <circle> lleva únicamente cx, cy y r.
-- No pongas fill, stroke, stroke-width, class, style ni ningún atributo de presentación. El color y el grosor los aplica el sistema.
-- Los <path> se van a dibujar como trazo (contorno), nunca rellenos. Los <circle> se van a dibujar rellenos y sólidos.
-- En el atributo d usá solo comandos M, L, C, Q, A, Z y números. Nada de comandos relativos en minúscula: dificultan la revisión.
+export const REGLAS_LOGO = `Sos un director de arte e identidad visual de primer nivel internacional.
+Diseñás composiciones de marca completas: firmas tipográficas de autor, pastillas de alto contraste, sellos circulares y monogramas geométricos con peso y elegancia.`
 
-CRITERIOS DE DISEÑO:
-- Monolineal: un trazo de grosor uniforme, como un dibujo hecho de alambre.
-- Tiene que leerse a 40 píxeles. Si a ese tamaño los detalles se empastan, el logo está mal. Como regla: máximo 3 o 4 trazos, ningún hueco menor a 6 unidades.
-- Geometría simple y decidida: círculos, arcos, ángulos rectos, diagonales a 45°. Evitá curvas orgánicas irregulares y cualquier cosa que parezca dibujada a pulso.
-- Un solo concepto por logo. Un símbolo que dice una cosa gana siempre a uno que intenta decir tres.
-- Buscá la abstracción del oficio, no la ilustración literal. Para una panadería, mejor la geometría de una espiga o el arco de un horno que un croissant dibujado. Para un estudio contable, mejor una estructura de ejes o un ábaco abstracto que un signo pesos.
-- Evitá los clichés del rubro y los símbolos genéricos de app (el pin de mapa, el chat globo, el engranaje, el cohete, el corazón).
-- No intentes formar letras ni monogramas: a 40 píxeles y en trazo, las letras se leen mal y compiten con el nombre que va al lado.
+/** Extrae las iniciales del nombre (ej: "Café Botánico" -> "CB", "Mendieta" -> "M") */
+function extraerIniciales(nombre = '') {
+  const palabras = String(nombre).trim().split(/\s+/).filter(Boolean)
+  if (palabras.length === 1) {
+    return palabras[0].slice(0, 2).toUpperCase()
+  }
+  return (palabras[0][0] + (palabras[1] ? palabras[1][0] : '')).toUpperCase()
+}
 
-Devolvés exactamente 3 propuestas distintas entre sí — distintas de concepto, no la misma forma rotada. Cada una con una explicación de una frase de qué representa, escrita para que la entienda el dueño del negocio, sin jerga de diseño.`
-
-const SCHEMA = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['propuestas'],
-  properties: {
-    propuestas: {
-      type: 'array',
-      items: {
-        type: 'object',
-        additionalProperties: false,
-        required: ['concepto', 'inner', 'strokeWidth'],
-        properties: {
-          concepto: { type: 'string', description: 'Qué representa, en una frase, sin jerga.' },
-          inner: {
-            type: 'string',
-            description: 'Los elementos <path> y <circle>, concatenados, sin atributos de presentación.',
-          },
-          strokeWidth: {
-            type: 'integer',
-            description: 'Grosor del trazo sobre el viewBox de 100. Entre 5 y 10.',
-          },
-        },
-      },
-    },
-  },
+/** Limpia y escapa texto para SVG */
+function esc(str = '') {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;')
 }
 
 /**
- * Genera 3 propuestas de isotipo para un negocio.
- * @param {object} negocio { nombre, rubro, queVende, publico, diferencial, ciudad }
- * @returns {Promise<{propuestas:Array, costo:number, usage:object}>}
+ * 1. Genera un logo estilo Firma / Caligráfico de Autor.
+ */
+export function generarLogoFirma(negocio = {}) {
+  const nombre = esc(negocio.nombre || 'Mi Marca')
+  const subtitulo = esc((negocio.rubro || negocio.ciudad || 'OFICIO & CALIDAD').toUpperCase())
+
+  const inner = `
+    <g text-anchor="middle" fill="currentColor">
+      <text x="150" y="58" font-family="'Alex Brush', 'Dancing Script', cursive" font-size="44" transform="rotate(-2 150 58)">${nombre}</text>
+      <line x1="40" y1="72" x2="260" y2="72" stroke="currentColor" stroke-width="1.2" opacity="0.75" />
+      <text x="150" y="85" font-family="'JetBrains Mono', monospace" font-size="8.5" font-weight="700" letter-spacing="3" opacity="0.85">${subtitulo}</text>
+    </g>
+  `
+
+  return {
+    id: 'logo-firma',
+    familia: 'firma',
+    nombre: 'Firma Caligráfica de Autor',
+    concepto: `Tipografía fluida de autor con subtítulo artesanal para "${nombre}".`,
+    logo: {
+      viewBox: '0 0 300 100',
+      inner: sanitizeLogoInner(inner),
+      strokeWidth: 2,
+      strokeWidthSmall: 2,
+      origen: 'generador:firma',
+    },
+  }
+}
+
+/**
+ * 2. Genera un logo estilo Pastilla / Caja Sólida de Alto Impacto.
+ */
+export function generarLogoPastilla(negocio = {}) {
+  const nombre = esc((negocio.nombre || 'MARCA').toUpperCase())
+  const subtitulo = esc((negocio.rubro || 'AUTÉNTICO').toUpperCase())
+
+  const inner = `
+    <g fill="currentColor">
+      <rect x="10" y="10" width="280" height="80" rx="40" fill="currentColor" />
+      <rect x="14" y="14" width="272" height="72" rx="36" fill="none" stroke="#FFFFFF" stroke-width="2.5" opacity="0.4" />
+      <text x="150" y="54" text-anchor="middle" font-family="'Syne', 'Inter', sans-serif" font-size="28" font-weight="800" fill="#FFFFFF" letter-spacing="1.5">${nombre}</text>
+      <text x="150" y="72" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="8" font-weight="700" fill="#FFFFFF" letter-spacing="2.5" opacity="0.9">${subtitulo}</text>
+    </g>
+  `
+
+  return {
+    id: 'logo-pastilla',
+    familia: 'pastilla',
+    nombre: 'Pastilla / Caja de Marca',
+    concepto: `Bloque sólido ovalado con tipografía bold de alto contraste para "${nombre}".`,
+    logo: {
+      viewBox: '0 0 300 100',
+      inner: sanitizeLogoInner(inner),
+      strokeWidth: 2,
+      strokeWidthSmall: 2,
+      origen: 'generador:pastilla',
+    },
+  }
+}
+
+/**
+ * 3. Genera un logo estilo Sello / Medallón Circular.
+ */
+export function generarLogoSello(negocio = {}) {
+  const nombre = esc((negocio.nombre || 'MI NEGOCIO').toUpperCase())
+  const subtitulo = esc((negocio.rubro || negocio.ciudad || 'CALIDAD ARTESANAL').toUpperCase())
+
+  const inner = `
+    <defs>
+      <path id="sello-arco-sup" d="M 28,100 A 72,72 0 1,1 172,100" fill="none" />
+      <path id="sello-arco-inf" d="M 172,100 A 72,72 0 0,0 28,100" fill="none" />
+    </defs>
+    <g fill="currentColor" stroke="currentColor">
+      <circle cx="100" cy="100" r="94" fill="none" stroke-width="3.5" />
+      <circle cx="100" cy="100" r="86" fill="none" stroke-width="1.2" stroke-dasharray="3 3" />
+      <circle cx="100" cy="100" r="54" fill="none" stroke-width="2" />
+      
+      <text font-family="'Cinzel', serif" font-size="12" font-weight="700" fill="currentColor" letter-spacing="2.5" stroke="none">
+        <textPath href="#sello-arco-sup" startOffset="50%" text-anchor="middle">${nombre}</textPath>
+      </text>
+      <text font-family="'Inter', sans-serif" font-size="9" font-weight="700" fill="currentColor" letter-spacing="2" stroke="none">
+        <textPath href="#sello-arco-inf" startOffset="50%" text-anchor="middle">${subtitulo}</textPath>
+      </text>
+      
+      <!-- Símbolo central de espacio negativo -->
+      <path d="M 100 66 C 110 78 114 92 100 110 C 86 92 90 78 100 66 Z" fill="currentColor" stroke="none" />
+      <circle cx="100" cy="122" r="3" fill="currentColor" stroke="none" />
+      <circle cx="44" cy="100" r="2.5" fill="currentColor" stroke="none" />
+      <circle cx="156" cy="100" r="2.5" fill="currentColor" stroke="none" />
+    </g>
+  `
+
+  return {
+    id: 'logo-sello',
+    familia: 'sello',
+    nombre: 'Sello / Medallón Circular',
+    concepto: `Insignia concéntrica con texto en arco y símbolo central para "${nombre}".`,
+    logo: {
+      viewBox: '0 0 200 200',
+      inner: sanitizeLogoInner(inner),
+      strokeWidth: 2,
+      strokeWidthSmall: 2,
+      origen: 'generador:sello',
+    },
+  }
+}
+
+/**
+ * 4. Genera un logo estilo Monograma Geométrico de Diseñador.
+ */
+export function generarLogoMonograma(negocio = {}) {
+  const nombre = esc(negocio.nombre || 'Mi Negocio')
+  const subtitulo = esc(negocio.rubro || 'Estudio & Consultoría')
+  const iniciales = extraerIniciales(negocio.nombre)
+
+  const inner = `
+    <g fill="currentColor">
+      <!-- Badge cuadrado de iniciales -->
+      <rect x="10" y="15" width="70" height="70" rx="14" fill="none" stroke="currentColor" stroke-width="2.5" />
+      <rect x="15" y="20" width="60" height="60" rx="10" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="2 2" opacity="0.6" />
+      <text x="45" y="58" text-anchor="middle" font-family="'Cinzel', serif" font-size="30" font-weight="800" fill="currentColor" letter-spacing="1">${iniciales}</text>
+      
+      <!-- Bloque tipográfico con Serif -->
+      <text x="100" y="50" font-family="'Fraunces', 'Playfair Display', serif" font-size="24" font-weight="700" fill="currentColor" letter-spacing="-0.02em">${nombre}</text>
+      <text x="101" y="68" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="600" fill="currentColor" letter-spacing="2" opacity="0.75">${subtitulo}</text>
+    </g>
+  `
+
+  return {
+    id: 'logo-monograma',
+    familia: 'monograma',
+    nombre: 'Monograma de Diseñador',
+    concepto: `Iniciales "${iniciales}" en marco geométrico con tipografía Serif de autor.`,
+    logo: {
+      viewBox: '0 0 320 100',
+      inner: sanitizeLogoInner(inner),
+      strokeWidth: 2,
+      strokeWidthSmall: 2,
+      origen: 'generador:monograma',
+    },
+  }
+}
+
+/**
+ * Genera propuestas de las 4 familias de diseño para un negocio concreto.
+ */
+export async function generarPropuestasCompletas(negocio = {}) {
+  const firma = generarLogoFirma(negocio)
+  const pastilla = generarLogoPastilla(negocio)
+  const sello = generarLogoSello(negocio)
+  const monograma = generarLogoMonograma(negocio)
+
+  return [firma, pastilla, sello, monograma]
+}
+
+/**
+ * Función principal para sugerir logos al negocio en el alta o desde el servicio.
  */
 export async function generarLogo(negocio = {}) {
-  const { nombre, rubro, queVende, publico, diferencial, ciudad } = negocio
+  const { nombre } = negocio
   if (!nombre) throw new Error('falta el nombre del negocio')
 
-  const contexto = [
-    `Negocio: ${nombre}`,
-    rubro && `Rubro: ${rubro}`,
-    queVende && `Qué vende: ${queVende}`,
-    publico && `A quién le vende: ${publico}`,
-    diferencial && `Lo que lo diferencia: ${diferencial}`,
-    ciudad && `Dónde: ${ciudad}`,
-  ].filter(Boolean).join('\n')
-
-  const { data, usage, costo } = await pedirJSON({
-    reglas: REGLAS_LOGO,
-    contexto,
-    prompt: `Diseñá 3 isotipos para este negocio. Recordá: se van a ver en la esquina de una placa de Instagram, a 40 píxeles, en un solo color.`,
-    schema: SCHEMA,
-    effort: 'high',
-    maxTokens: 6000,
-  })
-
-  // El sanitizador es la última línea: nada que venga del modelo entra a un
-  // render sin pasar por acá.
-  const propuestas = (data.propuestas || [])
-    .map((p, i) => {
-      const inner = sanitizeLogoInner(p.inner)
-      if (!inner) return null
-      const sw = Math.min(10, Math.max(4, Number(p.strokeWidth) || 8))
-      return {
-        id: `opcion-${i + 1}`,
-        concepto: String(p.concepto || '').trim(),
-        logo: {
-          viewBox: '0 0 100 100',
-          inner,
-          strokeWidth: sw,
-          strokeWidthSmall: Math.max(3, Math.round(sw * 0.85)),
-          origen: 'ia',
-        },
-      }
-    })
-    .filter(Boolean)
-
-  if (!propuestas.length) {
-    throw new Error('Ninguna propuesta pasó la validación de SVG. Reintentá.')
-  }
-
-  return { propuestas, usage, costo }
+  const propuestas = await generarPropuestasCompletas(negocio)
+  return { propuestas, usage: {}, costo: 0 }
 }

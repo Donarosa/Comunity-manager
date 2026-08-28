@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Firmas de marca · Community</title>
+<!--
+  Visor de logotipos: las combinaciones de firma, en grande y en vivo.
+
+  Los PNG de `npm run logotipos` son placas de 2160×2700 donde la firma es un
+  elemento chico en la esquina — sirven para ver la firma EN CONTEXTO, no para
+  compararlas entre sí. Esta página es lo contrario: la firma sola, al tamaño
+  que hace falta para decidir.
+
+  No reimplementa nada. Importa `logotipo.mjs`, `palette.mjs` y `fonts.mjs`
+  desde /nucleo, así que lo que se ve acá es exactamente lo que va a salir
+  renderizado. Si el motor cambia, esta página cambia con él.
+-->
+<style>
+  :root{
+    --papel:#FBFAF8; --tinta:#16181A; --gris:#6B7176; --linea:#E4E2DD;
+    --ui:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --papel:#131416; --tinta:#EDEBE7; --gris:#9AA0A6; --linea:#2A2D30;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--papel);color:var(--tinta);font-family:var(--ui);
+       line-height:1.5;padding:36px 24px 90px}
+  .caja{max-width:1080px;margin:0 auto}
+  h1{font-size:1.5rem;margin:0 0 6px;letter-spacing:-.02em}
+  .sub{color:var(--gris);font-size:.94rem;margin:0 0 30px;max-width:62ch}
+
+  .controles{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;
+             padding:18px;border:1px solid var(--linea);border-radius:10px;margin-bottom:34px}
+  .campo{display:flex;flex-direction:column;gap:5px}
+  .campo label{font-size:.76rem;font-weight:600;letter-spacing:.05em;
+               text-transform:uppercase;color:var(--gris)}
+  .campo input,.campo select{font:inherit;font-size:.92rem;padding:7px 10px;
+    border:1px solid var(--linea);border-radius:7px;background:var(--papel);color:var(--tinta)}
+  .campo input[type=color]{padding:2px;width:52px;height:36px;cursor:pointer}
+
+  h2{font-size:.78rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+     color:var(--gris);margin:36px 0 4px}
+  h2 + p{margin:0 0 16px;color:var(--gris);font-size:.9rem;max-width:62ch}
+
+  .grilla{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+  /* Columna con el lienzo elástico: así los pies de todas las tarjetas quedan
+     a la misma altura aunque las firmas midan distinto. */
+  .item{border:1px solid var(--linea);border-radius:10px;overflow:hidden;background:#fff;
+        display:flex;flex-direction:column}
+  .item .lienzo{padding:30px 26px;min-height:112px;display:flex;align-items:center;
+        flex:1;overflow-x:auto}
+  /* Una firma no se parte en dos renglones: "en una línea" tiene que verse en
+     una línea. Si no entra, la tarjeta scrollea. */
+  .item .lienzo .brand{white-space:nowrap}
+  .item .lienzo .c-lg-apilado .wm,.item .lienzo.c-lg-apilado .brand .wm{white-space:normal}
+  .item .pie{border-top:1px solid var(--linea);padding:8px 14px;font-size:.78rem;
+             display:flex;justify-content:space-between;gap:10px;background:var(--papel)}
+  .item .pie b{font-weight:600}
+  .item .pie code{color:var(--gris);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.74rem}
+  .item.oscuro .lienzo{background:var(--fondo-oscuro,#132015)}
+
+  .nota{margin-top:8px;color:var(--gris);font-size:.86rem}
+  .aviso{border-left:3px solid #C2410C;padding:10px 14px;margin:16px 0;
+         background:rgba(194,65,12,.07);font-size:.9rem;border-radius:0 7px 7px 0}
+</style>
+</head>
+<body>
+<div class="caja">
+  <h1>Firmas de marca</h1>
+  <p class="sub">Cómo firma una marca sus placas: el tipo, el tratamiento del nombre y la
+     forma del símbolo. Escribí el nombre de un cliente real y compará. Es el mismo código
+     que usa el motor de render, así que lo que ves es lo que sale.</p>
+
+  <div class="controles">
+    <div class="campo">
+      <label for="nombre">Nombre del negocio</label>
+      <input id="nombre" type="text" value="Vivero Las Acacias" size="26" autocomplete="off">
+    </div>
+    <div class="campo">
+      <label for="rubro">Rubro y ciudad (la bajada)</label>
+      <input id="rubro" type="text" value="plantas & jardín · Rosario" size="24" autocomplete="off">
+    </div>
+    <div class="campo">
+      <label for="color">Color</label>
+      <input id="color" type="color" value="#3F6B34">
+    </div>
+    <div class="campo">
+      <label for="tipo">Tipografía del texto</label>
+      <select id="tipo"></select>
+    </div>
+    <div class="campo">
+      <label for="logofuente">Letra del logotipo</label>
+      <select id="logofuente"></select>
+    </div>
+  </div>
+
+  <div id="salida"></div>
+</div>
+
+<link id="fuentes" rel="stylesheet" href="">
+<style id="css-nucleo"></style>
+<style id="css-marca"></style>
+
+<script type="module">
+import { catalogoLogotipos, lockupCSS, monogramaCSS, monogramaHTML, selloHTML,
+         resolverTipo, resolverTratamiento } from '/nucleo/brand/logotipo.mjs'
+import { derivePalette } from '/nucleo/brand/palette.mjs'
+import { FONT_PRESETS, LOGO_FONTS, resolveFonts } from '/nucleo/brand/fonts.mjs'
+
+const $ = id => document.getElementById(id)
+const cat = catalogoLogotipos()
+
+// El CSS del núcleo scopea los tratamientos con `body.lg-X`, porque en una
+// placa hay una sola firma. Acá hay muchas a la vez, así que cada una necesita
+// su propio contenedor: `body.` pasa a ser una clase de tarjeta.
+$('css-nucleo').textContent = (lockupCSS() + monogramaCSS()).replaceAll('body.', '.c-')
+
+for (const f of FONT_PRESETS) {
+  $('tipo').append(Object.assign(document.createElement('option'), { value: f.id, textContent: f.label }))
+}
+for (const f of LOGO_FONTS) {
+  $('logofuente').append(Object.assign(document.createElement('option'),
+    { value: f.id, textContent: f.family ? `${f.label} · ${f.family}` : f.label }))
+}
+// Todas las hojas de una: son diez familias, se piden al abrir y listo.
+for (const f of LOGO_FONTS.filter(f => f.importUrl)) {
+  document.head.append(Object.assign(document.createElement('link'), { rel: 'stylesheet', href: f.importUrl }))
+}
+
+// Mismo criterio que schema.mjs: la última palabra es el acento.
+function partirNombre(nombre) {
+  const partes = String(nombre || '').trim().split(/\s+/).filter(Boolean)
+  if (!partes.length) return null
+  if (partes.length === 1) return { base: partes[0], accent: '' }
+  return { base: partes.slice(0, -1).join(' ') + ' ', accent: partes.at(-1) }
+}
+
+function tarjeta({ nombre, wm, tipo, tratamiento, escudo, etiqueta, detalle, oscuro, caps, ajuste, bajada }) {
+  const simbolo = tipo === 'palabra' ? ''
+    : `<span class="marca">${monogramaHTML({ nombre, escudo, px: 40, ajuste })}</span>`
+  const nom = wm.accent ? `${wm.base}<span class="acc">${wm.accent}</span>` : wm.base
+  // Mismo criterio que lockupHTML: sin nombre, no hay bajada que colgarle.
+  const baj = bajada && tipo !== 'simbolo' ? `<span class="bajada">${bajada.toUpperCase()}</span>` : ''
+  const clases = ['c-lg-' + tratamiento]
+  if (tipo === 'simbolo') clases.push('c-lg-solo-simbolo')
+  if (tipo === 'palabra') clases.push('c-lg-solo-palabra')
+  if (oscuro) clases.push('c-dark')
+  if (caps) clases.push('c-lg-caps')
+  return `<div class="item${oscuro ? ' oscuro' : ''}">
+    <div class="lienzo ${clases.join(' ')}">${tipo === 'sello'
+      ? `<div class="brand">${selloHTML({ nombre, rubro: bajada, px: 108, slug: detalle })}</div>`
+      : `<div class="brand">${simbolo}${tipo === 'simbolo' ? '' : `<span class="nom"><span class="wm">${nom}</span>${baj}</span>`}</div>`}</div>
+    <div class="pie"><b>${etiqueta}</b><code>${detalle}</code></div>
+  </div>`
+}
+
+function seccion(titulo, bajada, html) {
+  return `<h2>${titulo}</h2><p>${bajada}</p><div class="grilla">${html}</div>`
+}
+
+function pintar() {
+  const nombre = $('nombre').value.trim()
+  const wm = partirNombre(nombre)
+  if (!wm) { $('salida').innerHTML = '<p class="aviso">Escribí un nombre para ver las firmas.</p>'; return }
+
+  const { flat, warnings } = derivePalette({ accent: $('color').value })
+  const f = resolveFonts($('tipo').value, $('logofuente').value)
+  $('fuentes').href = f.importUrl
+  $('css-marca').textContent =
+    `:root{--accent:${flat.accent};--accent-deep:${flat.accentDeep};--accent-dark:${flat.accentOnDark};` +
+    `--dark-bg:${flat.darkBg};--ink:${flat.ink};--font:'${f.sans}',sans-serif;` +
+    `--font-logo:'${f.logo.family}',sans-serif;--font-mono-marca:'${f.logo.monogramaFamily}',sans-serif;` +
+    `--track-logo:${f.logo.tracking};--fondo-oscuro:${flat.darkBg}}` +
+    `.item .lienzo{background:${flat.bg}}`
+
+  const unaPalabra = !wm.accent
+  const trats = cat.tratamientos.filter(t => !t.requiereDosPalabras || !unaPalabra)
+  const caps = f.logo.caps
+  const ajuste = f.logo.mono
+  const bajada = $('rubro').value.trim()
+
+  let html = ''
+
+  html += seccion('Tipo', 'Lo primero que elige el cliente: si su firma lleva el nombre, el nombre con un símbolo, o solo el símbolo.',
+    cat.tipos.map(t => tarjeta({ nombre, wm, tipo: t.id, tratamiento: 'linea', escudo: 'circulo',
+      etiqueta: t.label, detalle: t.id, caps, ajuste, bajada })).join(''))
+
+  html += seccion('Tratamiento del nombre', 'Cómo se resuelve tipográficamente el nombre. Son recursos de identidad, no adornos.',
+    trats.map(t => tarjeta({ nombre, wm, tipo: 'palabra-simbolo', tratamiento: t.id, escudo: 'circulo',
+      etiqueta: t.label, detalle: t.id, caps, ajuste, bajada })).join(''))
+
+  html += seccion('Forma del símbolo', 'El monograma sale de las iniciales del negocio, nunca de un icono de catálogo: un icono público lo comparten miles de comercios y no se puede registrar como marca.',
+    cat.escudos.map(e => tarjeta({ nombre, wm, tipo: 'palabra-simbolo', tratamiento: 'linea', escudo: e.id,
+      etiqueta: e.label, detalle: e.id, caps, ajuste, bajada })).join(''))
+
+  html += seccion('Sobre fondo oscuro', 'La mitad de las placas van en oscuro. El color de acento cambia para no perder contraste.',
+    cat.escudos.map(e => tarjeta({ nombre, wm, tipo: 'palabra-simbolo', tratamiento: 'linea', escudo: e.id,
+      etiqueta: e.label, detalle: e.id, caps, ajuste, bajada, oscuro: true })).join(''))
+
+  if (unaPalabra) {
+    html += `<p class="aviso"><b>${nombre}</b> es una sola palabra, así que "apilado" no se ofrece:
+             necesita dos renglones. El resto funciona igual.</p>`
+  }
+  if (warnings.length) {
+    html += `<p class="aviso">${warnings.join(' · ')}</p>`
+  }
+  $('salida').innerHTML = html
+}
+
+for (const id of ['nombre', 'rubro', 'color', 'tipo', 'logofuente']) $(id).addEventListener('input', pintar)
+pintar()
+</script>
+</body>
+</html>

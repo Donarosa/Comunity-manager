@@ -5,7 +5,7 @@
 // exacta que consume el motor. Por eso el schema es tan específico — cada campo
 // cae en un lugar concreto de una placa.
 
-import { pedirJSON } from '../ai/claude.mjs'
+import { pedirJSON } from '../ai/gemini.mjs'
 
 /* ── reglas estables (se cachean; iguales para todas las cuentas) ── */
 
@@ -142,7 +142,7 @@ export function contextoDeMarca(brand) {
     n.publico && `A quién le vende: ${n.publico}`,
     n.diferencial && `Lo que lo diferencia: ${n.diferencial}`,
     n.tono && `Tono pedido: ${n.tono}`,
-    `Instagram: ${brand.handle}`,
+    brand.handle && `Instagram: ${brand.handle}`,
     n.noDecir?.length && `Nunca menciones: ${n.noDecir.join(', ')}`,
     n.voz && `\nCómo habla el negocio, en sus propias palabras:\n${n.voz}`,
   ].filter(Boolean)

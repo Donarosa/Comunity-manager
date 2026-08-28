@@ -1,19 +1,27 @@
-// Armado de la aplicación: qué pantalla se ve y cómo se pasa de una a otra.
+// Armado de la aplicación: enrutamiento, autenticación y pantallas.
 
 import { api } from './api.js'
 import { el, $, $$, vaciar, aviso } from './ui.js'
 import { iniciarWizard } from './wizard.js'
 import { iniciarEditor } from './editor.js'
+import { iniciarDashboard } from './dashboard.js'
+import { abrirModalAuth } from './modal-auth.js'
+import { enCambioDeAuth, obtenerUsuario, cerrarSesion } from './auth.js'
 
 const LLAVE = 'cm.cuenta'
 const landing = $('#landing')
 const app = $('#app')
 const cuerpo = $('#app-cuerpo')
 const chip = $('#chip-cuenta')
+const btnEntrar = $('#btn-entrar')
+const btnLoginNav = $('#btn-login-nav')
+const usuarioNav = $('#usuario-nav')
+const navAvatar = $('#nav-avatar')
 
 let catalogo = null
 let cuenta = null
 let estadoCuota = null
+let usuarioActual = null
 
 /* ── navegación ──────────────────────────────────────────── */
 
@@ -21,19 +29,20 @@ function mostrarLanding() {
   app.classList.add('oculto')
   landing.classList.remove('oculto')
   $$('[data-solo-landing]').forEach(n => n.classList.remove('oculto'))
-  $('#btn-entrar').textContent = cuenta ? 'Entrar' : 'Empezar'
+  btnEntrar.textContent = usuarioActual ? 'Ir al Dashboard' : 'Empezar'
 }
 
 function mostrarApp(pintar) {
   landing.classList.add('oculto')
   app.classList.remove('oculto')
   $$('[data-solo-landing]').forEach(n => n.classList.add('oculto'))
-  $('#btn-entrar').textContent = 'Inicio'
+  btnEntrar.textContent = 'Dashboard'
   vaciar(cuerpo)
   pintar(cuerpo)
 }
 
 function actualizarChip(estado) {
+  if (!chip) return
   if (estado) estadoCuota = estado
   if (!estadoCuota) return chip.classList.add('oculto')
   const r = estadoCuota.restante
@@ -41,105 +50,72 @@ function actualizarChip(estado) {
   chip.innerHTML = `<b>${r.piezas.mes}</b> placas este mes · <b>${r.piezas.dia}</b> hoy`
 }
 
+function actualizarNavUsuario(u) {
+  usuarioActual = u
+  if (u) {
+    if (btnLoginNav) btnLoginNav.classList.add('oculto')
+    if (usuarioNav && navAvatar) {
+      usuarioNav.classList.remove('oculto')
+      navAvatar.src = u.foto || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(u.nombre || 'U')}&backgroundColor=A83A1C&textColor=FAF7F0`
+      navAvatar.onclick = () => {
+        if (cuenta) abrirDashboard()
+      }
+    }
+    btnEntrar.textContent = 'Mi Dashboard'
+  } else {
+    if (btnLoginNav) btnLoginNav.classList.remove('oculto')
+    if (usuarioNav) usuarioNav.classList.add('oculto')
+    btnEntrar.textContent = 'Empezar'
+  }
+}
+
 /* ── pantallas ───────────────────────────────────────────── */
 
-function inicio() {
-  mostrarApp(cont => {
-    const marca = cuenta.marca
-    cont.append(
-      el('div', { style: 'padding:44px 0 20px' },
-        el('span.rotulo', {}, 'Tu marca'),
-        el('h2', { style: 'margin:6px 0 4px' }, marca?.nombre || cuenta.nombre),
-        el('p.apunte', {}, marca ? `${marca.handle} · logo ${marca.logo === 'default' ? 'genérico' : marca.logo}` : 'Todavía sin marca cargada.')
-      )
-    )
-
-    if (!marca) {
-      cont.append(
-        aviso('Antes de publicar hay que cargar la marca.', ''),
-        el('div', { style: 'margin-top:16px' },
-          el('button.btn', { onclick: abrirWizard }, 'Armar mi marca'))
-      )
-      return
-    }
-
-    // El panel de valor solo aparece cuando hay algo que contar. Un tablero que
-    // dice "0 placas · equivalen a US$0" no informa nada y desanima.
-    const v = estadoCuota?.valor
-    if (v?.placasTotal > 0) cont.append(panelDeValor(v))
-
-    const tarjeta = (titulo, texto, etiquetaBoton, onClick, principal = false) =>
-      el('section', { style: 'padding:24px 0;border-top:1px solid var(--linea)' },
-        el('h3', {}, titulo),
-        el('p.apunte', { style: 'margin:4px 0 14px' }, texto),
-        el(`button.btn${principal ? '' : '.fantasma'}`, { onclick: onClick }, etiquetaBoton))
-
-    cont.append(
-      el('div', { style: v?.placasTotal ? '' : 'margin-top:26px' },
-        tarjeta('Nueva publicación',
-          'Elegís el formato, escribís el texto y bajás el PNG. Podés subir tu foto o buscar una con licencia libre.',
-          'Empezar una placa', abrirEditor, true),
-        tarjeta('Plan de contenido',
-          'Te proponemos qué publicar esta semana —posteos e historias, con el texto del posteo y los hashtags— y sale todo renderizado.',
-          'Pedir un plan', vistaPlan),
-        tarjeta('Mi marca',
-          'Cambiar el color, la tipografía o el logo. Se aplica a todo lo que generes de acá en adelante.',
-          'Editar la marca', abrirWizard)
-      ),
-      estadoCuota ? el('p.medidor', { style: 'margin-top:26px' },
-        `Plan ${estadoCuota.plan.nombre} · quedan ${estadoCuota.restante.piezas.mes} placas y ` +
-        `${estadoCuota.restante.planes.mes} planes de contenido este mes.`) : null
-    )
-  })
+function abrirDashboard() {
+  if (!cuenta) return entrar()
+  mostrarApp(cont => iniciarDashboard({
+    contenedor: cont,
+    cuentaId: cuenta.id,
+    catalogo,
+    onAbrirEditor: abrirEditor,
+    onAbrirWizard: abrirWizard,
+    onAbrirPlan: vistaPlan,
+    alCerrarSesion: () => {
+      cuenta = null
+      localStorage.removeItem(LLAVE)
+      mostrarLanding()
+    },
+  }))
 }
-
-/**
- * Cuánto viene generando el cliente, en placas y en su equivalente en plata.
- *
- * La aclaración del precio de referencia va impresa al lado del número, no en un
- * globito al pasar el mouse: un monto sin la referencia que lo produjo es una
- * cifra inventada, y el cliente lo huele.
- */
-function panelDeValor(v) {
-  const cifra = (rotulo, valor, pie) =>
-    el('div', {},
-      el('span.rotulo', { style: 'display:block;margin-bottom:4px' }, rotulo),
-      el('strong.cifra', {}, valor),
-      el('span.apunte.chico', { style: 'display:block;margin-top:2px' }, pie))
-
-  return el('section.panel-valor', {},
-    cifra('Placas hechas', String(v.placasTotal),
-      v.placasMes ? `${v.placasMes} este mes` : 'ninguna este mes todavía'),
-    cifra(v.referencia.modo === 'ahorro' ? 'Te ahorraste' : 'Equivalen a',
-      formatearMonto(v.equivalenteTotal, v.referencia),
-      v.texto.aclaracion)
-  )
-}
-
-const formatearMonto = (n, ref) => ref.simbolo + Math.round(n).toLocaleString('es-AR')
 
 function abrirEditor() {
+  if (!cuenta) return entrar()
   mostrarApp(cont => iniciarEditor({
     contenedor: cont,
     cuenta,
     catalogo,
-    alVolver: inicio,
+    alVolver: abrirDashboard,
     alCambiarCuota: actualizarChip,
   }))
 }
 
 function abrirWizard() {
+  if (!cuenta) return entrar()
   mostrarApp(cont => iniciarWizard({
     contenedor: cont,
     catalogo,
     cuentaId: cuenta.id,
-    alTerminar: async () => { await recargarCuenta(); inicio() },
+    alTerminar: async () => {
+      await recargarCuenta()
+      abrirDashboard()
+    },
   }))
 }
 
 /* ── plan de contenido ───────────────────────────────────── */
 
 function vistaPlan() {
+  if (!cuenta) return entrar()
   mostrarApp(cont => {
     const panel = el('div', { style: 'padding:40px 0 80px;max-width:760px' })
     cont.append(panel)
@@ -170,15 +146,15 @@ function vistaPlan() {
     }, 'Armar el plan')
 
     panel.append(
-      el('span.rotulo', {}, 'Plan de contenido'),
+      el('span.rotulo', {}, 'Plan de contenido semanal'),
       el('h2', { style: 'margin:6px 0 8px' }, '¿Qué publicamos esta semana?'),
-      el('p.intro', {}, 'Proponemos los posteos, escribimos el texto de las placas y el del posteo, y renderizamos todo. Vos revisás y subís.'),
+      el('p.intro', {}, 'Proponemos los posteos, escribimos el texto de las placas y el del posteo, y renderizamos todo con tu marca.'),
       el('div.campo', {}, el('label', {}, 'Cuánto'),
         el('div', { style: 'display:flex;gap:10px' }, posteos, historias)),
       el('div.campo', {}, el('label', {}, '¿Algo puntual?'),
-        el('span.ayuda', {}, 'Opcional. Si hay una promoción, una novedad o algo que querés contar, escribilo acá y tiene prioridad.'),
+        el('span.ayuda', {}, 'Opcional. Si hay una promoción, una novedad o algo que querés contar, escribilo acá.'),
         pedido),
-      el('div.acciones-paso', {}, pedir, el('button.btn.texto', { onclick: inicio }, '← Volver')),
+      el('div.acciones-paso', {}, pedir, el('button.btn.texto', { onclick: abrirDashboard }, '← Volver al Dashboard')),
       salida
     )
   })
@@ -186,7 +162,13 @@ function vistaPlan() {
 
 function mostrarPlan(cont, r) {
   vaciar(cont)
-  cont.append(el('div.aviso.bien', {}, r.resumen))
+  cont.append(
+    el('div.aviso.bien', {}, r.resumen),
+    el('button.btn.chico', {
+      style: 'margin-bottom:18px;',
+      onclick: abrirDashboard,
+    }, '← Volver al Dashboard para ver todas tus placas')
+  )
 
   for (const pub of r.publicaciones) {
     const bloque = el('section', { style: 'padding:22px 0;border-top:1px solid var(--linea)' })
@@ -194,10 +176,10 @@ function mostrarPlan(cont, r) {
       el('span.rotulo', {}, `${pub.dia} · ${pub.canal}`),
       el('h3', { style: 'margin:3px 0 8px' }, pub.objetivo)
     )
-    if (pub.archivos.length) {
+    if (pub.archivos?.length) {
       bloque.append(el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px' },
         pub.archivos.map(a => {
-          const url = `/piezas/${cuenta.id}/${r.carpeta.split('/').pop()}/${a}`
+          const url = a.startsWith('/') ? a : `/piezas/${cuenta.id}/${r.carpeta.split('/').pop()}/${a}`
           return el('a', { href: url, target: '_blank', download: a },
             el('img', { src: url, style: 'width:88px;border:1px solid var(--linea-fuerte);border-radius:2px;display:block' }))
         })))
@@ -219,58 +201,244 @@ function mostrarPlan(cont, r) {
   }
 }
 
-/* ── arranque ────────────────────────────────────────────── */
+/* ── arranque y sincronización de sesión ─────────────────── */
 
 async function recargarCuenta() {
+  if (!cuenta?.id) return
   const r = await api.cuenta(cuenta.id)
   cuenta = r.cuenta
   actualizarChip(r.estado)
 }
 
-async function entrar() {
+async function sincronizarUsuario(usuario) {
+  if (!usuario) {
+    cuenta = null
+    actualizarNavUsuario(null)
+    mostrarLanding()
+    return
+  }
+
+  actualizarNavUsuario(usuario)
+
   try {
-    if (!cuenta) {
-      const r = await api.crearCuenta({ nombre: 'Mi negocio' })
-      cuenta = r.cuenta
-      localStorage.setItem(LLAVE, cuenta.id)
-      actualizarChip(r.estado)
+    const r = await api.loginFirebase({
+      uid: usuario.id,
+      email: usuario.email,
+      nombre: usuario.nombre,
+      foto: usuario.foto,
+    })
+    cuenta = r.cuenta
+    localStorage.setItem(LLAVE, cuenta.id)
+    actualizarChip(r.estado)
+    if (!cuenta.marca) abrirWizard()
+    else abrirDashboard()
+  } catch (err) {
+    console.warn('[Sync] Error sincronizando usuario:', err.message)
+    // Fallback: intentar leer cuenta guardada o crearla
+    try {
+      const res = await api.cuenta(usuario.id)
+      cuenta = res.cuenta
+      actualizarChip(res.estado)
+      if (!cuenta.marca) abrirWizard()
+      else abrirDashboard()
+    } catch {
+      const nueva = await api.crearCuenta({
+        id: usuario.id,
+        nombre: usuario.nombre || 'Mi Negocio',
+        email: usuario.email,
+        foto: usuario.foto,
+      })
+      cuenta = nueva.cuenta
+      actualizarChip(nueva.estado)
       abrirWizard()
-      return
     }
-    await recargarCuenta()
-    cuenta.marca ? inicio() : abrirWizard()
-  } catch (e) {
-    mostrarApp(cont => cont.append(
-      el('div', { style: 'padding:60px 0' },
-        aviso(`No pudimos entrar: ${e.message}`, 'malo'),
-        el('button.btn.fantasma', {
-          style: 'margin-top:14px',
-          onclick: () => { localStorage.removeItem(LLAVE); location.reload() },
-        }, 'Empezar de cero'))
-    ))
+  }
+}
+
+async function entrar() {
+  const u = obtenerUsuario()
+  if (!u) {
+    abrirModalAuth({
+      alAutenticar: usuario => {
+        sincronizarUsuario(usuario)
+      },
+    })
+    return
+  }
+
+  if (!cuenta) {
+    await sincronizarUsuario(u)
+  } else {
+    abrirDashboard()
   }
 }
 
 async function arrancar() {
   catalogo = await api.catalogo().catch(() => ({ tipografias: [], formatos: [], planes: [] }))
 
-  const guardada = localStorage.getItem(LLAVE)
-  if (guardada) {
+  // Suscribirse a cambios en la sesión de Auth
+  enCambioDeAuth(u => {
+    actualizarNavUsuario(u)
+  })
+
+  const u = obtenerUsuario()
+  if (u) {
     try {
-      const r = await api.cuenta(guardada)
+      const r = await api.cuenta(u.id)
       cuenta = r.cuenta
       actualizarChip(r.estado)
     } catch {
-      localStorage.removeItem(LLAVE) // la cuenta ya no existe en el servidor
+      // Si la cuenta no existe en el backend, la sincronizamos
+      await sincronizarUsuario(u)
     }
   }
 
-  $('#btn-entrar').addEventListener('click', () => {
-    if (!app.classList.contains('oculto') && cuenta?.marca) return mostrarLanding()
+  btnEntrar.addEventListener('click', () => {
+    if (!app.classList.contains('oculto')) {
+      abrirDashboard()
+      return
+    }
     entrar()
   })
+
+  if (btnLoginNav) {
+    btnLoginNav.addEventListener('click', () => {
+      abrirModalAuth({ alAutenticar: usuario => sincronizarUsuario(usuario) })
+    })
+  }
+
   $$('[data-ir="wizard"]').forEach(b => b.addEventListener('click', entrar))
+
+  // N10 floating-on-scroll morph de Bubble (Hum-07)
+  const barra = $('#barra-nav') || $('header.barra')
+  if (barra) {
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 20) {
+        barra.classList.add('is-floating')
+      } else {
+        barra.classList.remove('is-floating')
+      }
+    }, { passive: true })
+  }
+
+  iniciarCarruselPantallas()
   mostrarLanding()
 }
 
+/* ── Carrusel dinámico de pantallas de salida ──────────────── */
+
+function iniciarCarruselPantallas() {
+  const container = $('#carrusel-pantallas')
+  const track = $('#carrusel-track')
+  const btnPrev = $('#carrusel-prev')
+  const btnNext = $('#carrusel-next')
+  const dotsContainer = $('#carrusel-dots')
+
+  if (!container || !track) return
+
+  const items = Array.from(track.querySelectorAll('.placa-mockup'))
+  const total = items.length
+  if (total === 0) return
+
+  let indiceActual = 0
+  let timerAutoplay = null
+  let pausado = false
+  let translateActual = 0
+
+  // Generar dots interactivos
+  vaciar(dotsContainer)
+  items.forEach((_, i) => {
+    const dot = el('button.carrusel-dot', {
+      'aria-label': `Ir a placa ${i + 1}`,
+      class: i === 0 ? 'is-active' : '',
+    })
+    dot.addEventListener('click', () => irAPlaca(i))
+    dotsContainer.append(dot)
+  })
+
+  const dots = Array.from(dotsContainer.querySelectorAll('.carrusel-dot'))
+
+  function calcularTranslate(idx) {
+    // Usamos getBoundingClientRect con el track en su posición actual
+    const containerRect = container.getBoundingClientRect()
+    const containerMid = containerRect.left + containerRect.width / 2
+
+    const item = items[idx]
+    // getBoundingClientRect del item incluye el transform actual
+    // Para tener la posición "natural", temporalmente quitamos el transform
+    const currentTransform = track.style.transform
+    track.style.transition = 'none'
+    track.style.transform = `translateX(${translateActual}px)`
+    const itemRect = item.getBoundingClientRect()
+    const itemMid = itemRect.left + itemRect.width / 2
+    const delta = containerMid - itemMid
+    track.style.transform = currentTransform
+    // Force reflow para restaurar transition en el siguiente frame
+    requestAnimationFrame(() => {
+      track.style.transition = ''
+    })
+    return translateActual + delta
+  }
+
+  function actualizarPosicion() {
+    items.forEach((item, i) => {
+      item.classList.toggle('is-active', i === indiceActual)
+    })
+    dots.forEach((dot, i) => {
+      dot.classList.toggle('is-active', i === indiceActual)
+    })
+
+    translateActual = calcularTranslate(indiceActual)
+    track.style.transform = `translateX(${translateActual}px)`
+  }
+
+  function irAPlaca(idx) {
+    indiceActual = ((idx % total) + total) % total
+    actualizarPosicion()
+    reiniciarTimer()
+  }
+
+  function siguiente() { irAPlaca(indiceActual + 1) }
+  function anterior() { irAPlaca(indiceActual - 1) }
+
+  function iniciarTimer() {
+    detenerTimer()
+    timerAutoplay = setInterval(() => { if (!pausado) siguiente() }, 3000)
+  }
+
+  function detenerTimer() {
+    if (timerAutoplay) { clearInterval(timerAutoplay); timerAutoplay = null }
+  }
+
+  function reiniciarTimer() { iniciarTimer() }
+
+  if (btnPrev) btnPrev.addEventListener('click', () => anterior())
+  if (btnNext) btnNext.addEventListener('click', () => siguiente())
+
+  items.forEach((item, i) => {
+    item.addEventListener('click', () => irAPlaca(i))
+  })
+
+  container.addEventListener('mouseenter', () => { pausado = true })
+  container.addEventListener('mouseleave', () => { pausado = false })
+
+  window.addEventListener('resize', () => {
+    translateActual = 0
+    track.style.transition = 'none'
+    track.style.transform = 'translateX(0)'
+    requestAnimationFrame(() => {
+      track.style.transition = ''
+      actualizarPosicion()
+    })
+  }, { passive: true })
+
+  // Inicializar — esperamos que el DOM esté pintado
+  setTimeout(() => {
+    actualizarPosicion()
+    iniciarTimer()
+  }, 150)
+}
+
+
 arrancar()
+

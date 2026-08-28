@@ -5,24 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Community — el Instagram de tu negocio, hecho</title>
 <meta name="description" content="Cargás tu marca una vez y bajás las placas de Instagram listas para subir: feed, carrusel e historia, con tus colores y tu logo.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M 22 22 L 78 22 L 78 62 C 78 74 68 78 56 78 L 22 78 Z' fill='none' stroke='%23A83A1C' stroke-width='9' stroke-linejoin='round'/%3E%3Ccircle cx='34' cy='50' r='7' fill='%23A83A1C'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=JetBrains+Mono:wght@400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,800;1,9..144,400&family=Alex+Brush&family=Cinzel:wght@600;800&family=Syne:wght@700;800&family=Playfair+Display:ital,wght@0,700;1,600&family=Bebas+Neue&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/app.css">
 </head>
 <body>
 
-<header class="barra">
+<header class="barra" id="barra-nav">
   <div class="marco">
-    <div class="logotipo">
-      <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M 22 22 L 78 22 L 78 62 C 78 74 68 78 56 78 L 22 78 Z"/>
-        <circle cx="34" cy="50" r="7" fill="currentColor" stroke="none"/>
-      </svg>
-      Community
+    <div class="logotipo" style="cursor:pointer;" onclick="location.hash=''; location.reload();">
+      <img src="/img/logo.svg" alt="Logo" class="logo-img" width="36" height="36">
+      Alquimia
     </div>
     <nav>
-      <a href="#como" class="apunte" data-solo-landing>Cómo funciona</a>
-      <a href="#plan" class="apunte" data-solo-landing>El plan</a>
-      <span id="chip-cuenta" class="medidor oculto"></span>
+      <a href="#etapas" class="apunte" data-solo-landing>El método</a>
+      <a href="#impacto" class="apunte" data-solo-landing>El impacto</a>
+      <a href="#precios" class="apunte" data-solo-landing>Precios</a>
+      <button class="btn fantasma chico" id="btn-login-nav" data-solo-landing>Iniciar sesión</button>
       <button class="btn chico" id="btn-entrar">Empezar</button>
     </nav>
   </div>
@@ -31,117 +31,346 @@
 <!-- ══ LANDING ══ -->
 <main id="landing">
 
+  <!-- ── 1. PORTADA HERO CON LOGO BUBBLE, RECORDATORIO Y PLACAS VERTICALES ── -->
   <section class="portada">
+    <span class="starter__bubble"></span>
+    <span class="starter__bubble"></span>
+    <span class="starter__bubble"></span>
+    <span class="starter__bubble"></span>
+
     <div class="marco cols">
       <div>
-        <span class="rotulo">Para negocios de barrio</span>
-        <h1>El Instagram de tu negocio, <em>ya hecho</em>.</h1>
-        <p class="bajada">
-          Cargás tu marca una vez —tu logo, tu color, tu tipografía— y bajás las placas
-          listas para subir. Feed, carrusel e historia. Sin plantillas ajenas y sin
-          quedarte una hora peleándote con un editor.
+        <span class="eyebrow"><span class="eyebrow__dot"></span> Tu agente de marketing con IA</span>
+        <h1>Alquimia: tu agente <em class="hl">todo en uno</em> para redes.</h1>
+        <p class="bajada" style="font-size:1.22rem;font-weight:600;color:var(--color-ink);margin-bottom:1.25rem;line-height:1.45;">
+          «Diseña contenido que atrapa, publica en automático y convierte seguidores en clientes.»
         </p>
-        <div class="acciones">
-          <button class="btn" data-ir="wizard">Armar mi marca</button>
-          <a href="#como" class="apunte">Ver cómo funciona ↓</a>
+
+        <!-- LOS 3 INGREDIENTES -->
+        <div class="ingredientes-box">
+          <div class="ingrediente-item">
+            <span class="ingrediente-chip ingrediente-chip--mint">🎨 Crea</span>
+            <span class="ingrediente-txt">Diseño y redacción alineados a tu marca.</span>
+          </div>
+          <div class="ingrediente-item">
+            <span class="ingrediente-chip ingrediente-chip--cyan">📅 Publica</span>
+            <span class="ingrediente-txt">Calendario y distribución sin esfuerzo.</span>
+          </div>
+          <div class="ingrediente-item">
+            <span class="ingrediente-chip ingrediente-chip--coral">📈 Vende</span>
+            <span class="ingrediente-txt">Estrategia orientada a tracción y conversión.</span>
+          </div>
+        </div>
+
+        <div class="acciones" style="margin-top:2rem;">
+          <button class="btn grande" data-ir="wizard">Empezar con Alquimia <span class="btn__arrow">→</span></button>
+          <a href="#etapas" class="btn btn--outline btn--mint grande">Ver el método <span class="btn__arrow">→</span></a>
         </div>
       </div>
-      <div class="muestra">
-        <div class="placa"><img src="/img/muestra-1.png" alt="Placa de carrusel: portada"></div>
-        <div class="placa"><img src="/img/muestra-2.png" alt="Placa de carrusel: pasos"></div>
-        <div class="placa"><img src="/img/muestra-3.png" alt="Historia"></div>
+
+      <!-- HERO RIGHT: LOGO ANIMADO BUBBLE + REMIND CARD -->
+      <div class="hero__stage">
+        <div class="starter" aria-hidden="true" title="Alquimia">
+          <span class="starter__pulse"></span>
+          <img src="/img/logo.svg" alt="Logo" class="starter__logo">
+          <span class="starter__bubble"></span>
+          <span class="starter__bubble"></span>
+          <span class="starter__bubble"></span>
+          <span class="starter__bubble"></span>
+        </div>
+
+        <div class="remind" role="status">
+          <span class="remind__icon" aria-hidden="true"></span>
+          <div>
+            <p class="remind__head"><b>ALQUIMIA</b> · EN 2 MIN</p>
+            <p class="remind__body">Tu equipo de marketing resuelto a una fracción del costo <span class="remind__time">— Todo tu contenido y diseño listos para convertir visitas en ventas.</span></p>
+          </div>
+        </div>
       </div>
     </div>
-  </section>
 
-  <section class="seccion" id="como">
+    <!-- CARRUSEL DINÁMICO DE PANTALLAS DE SALIDA (ESTILO SMARTPHONE / HISTORIAS) -->
     <div class="marco">
-      <span class="rotulo">Cómo funciona</span>
-      <h2>Cuatro pasos y ya tenés la primera placa</h2>
-      <ol class="pasos">
-        <li>
-          <div>
-            <h3>Contás qué hacés</h3>
-            <p>El rubro, la ciudad, qué vendés y a quién. Es lo que después hace que el
-            contenido hable de tu negocio y no de un negocio genérico.</p>
+      <div class="carrusel-pantallas-container">
+        <div class="carrusel-pantallas" id="carrusel-pantallas">
+          <button class="carrusel-btn prev" id="carrusel-prev" aria-label="Anterior">‹</button>
+          <div class="carrusel-track" id="carrusel-track">
+            <div class="placa-mockup is-active" data-idx="0">
+              <span class="placa-badge">01 · Portada</span>
+              <img src="/img/muestra-1.png" alt="Placa 1: Por qué tardamos tres días">
+            </div>
+            <div class="placa-mockup" data-idx="1">
+              <span class="placa-badge">02 · Proceso</span>
+              <img src="/img/muestra-2.png" alt="Placa 2: Tres días, tres etapas">
+            </div>
+            <div class="placa-mockup" data-idx="2">
+              <span class="placa-badge">03 · Cierre</span>
+              <img src="/img/muestra-3.png" alt="Placa 3: El pan del día se termina temprano">
+            </div>
+            <div class="placa-mockup" data-idx="3">
+              <span class="placa-badge">04 · Historia 4K</span>
+              <img src="/img/muestra-1.png" alt="Placa 4: Edición Especial">
+            </div>
+            <div class="placa-mockup" data-idx="4">
+              <span class="placa-badge">05 · Carrusel</span>
+              <img src="/img/muestra-2.png" alt="Placa 5: Paso a Paso">
+            </div>
           </div>
-        </li>
-        <li>
-          <div>
-            <h3>Cargás tu marca — o te la proponemos</h3>
-            <p>Si ya tenés logo, colores y tipografía, los subís. Si no tenés nada, te
-            mostramos cuatro logos, tres colores y una tipografía pensados para tu rubro,
-            y elegís.</p>
-          </div>
-        </li>
-        <li>
-          <div>
-            <h3>Elegís qué publicar</h3>
-            <p>Historia, post o carrusel. Escribís el texto vos, o pedís que te lo
-            escribamos. Podés subir tu foto o buscar una en un banco de imágenes libres.</p>
-          </div>
-        </li>
-        <li>
-          <div>
-            <h3>Bajás el PNG y lo subís</h3>
-            <p>Imágenes reales de 2160×2700 píxeles. No son bocetos ni descripciones:
-            es el archivo que va a Instagram.</p>
-          </div>
-        </li>
-      </ol>
+          <button class="carrusel-btn next" id="carrusel-next" aria-label="Siguiente">›</button>
+        </div>
+        <div class="carrusel-dots" id="carrusel-dots"></div>
+      </div>
     </div>
   </section>
 
-  <section class="seccion">
-    <div class="marco doscol">
-      <div>
-        <span class="rotulo">Qué hace distinto</span>
-        <h2>Tu marca aplicada de verdad</h2>
-        <p class="apunte" style="margin-top:14px">
-          De un color salen dieciséis: los fondos, los grises, el tono para fondo oscuro.
-          El sistema además chequea que se lea. Si elegís un amarillo flúor, baja el tono
-          para los textos, lo mantiene en los fondos y te avisa por qué. Ninguna placa
-          sale ilegible sin que te enteres.
+  <!-- ── 2. SECCIÓN NARRATIVA DE ETAPAS (BUBBLE STAGES) ── -->
+  <section class="seccion" id="etapas">
+    <div class="marco">
+      <header style="margin-bottom:3.5rem;text-align:center;">
+        <span class="eyebrow"><span class="eyebrow__dot eyebrow__dot--mint"></span> El método</span>
+        <h2>Cuatro etapas, de la idea a tu feed.</h2>
+        <p class="apunte" style="font-size:1.15rem;max-width:54ch;margin:0.75rem auto 0;line-height:1.55;">
+          Las mismas cuatro cada vez. Nunca hacés más de una a la vez: Community te guía paso a paso para que no tengas que pensar en diseño.
         </p>
+      </header>
+
+      <div class="stages">
+        <!-- 1.0 NEGOCIO -->
+        <article class="stage stage--mint">
+          <div class="stage__rail" aria-hidden="true">
+            <div class="stage__node"><b>1<small>.0</small></b></div>
+            <div class="stage__line"></div>
+          </div>
+          <div class="stage__panel">
+            <div>
+              <p class="stage__label">1.0 · NEGOCIO · TU HISTORIA</p>
+              <h3 class="stage__title">Contás de qué se trata</h3>
+              <p class="stage__text">Tu rubro, tu ciudad, qué vendés y a quién. <b>Con eso adaptamos el tono y el contenido</b> para que hable con la voz real de tu negocio y no con frases genéricas.</p>
+              <div class="stage__chips">
+                <span class="chip"><span class="chip__dot"></span> 2 MIN · SENCILLO</span>
+                <span class="chip chip--hands"><span class="chip__dot"></span> SIN CONOCIMIENTOS PREVIOS</span>
+              </div>
+            </div>
+            <div class="stage__art" aria-hidden="true">
+              <div class="art-typewriter">
+                <div class="art-typewriter__hump"></div>
+                <div class="art-typewriter__body">
+                  <div class="art-typewriter__roller"></div>
+                  <div class="art-typewriter__keys">
+                    <div class="art-typewriter__key"></div>
+                    <div class="art-typewriter__key"></div>
+                    <div class="art-typewriter__key"></div>
+                    <div class="art-typewriter__key"></div>
+                    <div class="art-typewriter__key"></div>
+                    <div class="art-typewriter__key"></div>
+                    <div class="art-typewriter__key"></div>
+                  </div>
+                </div>
+                <div class="art-typewriter__paper"></div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- 2.0 IDENTIDAD -->
+        <article class="stage stage--cyan">
+          <div class="stage__rail" aria-hidden="true">
+            <div class="stage__node"><b>2<small>.0</small></b></div>
+            <div class="stage__line"></div>
+          </div>
+          <div class="stage__panel">
+            <div>
+              <p class="stage__label">2.0 · IDENTIDAD · TU MARCA</p>
+              <h3 class="stage__title">Definís tu firma visual</h3>
+              <p class="stage__text">Si tenés logo lo subís en un toque; si no, <b>te componemos una firma tipográfica de autor</b> con tus iniciales, sellos y colores testeados para que siempre se lean nítidos.</p>
+              <div class="stage__chips">
+                <span class="chip"><span class="chip__dot"></span> 100% REGISTRABLE</span>
+                <span class="chip chip--hands"><span class="chip__dot"></span> PROTECCIÓN DE CONTRASTE</span>
+              </div>
+            </div>
+            <div class="stage__art" aria-hidden="true">
+              <div class="art-card">
+                <div class="art-card__body">
+                  <div class="art-card__stripe"></div>
+                  <div class="art-card__circle"></div>
+                  <div class="art-card__line"></div>
+                  <div class="art-card__line"></div>
+                  <div class="art-card__line"></div>
+                </div>
+                <div class="art-card__dots">
+                  <div class="art-card__dot"></div>
+                  <div class="art-card__dot"></div>
+                  <div class="art-card__dot"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- 3.0 CONTENIDO -->
+        <article class="stage stage--pear">
+          <div class="stage__rail" aria-hidden="true">
+            <div class="stage__node"><b>3<small>.0</small></b></div>
+            <div class="stage__line"></div>
+          </div>
+          <div class="stage__panel">
+            <div>
+              <p class="stage__label">3.0 · PLAN · IDEAS LISTAS</p>
+              <h3 class="stage__title">Elegís qué vas a comunicar</h3>
+              <p class="stage__text">Historias, carruseles de pasos o promociones de alto impacto. <b>La plataforma redacta los copys y ganchos</b>, o escribís lo tuyo sin gastar cuota extra.</p>
+              <div class="stage__chips">
+                <span class="chip"><span class="chip__dot"></span> 7 PLANTILLAS PRO</span>
+                <span class="chip chip--hands"><span class="chip__dot"></span> BANCO DE FOTOS LIBRES</span>
+              </div>
+            </div>
+            <div class="stage__art" aria-hidden="true">
+              <div class="art-phone">
+                <div class="art-phone__frame">
+                  <div class="art-phone__notch"></div>
+                  <div class="art-phone__screen">
+                    <div class="art-phone__post"></div>
+                    <div class="art-phone__post"></div>
+                    <div class="art-phone__post"></div>
+                  </div>
+                  <div class="art-phone__btn"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- 4.0 PUBLICAR -->
+        <article class="stage stage--coral">
+          <div class="stage__rail" aria-hidden="true">
+            <div class="stage__node"><b>4<small>.0</small></b></div>
+            <div class="stage__line"></div>
+          </div>
+          <div class="stage__panel">
+            <div>
+              <p class="stage__label">4.0 · DESCARGA · ALTA DEFINICIÓN</p>
+              <h3 class="stage__title">Bajás el PNG y lo publicás</h3>
+              <p class="stage__text">Archivos reales de 2160×2700 px listos para Instagram. <b>Sin marcas de agua molestas</b> y respetando milimétricamente las zonas seguras de historias.</p>
+              <div class="stage__chips">
+                <span class="chip"><span class="chip__dot"></span> ULTRA HD 4K</span>
+                <span class="chip chip--hands"><span class="chip__dot"></span> 1 CLICK DE DESCARGA</span>
+              </div>
+            </div>
+            <div class="stage__art" aria-hidden="true">
+              <div class="art-arrow">
+                <div class="art-arrow__screen">
+                  <div class="art-arrow__topbar">
+                    <span class="art-arrow__dot"></span>
+                    <span class="art-arrow__dot"></span>
+                    <span class="art-arrow__dot"></span>
+                  </div>
+                  <div class="art-arrow__up"></div>
+                  <div class="art-arrow__wave"></div>
+                  <div class="art-arrow__wave"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
       </div>
-      <ul class="lista-limpia">
-        <li><b>Tres formatos.</b> Feed 1080×1350, historia 1080×1920, cuadrado 1080×1080. La historia respeta las zonas que tapa Instagram.</li>
-        <li><b>Siete plantillas.</b> Portada, texto, pasos, oferta, cierre, frase y foto.</li>
-        <li><b>Imágenes con licencia.</b> Buscador de fotos libres para uso comercial y con permiso de modificación, con el crédito ya armado.</li>
-        <li><b>No generamos fotos.</b> Una foto inventada de tu local no es tu local. O es tuya, o es de banco y va con crédito.</li>
-        <li><b>El texto es tuyo si querés.</b> Escribir vos no gasta nada del plan de contenido.</li>
-      </ul>
     </div>
   </section>
 
-  <section class="seccion" id="plan">
-    <div class="marco doscol">
-      <div>
-        <span class="rotulo">El plan</span>
-        <h2>Uno solo, sin escalones</h2>
-        <p class="apunte" style="margin-top:14px">
-          Elegir entre tres planes antes de haber visto el producto funcionar es una
-          molestia sin sentido. Hay uno, con un tope mensual holgado y un tope diario que
-          está para que no te comas el mes en una tarde.
+  <!-- ── 3. SECCIÓN NÚMEROS REALES / AHORRO EN TIEMPO Y COSTOS (THE HONEST MATH) ── -->
+  <section class="seccion" id="impacto" style="background:var(--tint-mint);border-block:1px solid var(--color-rule);">
+    <div class="marco">
+      <header style="margin-bottom:3.5rem;text-align:center;">
+        <span class="eyebrow"><span class="eyebrow__dot eyebrow__dot--mint"></span> Números reales</span>
+        <h2>Menos horas perdidas. Más clientes que entran.</h2>
+        <p class="apunte" style="font-size:1.15rem;max-width:52ch;margin:0.75rem auto 0;line-height:1.55;">
+          Sin pagar agencias costosas ni perder fines de semana enteros intentando diseñar.
         </p>
-        <p class="apunte" style="margin-top:14px">
-          <b>El precio lo estamos definiendo con los primeros negocios que lo usen.</b>
-          Preferimos ponerle número cuando sepamos cuánto se usa de verdad.
-        </p>
+      </header>
+
+      <div class="numbers">
+        <div class="bignum">
+          <div class="bignum__v"><span class="bignum__pre">≈</span>10<span class="bignum__u">min</span></div>
+          <div class="bignum__k">por semana para tener todo el contenido de tu mes planificado y listo.</div>
+        </div>
+        <div class="bignum">
+          <div class="bignum__v"><span class="bignum__pre">-</span>90<span class="bignum__u">%</span></div>
+          <div class="bignum__k">de costo mensual comparado con contratar una agencia o diseñador freelance.</div>
+        </div>
+        <div class="bignum">
+          <div class="bignum__v"><span class="bignum__pre">+</span>35<span class="bignum__u">%</span></div>
+          <div class="bignum__k">de aumento en consultas reales de clientes por publicar con coherencia de marca.</div>
+        </div>
       </div>
-      <ul class="lista-limpia">
-        <li><b>120 placas por mes</b> — 24 por día</li>
-        <li><b>12 planes de contenido</b> — cada uno propone varios posteos e historias con su texto</li>
-        <li><b>1 propuesta de identidad por mes</b> — cuatro logos, tres colores y una tipografía</li>
-        <li><b>Sin límite</b> para las placas que escribís vos</li>
-      </ul>
+    </div>
+  </section>
+
+  <!-- ── 4. SECCIÓN DE PRECIOS Y PLANES (BUBBLE PRICING) ── -->
+  <section class="seccion" id="precios">
+    <div class="marco">
+      <header style="margin-bottom:3.5rem;text-align:center;">
+        <span class="eyebrow"><span class="eyebrow__dot eyebrow__dot--pear"></span> Planes y Precios</span>
+        <h2>Empezar es gratis. Crecer es accesible.</h2>
+        <p class="apunte" style="font-size:1.15rem;max-width:52ch;margin:0.75rem auto 0;line-height:1.55;">
+          Probá la plataforma sin tarjeta de crédito. Elegí mejorar cuando veas los resultados en tu negocio.
+        </p>
+      </header>
+
+      <div class="plans">
+        <!-- PLAN GRATIS -->
+        <article class="plan">
+          <p class="plan__name">Gratis</p>
+          <p class="plan__price"><span class="plan__num">$0</span></p>
+          <p class="plan__note">Todo lo básico para probar y publicar tus primeras piezas sin pagar nada. Para siempre.</p>
+          <ul class="plan__list">
+            <li>12 placas completas por mes</li>
+            <li>Identidad de marca con logo y colores</li>
+            <li>Las 7 plantillas de post y carrusel</li>
+            <li>Descarga directa en calidad PNG</li>
+          </ul>
+          <button class="btn btn--outline btn--mint" data-ir="wizard" style="width:100%;">Probar gratis</button>
+        </article>
+
+        <!-- PLAN PLUS (DESTACADO) -->
+        <article class="plan plan--feature">
+          <span class="plan__badge">Más elegido</span>
+          <p class="plan__name">Pro / Negocios</p>
+          <p class="plan__price"><span class="plan__num">$12</span><span class="plan__unit">/ mes</span></p>
+          <p class="plan__note">Para locales y marcas activas que quieren delegar todo su Instagram con IA.</p>
+          <ul class="plan__list">
+            <li><b>120 placas por mes</b> (24 por día)</li>
+            <li><b>12 planes mensuales con IA</b> generados a medida</li>
+            <li>Acceso a banco de fotos comerciales libres</li>
+            <li>Formatos Feed, Historia y Carrusel ilimitados</li>
+            <li>Soporte prioritario por WhatsApp</li>
+          </ul>
+          <button class="btn grande" data-ir="wizard" style="width:100%;">Comenzar con Pro <span class="btn__arrow">→</span></button>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 5. FINAL CTA STATEMENT (CLOSER) ── -->
+  <section class="seccion" style="text-align:center;padding:5rem 0 6rem;background:var(--color-paper-2);border-top:1px solid var(--color-rule);">
+    <div class="marco">
+      <h2 style="font-size:clamp(2.4rem, 5vw, 3.8rem);margin-bottom:1rem;">Empezá por la primera etapa.</h2>
+      <p class="apunte" style="font-size:1.2rem;max-width:48ch;margin:0 auto 2.5rem;">
+        Cargás tu negocio en dos minutos y ya tenés tus primeras placas listas para publicar.
+      </p>
+      <div style="display:flex;justify-content:center;gap:1rem;flex-wrap:wrap;">
+        <button class="btn grande" data-ir="wizard">Armar mi marca <span class="btn__arrow">→</span></button>
+        <a href="#precios" class="btn btn--outline btn--mint grande">Ver planes</a>
+      </div>
     </div>
   </section>
 
   <footer class="pie">
-    <div class="marco">
-      Hecho en Argentina. Las fotos del banco son de Openverse, con licencia Creative
-      Commons para uso comercial.
+    <div class="marco" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1.5rem;">
+      <div>
+        <b style="font-size:1.1rem;">Alquimia</b> · Tu agente todo en uno para redes.<br>
+        <span style="font-size:0.85rem;color:var(--color-muted);">Diseña, publica y vende en automático.</span>
+      </div>
+      <div style="font-family:var(--font-label);font-size:0.8rem;letter-spacing:0.12em;text-transform:uppercase;">
+        FEED · CARRUSEL · HISTORIA
+      </div>
     </div>
   </footer>
 </main>

@@ -7,12 +7,13 @@
 // es la zona segura que tapa Instagram.
 
 import { resolverDisposicion, cssDeDisposiciones } from '../disposiciones.mjs'
+import { lockupCSS, lockupHTML, clasesDeLogotipo } from '../../brand/logotipo.mjs'
 
 export function flatCSS(ctx, fmt, disp) {
   const { B, F, LOGO, markCss } = ctx
   const C = B.colors.flat
   const base = `
-:root{--accent:${C.accent};--accent-deep:${C.accentDeep};--accent-dark:${C.accentOnDark};--dark-bg:${C.darkBg};--bg:${C.bg};--tint:${C.tint};--paper:${C.paper};--ink:${C.ink};--fg:${C.fg};--muted:${C.muted};--soft:${C.soft};--hair:${C.hair};--font:'${F.sans}',sans-serif;--mono:'${F.mono}',monospace}
+:root{--accent:${C.accent};--accent-deep:${C.accentDeep};--accent-dark:${C.accentOnDark};--dark-bg:${C.darkBg};--bg:${C.bg};--tint:${C.tint};--paper:${C.paper};--ink:${C.ink};--fg:${C.fg};--muted:${C.muted};--soft:${C.soft};--hair:${C.hair};--font:'${F.sans}',sans-serif;--font-logo:'${F.logo.family}',sans-serif;--font-mono-marca:'${F.logo.monogramaFamily}',sans-serif;--track-logo:${F.logo.tracking};--mono:'${F.mono}',monospace}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--font);-webkit-font-smoothing:antialiased}
 .frame{width:${fmt.w}px;height:${fmt.h}px;position:relative;padding:${fmt.pad};display:flex;flex-direction:column;overflow:hidden}
@@ -21,12 +22,10 @@ body.trial .frame{background:var(--tint);color:var(--fg)}
 body.dark .frame{background:linear-gradient(155deg,var(--dark-bg) 0%,var(--accent-deep) 100%);color:#fff}
 body.dark .frame::after{content:'';position:absolute;top:-140px;right:-140px;width:520px;height:520px;background:radial-gradient(circle,rgba(255,255,255,.06) 0%,transparent 70%);border-radius:50%}
 .top{display:flex;justify-content:space-between;align-items:center;position:relative;z-index:2}
-.brand{display:flex;align-items:center;gap:13px}
 ${markCss('.brand .sw', LOGO.strokeWidth)}
 .brand .sw{width:40px;height:40px;color:var(--accent);display:block}
-.brand .wm{font-size:31px;font-weight:700;letter-spacing:-.03em;color:var(--ink)}
-.brand .wm .acc{color:var(--accent)}
-body.dark .brand .sw{color:#fff} body.dark .brand .wm{color:#fff} body.dark .brand .wm .acc{color:var(--accent-dark)}
+body.dark .brand .sw{color:#fff}
+${lockupCSS()}
 .idx{font-family:var(--mono);font-size:20px;font-weight:600;letter-spacing:.1em;color:var(--soft)}
 body.dark .idx{color:rgba(255,255,255,.55)}
 .content{flex:1;display:flex;flex-direction:column;justify-content:center;position:relative;z-index:2}
@@ -86,37 +85,46 @@ export function flatHTML(s, ctx, fmt) {
 
   const page = (theme, inner) =>
     `<!DOCTYPE html><html><head><meta charset="utf-8">${fontsLink}<style>${css}</style></head>` +
-    `<body class="${theme} fmt-${fmt.id} disp-${disp.id}"><div class="frame">${inner}</div></body></html>`
+    `<body class="${theme} fmt-${fmt.id} disp-${disp.id} ${clasesDeLogotipo(B)}"><div class="frame">${inner}</div></body></html>`
 
-  const brandLockup = `<div class="brand"><span class="sw">${mark(40, 'sw-svg')}</span><span class="wm">${wordmarkHTML('acc')}</span></div>`
+  const brandLockup = lockupHTML(ctx, 40)
   const top = idx => `<div class="top">${brandLockup}${idx ? `<span class="idx">${idx}</span>` : ''}</div>`
   const foot = (l, h) => `<div class="foot"><span>${l || B.site}</span>${h ? `<span class="hint">${h}</span>` : ''}</div>`
+
+  // Un campo decorativo vacío no dibuja nada. Interpolarlo derecho estampa
+  // "undefined" en la placa, que es peor que cualquier placeholder.
+  const opt = (clase, valor) => (valor == null || valor === '' ? '' : `<div class="${clase}">${valor}</div>`)
+  // El título sí es obligatorio: una placa sin título no es una placa.
+  const req = (clase, valor, campo) => {
+    if (valor == null || valor === '') throw new Error(`la placa "${s.name || s.type}" no tiene ${campo}`)
+    return `<div class="${clase}">${valor}</div>`
+  }
 
   switch (s.type) {
     case 'cover':
       return page('dark', top(s.idx) +
-        `<div class="content"><div class="kick">${s.kick}</div><div class="title big">${s.title}</div><div class="body">${s.body}</div>${s.src ? `<div class="cover-src">${s.src}</div>` : ''}</div>` +
+        `<div class="content">${opt('kick', s.kick)}${req('title big', s.title, 'título')}${opt('body', s.body)}${s.src ? `<div class="cover-src">${s.src}</div>` : ''}</div>` +
         foot(B.site, s.hint || B.hints?.cover || 'Deslizá →'))
 
     case 'body':
       return page(s.theme || 'light', top(s.idx) +
-        `<div class="content"><div class="kick">${s.kick}</div><div class="title">${s.title}</div><div class="body">${s.body}</div></div>` +
+        `<div class="content">${opt('kick', s.kick)}${req('title', s.title, 'título')}${opt('body', s.body)}</div>` +
         (s.fuente ? `<div class="fuente">Fuente — <b>${s.fuente}</b></div>` : '') +
         foot(B.site, s.hint))
 
     case 'steps':
       return page('light', top(s.idx) +
-        `<div class="content"><div class="kick">${s.kick}</div><div class="title">${s.title}</div><div class="steps">${s.steps.map(x => `<div class="step"><div class="n">${x.n}</div><div><div class="sk">${x.k}</div><div class="st">${x.t}</div><div class="sd">${x.d}</div></div></div>`).join('')}</div></div>` +
+        `<div class="content">${opt('kick', s.kick)}${req('title', s.title, 'título')}<div class="steps">${s.steps.map(x => `<div class="step"><div class="n">${x.n}</div><div><div class="sk">${x.k}</div><div class="st">${x.t}</div><div class="sd">${x.d}</div></div></div>`).join('')}</div></div>` +
         foot(B.site, s.hint))
 
     case 'pista':
       return page('light', top(s.idx) +
-        `<div class="content"><div class="emoji">${s.emoji}</div><div class="kick">${s.kick}</div><div class="title">${s.title}</div><div class="body">${s.body}</div><div class="chips">${(s.chips || []).map(c => `<span class="chip">${c}</span>`).join('')}</div></div>` +
+        `<div class="content">${opt('emoji', s.emoji)}${opt('kick', s.kick)}${req('title', s.title, 'título')}${opt('body', s.body)}<div class="chips">${(s.chips || []).map(c => `<span class="chip">${c}</span>`).join('')}</div></div>` +
         foot(B.site, s.hint || B.altSite || ''))
 
     case 'trial':
       return page('trial', top('') +
-        `<div class="content"><div class="pill"><span class="dot"></span>${s.pill}</div><div class="title">${s.title}</div><div class="body">${s.body}</div></div>` +
+        `<div class="content">${s.pill ? `<div class="pill"><span class="dot"></span>${s.pill}</div>` : ''}${req('title', s.title, 'título')}${opt('body', s.body)}</div>` +
         foot(B.site, s.hint || B.hints?.trial || ''))
 
     case 'biblio':

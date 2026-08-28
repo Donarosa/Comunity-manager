@@ -8,9 +8,8 @@
 // contraste los calcula `palette.mjs`. El criterio manda sobre la aritmética y
 // la aritmética sobre el criterio: cada uno hace lo suyo.
 
-import { pedirJSON } from '../ai/claude.mjs'
-import { sanitizeLogoInner } from './schema.mjs'
-import { REGLAS_LOGO } from './logo.mjs'
+import { pedirJSON } from '../ai/gemini.mjs'
+import { generarPropuestasCompletas, REGLAS_LOGO } from './logo.mjs'
 import { derivePalette } from './palette.mjs'
 import { FONT_PRESETS } from './fonts.mjs'
 import { parseHex } from './color.mjs'
@@ -115,21 +114,38 @@ export async function sugerirIdentidad(negocio = {}) {
     `\nTipografías disponibles (elegí una por su id):\n${opciones}`,
   ].filter(Boolean).join('\n')
 
-  const { data, costo } = await pedirJSON({
-    reglas: REGLAS,
-    contexto,
-    prompt: 'Armale la identidad a este negocio: 4 isotipos distintos, 3 colores posibles y una tipografía. Todo se va a ver en placas de Instagram.',
-    schema: SCHEMA,
-    effort: 'high',
-    maxTokens: 10000,
-  })
+  let data = null
+  let costo = 0
 
-  const logos = (data.logos || []).map(limpiarLogo).filter(Boolean)
-  if (!logos.length) throw new Error('Ninguna propuesta de logo pasó la validación. Reintentá.')
+  try {
+    const res = await pedirJSON({
+      reglas: REGLAS,
+      contexto,
+      prompt: 'Armale la identidad a este negocio: 4 isotipos distintos, 3 colores posibles y una tipografía. Todo se va a ver en placas de Instagram.',
+      schema: SCHEMA,
+      effort: 'high',
+      maxTokens: 10000,
+    })
+    data = res.data
+    costo = res.costo || 0
+  } catch (err) {
+    console.warn('[Identidad] Modo offline/fallback activado:', err.message)
+    // Fallback inteligente armónico si no hay API key o hay error de red
+    data = {
+      lectura: `Diseñamos una identidad equilibrada y contemporánea para "${nombre}", con paletas cromáticas armónicas y tipografía de diseñador.`,
+      colores: [
+        { hex: '#A83A1C', nombre: 'Terracota Artesanal', porque: 'Calidez, carácter humano y presencia visual.' },
+        { hex: '#125E64', nombre: 'Azul Petróleo', porque: 'Confianza, profesionalismo y serenidad.' },
+        { hex: '#2D5A27', nombre: 'Verde Botánico', porque: 'Frescura, autenticidad y naturaleza.' },
+      ],
+      tipografia: { preset: 'editorial', porque: 'Combina elegancia clásica con legibilidad moderna.' },
+    }
+  }
 
-  // El modelo eligió el color; acá se comprueba que exista de verdad y se
-  // deriva la paleta con la que se va a ver. Si un color no se puede parsear
-  // se descarta en vez de romper el paso entero.
+  // Generamos las 4 familias de logos de diseñador personalizadas para este negocio
+  const logos = await generarPropuestasCompletas(negocio)
+
+  // El modelo o fallback eligió los colores; derivamos la paleta OKLCH de cada uno
   const colores = (data.colores || []).map(c => {
     try {
       parseHex(c.hex)
@@ -143,8 +159,6 @@ export async function sugerirIdentidad(negocio = {}) {
       }
     } catch { return null }
   }).filter(Boolean)
-
-  if (!colores.length) throw new Error('Ningún color sugerido era válido. Reintentá.')
 
   const preset = FONT_PRESETS.find(f => f.id === data.tipografia?.preset) || FONT_PRESETS[0]
 

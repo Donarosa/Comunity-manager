@@ -1,0 +1,31 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Reglas para usuarios y cuentas
+    match /cuentas/{cuentaId} {
+      // Permitir leer y escribir si el usuario es el dueño de la cuenta
+      allow read, write: if request.auth != null && (request.auth.uid == cuentaId || resource == null || resource.data.userId == request.auth.uid);
+      
+      // Subcolección de publicaciones/piezas generadas por el usuario
+      match /publicaciones/{pubId} {
+        allow read, write: if request.auth != null && (request.auth.uid == cuentaId || get(/databases/$(database)/documents/cuentas/$(cuentaId)).data.userId == request.auth.uid);
+      }
+
+      // Subcolección de planes de contenido
+      match /planes/{planId} {
+        allow read, write: if request.auth != null && (request.auth.uid == cuentaId || get(/databases/$(database)/documents/cuentas/$(cuentaId)).data.userId == request.auth.uid);
+      }
+
+      // Subcolección de estadísticas / interacciones
+      match /estadisticas/{statId} {
+        allow read, write: if request.auth != null && (request.auth.uid == cuentaId || get(/databases/$(database)/documents/cuentas/$(cuentaId)).data.userId == request.auth.uid);
+      }
+    }
+
+    // Colección de códigos OTP temporales (solo administrable por backend o cloud functions)
+    match /otp_codes/{codigoId} {
+      allow read, write: if false; // Solo accesible desde Firebase Admin SDK
+    }
+  }
+}

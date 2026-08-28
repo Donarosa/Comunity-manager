@@ -4,6 +4,7 @@
 import { resolverDisposicion } from '../disposiciones.mjs'
 
 export function vectorHTML(s, ctx, fmt) {
+  if (!s.headline) throw new Error(`la placa "${s.name || 'vector'}" no tiene titular`)
   const { B, F, LOGO, WM, mark, markCss, fontsLink } = ctx
   const V = B.colors.vector
 
@@ -20,7 +21,7 @@ export function vectorHTML(s, ctx, fmt) {
 
   return `<!DOCTYPE html><html><head><meta charset="utf-8">
 ${fontsLink}
-<style>:root{--bg:${V.bg};--accent:${V.accent};--paper:${V.paper}}*{box-sizing:border-box;margin:0;padding:0}
+<style>:root{--bg:${V.bg};--accent:${V.accent};--paper:${V.paper};--font-logo:'${F.logo.family}',sans-serif;--font-mono-marca:'${F.logo.monogramaFamily}',sans-serif;--track-logo:${F.logo.tracking}}*{box-sizing:border-box;margin:0;padding:0}
 .slide{width:${fmt.w}px;height:${fmt.h}px;position:relative;overflow:hidden;background:var(--bg);color:var(--paper);font-family:'${F.sans}',sans-serif}
 .topo{position:absolute;inset:0;background-image:radial-gradient(ellipse 1500px 500px at 50% -8%,rgba(245,242,237,.10) 0%,transparent 60%),radial-gradient(ellipse 900px 320px at 18% 8%,rgba(245,242,237,.06) 0%,transparent 60%);z-index:1}
 .wm{position:absolute;top:64px;left:72px;display:flex;align-items:center;gap:16px;z-index:6}
@@ -37,6 +38,6 @@ ${extra}
 .badge{position:absolute;bottom:${fmt.vectorFootBottom - 2}px;right:72px;z-index:6;font-family:'${F.mono}',monospace;font-size:19px;font-weight:600;color:var(--paper);letter-spacing:.06em;background:rgba(245,242,237,.14);padding:12px 22px;border-radius:100px}
 </style></head><body><div class="slide"><div class="topo"></div>
 <div class="wm"><div class="sym">${mark(30)}</div><div class="txt">${WM.base}${WM.accent || ''}</div></div>
-<div class="content"><div class="eyebrow">${s.eyebrow}</div><h1 class="headline">${s.headline}</h1></div>
-${B.scene || ''}<div class="handle">${s.handle || B.handle}</div><div class="badge">${s.site || B.site}</div></div></body></html>`
+<div class="content">${s.eyebrow ? `<div class="eyebrow">${s.eyebrow}</div>` : ''}<h1 class="headline">${s.headline || ''}</h1></div>
+${B.scene || ''}<div class="handle">${s.handle || B.handle || B.nombre}</div><div class="badge">${s.site || B.site}</div></div></body></html>`
 }

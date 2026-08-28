@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Flow Completo · Community Manager para Micro Pymes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,600&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg: #F8F9FA;
+      --card-bg: #FFFFFF;
+      --text: #171A1C;
+      --text-muted: #5E6973;
+      --text-dim: #8C9BA5;
+      --border: #E2E6E9;
+      --border-strong: #CBD2D8;
+      --accent: #A83A1C;
+      --accent-soft: #FDF1ED;
+      --accent-hover: #8C2E14;
+      --teal: #125E64;
+      --teal-soft: #E6F3F4;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Inter', system-ui, -apple-system, sans-serif;
+      --serif: 'Fraunces', Georgia, serif;
+      --radius: 12px;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+      --shadow-md: 0 8px 24px rgba(0,0,0,0.07);
+      --shadow-lg: 0 20px 48px rgba(0,0,0,0.12);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0F1215;
+        --card-bg: #171B20;
+        --text: #F0F3F5;
+        --text-muted: #9BA7B0;
+        --text-dim: #606D78;
+        --border: #262E35;
+        --border-strong: #37434D;
+        --accent: #E06443;
+        --accent-soft: #2E1914;
+        --accent-hover: #F27857;
+        --teal: #3FB6BE;
+        --teal-soft: #12282A;
+      }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Layout */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Header */
+    header.hero {
+      padding: 64px 0 44px;
+      border-bottom: 1px solid var(--border);
+      background: var(--card-bg);
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 6px 14px;
+      border-radius: 999px;
+      margin-bottom: 18px;
+    }
+    h1 {
+      font-family: var(--serif);
+      font-size: clamp(2.4rem, 4vw, 3.6rem);
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
+    h1 em {
+      font-style: italic;
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .hero-lead {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      max-width: 780px;
+      line-height: 1.65;
+    }
+
+    .stats-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 28px;
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .stats-bar strong {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    /* Sticky Nav Index */
+    .sticky-nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 0;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    @media (prefers-color-scheme: dark) {
+      .sticky-nav { background: rgba(23, 27, 32, 0.85); }
+    }
+    .nav-track {
+      display: flex;
+      gap: 8px;
+    }
+    .nav-pill {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      transition: all 0.15s ease;
+    }
+    .nav-pill:hover, .nav-pill.active {
+      color: var(--text);
+      background: var(--bg);
+      border-color: var(--border-strong);
+    }
+
+    /* Sections */
+    section.flow-step {
+      padding: 72px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .step-header {
+      margin-bottom: 32px;
+    }
+    .step-num {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--teal);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      display: block;
+    }
+    h2 {
+      font-family: var(--serif);
+      font-size: clamp(1.8rem, 2.5vw, 2.4rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 10px;
+    }
+    .step-desc {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      max-width: 800px;
+    }
+
+    /* Grid Layout */
+    .grid-duo {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+      gap: 36px;
+      align-items: start;
+    }
+    @media (max-width: 960px) {
+      .grid-duo { grid-template-columns: 1fr; }
+    }
+
+    /* Visual Media Cards */
+    .media-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative;
+    }
+    .media-card:hover {
+      box-shadow: var(--shadow-md);
+    }
+    .media-card img {
+      width: 100%;
+      height: auto;
+      display: block;
+      cursor: zoom-in;
+      background: #000;
+    }
+    .media-caption {
+      padding: 12px 18px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card-bg);
+    }
+    .media-caption span.tag {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--teal);
+      background: var(--teal-soft);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    /* Details Panel */
+    .details-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .options-box {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+    .options-box h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .options-box h3::before {
+      content: '';
+      width: 4px;
+      height: 16px;
+      background: var(--accent);
+      border-radius: 2px;
+      display: inline-block;
+    }
+
+    /* Tables */
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin-top: 8px;
+    }
+    table.data-table th, table.data-table td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    table.data-table th {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-dim);
+      background: var(--bg);
+    }
+    table.data-table tr:last-child td { border-bottom: none; }
+    table.data-table td strong { color: var(--text); }
+    table.data-table td code {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      background: var(--bg);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+
+    /* Alert / Callout */
+    .alert-card {
+      background: var(--accent-soft);
+      border-left: 4px solid var(--accent);
+      padding: 16px 20px;
+      border-radius: 0 var(--radius) var(--radius) 0;
+      font-size: 0.92rem;
+      color: var(--text);
+    }
+    .alert-card strong {
+      display: block;
+      color: var(--accent);
+      font-weight: 700;
+      margin-bottom: 4px;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-family: var(--mono);
+    }
+
+    .alert-teal {
+      background: var(--teal-soft);
+      border-left: 4px solid var(--teal);
+    }
+    .alert-teal strong {
+      color: var(--teal);
+    }
+
+    /* Carousel Tabs */
+    .carousel-container {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+    .carousel-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+      overflow-x: auto;
+    }
+    .carousel-tab {
+      padding: 12px 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      border: none;
+      background: none;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .carousel-tab:hover {
+      color: var(--text);
+    }
+    .carousel-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+      background: var(--card-bg);
+    }
+    .carousel-body {
+      position: relative;
+    }
+    .carousel-slide {
+      display: none;
+    }
+    .carousel-slide.active {
+      display: block;
+    }
+    .carousel-slide img {
+      width: 100%;
+      display: block;
+      cursor: zoom-in;
+    }
+
+    /* Flow Chart Container */
+    .flow-chart-box {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px 20px;
+      margin: 32px 0 0;
+      box-shadow: var(--shadow-sm);
+      overflow-x: auto;
+    }
+    .flow-chart-box .mermaid {
+      display: flex;
+      justify-content: center;
+    }
+
+    /* Lightbox Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.88);
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+      padding: 32px;
+      cursor: zoom-out;
+      animation: fadeIn 0.15s ease-out;
+    }
+    .modal.show { display: flex; }
+    .modal-img {
+      max-width: 95vw;
+      max-height: 92vh;
+      border-radius: 8px;
+      box-shadow: var(--shadow-lg);
+      object-fit: contain;
+      animation: scaleUp 0.15s ease-out;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes scaleUp { from { transform: scale(0.96); } to { transform: scale(1); } }
+
+    /* Footer */
+    footer.doc-foot {
+      padding: 64px 0 80px;
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 0.88rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="hero">
+    <div class="container">
+      <span class="badge">✦ Documentación Visual & User Flow</span>
+      <h1>User Flow Completo <em>Paso a Paso</em></h1>
+      <p class="hero-lead">
+        Recorrido interactivo de punta a punta por la plataforma de Community Manager para micro pymes:
+        desde la portada y el alta de marca asistida, hasta el editor en vivo y la generación de contenido semanal con IA.
+      </p>
+      <div class="stats-bar">
+        <span>📸 <strong>17 capturas reales</strong> tomadas en ejecución</span>
+        <span>🎨 <strong>16 colores derivados</strong> con contraste OKLCH</span>
+        <span>📐 <strong>7 plantillas · 5 disposiciones · 3 formatos</strong></span>
+        <span>🚀 <strong>PNG reales a 2160×2700 px</strong></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- STICKY NAV -->
+  <nav class="sticky-nav">
+    <div class="container nav-track">
+      <a href="#diagrama" class="nav-pill active">Diagrama General</a>
+      <a href="#landing" class="nav-pill">1. Landing</a>
+      <a href="#paso1" class="nav-pill">2. Negocio</a>
+      <a href="#paso2" class="nav-pill">3. Activos</a>
+      <a href="#paso3" class="nav-pill">4. Identidad</a>
+      <a href="#paso4" class="nav-pill">5. Diseños</a>
+      <a href="#dashboard" class="nav-pill">6. Tablero</a>
+      <a href="#editor-formato" class="nav-pill">7. Formatos</a>
+      <a href="#editor-vivo" class="nav-pill">8. Editor en Vivo</a>
+      <a href="#editor-banco" class="nav-pill">9. Banco de Fotos</a>
+      <a href="#plan-ia" class="nav-pill">10. Plan con IA</a>
+    </div>
+  </nav>
+
+  <main class="container">
+
+    <!-- 0. DIAGRAMA GENERAL -->
+    <section class="flow-step" id="diagrama">
+      <div class="step-header">
+        <span class="step-num">Mapa de Arquitectura</span>
+        <h2>Diagrama del Flujo de Usuario</h2>
+        <p class="step-desc">
+          Mapa exhaustivo de todos los estados y bifurcaciones de la experiencia de usuario.
+        </p>
+      </div>
+
+      <div class="flow-chart-box">
+        <pre class="mermaid">
+flowchart TD
+    A["1. Landing Page (Portada)"] -->|Clic en 'Armar mi marca'| B["2. Onboarding: Tu Negocio"]
+    B -->|Ingreso de datos comerciales| C["3. Onboarding: ¿Qué tenés?"]
+    
+    C -->|¿Tenés logo / color / fuente?| D{"Bifurcación de Activos"}
+    D -->|Cargar propios| E1["Subir SVG + Selector de Color OKLCH + Google Fonts"]
+    D -->|Pedir sugerencia| E2["IA propone: 4 Isotipos SVG + 3 Colores + Tipografía"]
+    
+    E1 --> F["4. Onboarding: Tu Identidad (Paleta 16 tonos)"]
+    E2 --> F
+    
+    F --> G["5. Onboarding: Listo (5 Disposiciones)"]
+    G -->|Confirmar y Guardar| H["6. Panel Principal / Dashboard"]
+    
+    H -->|Nueva publicación| I["7. Elección de Formato (Feed vs Story / Post vs Carrusel)"]
+    I --> J["8. Editor de Placas en Vivo (7 Plantillas + Live Iframe)"]
+    J -->|Bajar PNG| K["Render en Chrome Headless (2160×2700 px)"]
+    
+    H -->|Pedir un plan| L["9. Plan de Contenido Semanal con IA"]
+    L -->|Generar| M["Propuesta de Posteos + Copys + Hashtags + Placas"]
+    
+    H -->|Editar marca| F
+        </pre>
+      </div>
+    </section>
+
+    <!-- 1. LANDING PAGE -->
+    <section class="flow-step" id="landing">
+      <div class="step-header">
+        <span class="step-num">Paso 01</span>
+        <h2>Portada y Landing Page</h2>
+        <p class="step-desc">
+          Presentación de la propuesta de valor sin vueltas: publicaciones profesionales listas para subir sin plantillas genéricas.
+        </p>
+      </div>
+
+      <div class="grid-duo">
+        <div class="media-card">
+          <img src="capturas/01_landing.png" alt="Captura de la Landing Page" onclick="abrirModal(this.src)">
+          <div class="media-caption">
+            <span>Vista de portada con muestras reales</span>
+            <span class="tag">Estado Inicial</span>
+          </div>
+        </div>
+
+        <div class="details-panel">
+          <div class="options-box">
+            <h3>Puntos de Interacción y Opciones</h3>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Elemento</th>
+                  <th>Tipo</th>
+                  <th>Destino / Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Armar mi marca</strong></td>
+                  <td>Botón Primario</td>
+                  <td>Inicia el Onboarding de alta de marca</td>
+                </tr>
+                <tr>
+                  <td><strong>Cómo funciona</strong></td>
+                  <td>Ancla</td>
+                  <td>Desplaza hacia la sección explicativa de 4 pasos</td>
+                </tr>
+                <tr>
+                  <td><strong>El plan</strong></td>
+                  <td>Ancla</td>
+                  <td>Detalla la cuota de 120 placas/mes y sin límites</td>
+                </tr>
+                <tr>
+                  <td><strong>Empezar / Inicio</strong></td>
+                  <td>Botón Header</td>
+                  <td>Acceso rápido según estado de sesión en localStorage</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="alert-card alert-teal">
+            <strong>Decisión de Producto</strong>
+            El plan es único y sin escalones. Elegir entre 3 planes antes de ver el producto funcionar crea fricción innecesaria.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. WIZARD: TU NEGOCIO -->
+    <section class="flow-step" id="paso1">
+      <div class="step-header">
+        <span class="step-num">Paso 02 · Onboarding (1/4)</span>
+        <h2>Tu Negocio: Contanos qué hacés</h2>
+        <p class="step-desc">
+          Recolección de la información troncal del negocio que alimentará los argumentos de venta de la IA.
+        </p>
+      </div>
+
+      <div class="grid-duo">
+        <div class="media-card">
+          <img src="capturas/02_wizard_paso1_completado.png" alt="Formulario de datos del negocio" onclick="abrirModal(this.src)">
+          <div class="media-caption">
+            <span>Formulario con datos de muestra de cafetería</span>
+            <span class="tag">Formulario Base</span>
+          </div>
+        </div>
+
+        <div class="details-panel">
+          <div class="options-box">
+            <h3>Campos del Formulario</h3>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Campo</th>
+                  <th>Ejemplo Real</th>
+                  <th>Impacto</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>nombre</code></td>
+                  <td>Café Botánico</td>
+                  <td>Cabecera fija en cada placa</td>
+                </tr>
+                <tr>
+                  <td><code>rubro</code></td>
+                  <td>Cafetería de especialidad y plantas</td>
+                  <td>Contexto para la IA</td>
+                </tr>
+                <tr>
+                  <td><code>ciudad</code></td>
+                  <td>Rosario (u "Online")</td>
+                  <td>Anclaje geográfico y hashtags locales. Si vende por internet, indicar "Online".</td>
+                </tr>
+                <tr>
+                  <td><code>queVende</code></td>
+                  <td>Café filtrado, espresso, tostadas de masa madre</td>
+                  <td>Productos para ofertas y tips</td>
+                </tr>
+                <tr>
+                  <td><code>diferencial</code></td>
+                  <td>Granos de origen tostados cada semana</td>
+                  <td>Argumento central en copys</td>
+                </tr>
+                <tr>
+                  <td><code>handle</code></td>
+                  <td>cafebotanico.ba</td>
+                  <td>Estampado en el cierre de placas y llamadas a la acción de los copys. Opcional diferido.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. WIZARD: QUÉ TENÉS -->
+    <section class="flow-step" id="paso2">
+      <div class="step-header">
+        <span class="step-num">Paso 03 · Onboarding (2/4)</span>
+        <h2>Diagnóstico Desacoplado: ¿Qué tenés ya armado?</h2>
+        <p class="step-desc">
+          Preguntar por separado por logo, color y tipografía evita obligar al usuario a mentir con un "sí/no" genérico.
+        </p>
+      </div>
+
+      <div class="grid-duo">
+        <div class="media-card">
+          <img src="capturas/03_wizard_paso2_opciones.png" alt="Opciones de diagnóstico" onclick="abrirModal(this.src)">
+          <div class="media-caption">
+            <span>Selección individual por cada activo visual</span>
+            <span class="tag">Diagnóstico</span>
+          </div>
+        </div>
+
+        <div class="details-panel">
+          <div class="options-box">
+            <h3>Opciones Disponibles por Activo</h3>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Activo</th>
+                  <th>Opción: "Sí, lo tengo"</th>
+                  <th>Opción: "No, sugerime"</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Logo</strong></td>
+                  <td>Sube archivo vectorial (.SVG)</td>
+                  <td>Motor genera 4 familias de diseñador (Firma, Pastilla, Sello, Monograma) personalizadas al negocio</td>
+                </tr>
+                <tr>
+                  <td><strong>Color</strong></td>
+                  <td>Selector de tono en 2 pasos</td>
+                  <td>IA propone 3 combinaciones armónicas en OKLCH</td>
+                </tr>
+                <tr>
+                  <td><strong>Tipografía</strong></td>
+                  <td>Catálogo curado con preview</td>
+                  <td>IA asigna par de fuentes ideal al rubro</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="alert-card">
+            <strong>Regla de Saneado</strong>
+            Todo SVG subido por el usuario o creado por el modelo pasa por <code>sanitizeLogoInner()</code> para evitar scripts y estilos nocivos.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. WIZARD: TU IDENTIDAD -->
+    <section class="flow-step" id="paso3">
+      <div class="step-header">
+        <span class="step-num">Paso 04 · Onboarding (3/4)</span>
+        <h2>Tu Identidad: Color OKLCH y Catálogo Tipográfico</h2>
+        <p class="step-desc">
+          De un color principal se derivan matemáticamente 16 tonos funcionales con contraste garantizado para que ninguna placa salga ilegible.
+        </p>
+      </div>
+
+      <div class="grid-duo">
+        <div class="carousel-container">
+          <div class="carousel-nav">
+            <button class="carousel-tab active" onclick="cambiarSlide(this, 'slide-color')">Selector de Color & Paleta</button>
+            <button class="carousel-tab" onclick="cambiarSlide(this, 'slide-tipo')">Catálogo Tipográfico</button>
+          </div>
+          <div class="carousel-body">
+            <div class="carousel-slide active" id="slide-color">
+              <img src="capturas/04_wizard_paso3_color.png" alt="Selector de color OKLCH" onclick="abrirModal(this.src)">
+            </div>
+            <div class="carousel-slide" id="slide-tipo">
+              <img src="capturas/04_wizard_paso3_tipografia.png" alt="Catálogo de tipografías" onclick="abrirModal(this.src)">
+            </div>
+          </div>
+          <div class="media-caption">
+            <span>Derivación algorítmica de paleta en OKLCH y fuentes en vivo</span>
+            <span class="tag">Sistema Visual</span>
+          </div>
+        </div>
+
+        <div class="details-panel">
+          <div class="options-box">
+            <h3>Familias Tipográficas del Catálogo</h3>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Estilo</th>
+                  <th>Fuente Título</th>
+                  <th>Fuente Cuerpo</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Moderno</strong></td>
+                  <td>Fraunces (Italic)</td>
+                  <td>Inter</td>
+                </tr>
+                <tr>
+                  <td><strong>Editorial</strong></td>
+                  <td>Playfair Display</td>
+                  <td>Libre Franklin</td>
+                </tr>
+                <tr>
+                  <td><strong>Cálido</strong></td>
+                  <td>Bitter</td>
+                  <td>Nunito Sans</td>
+                </tr>
+                <tr>
+                  <td><strong>Geométrico</strong></td>
+                  <td>DM Serif Display</td>
+                  <td>Poppins</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="alert-card alert-teal">
+            <strong>Control Automático de Contraste</strong>
+            Si se elige un color claro (amarillo/lima), el motor oscurece el tono para el texto garantizando legibilidad y manteniendo el tono puro en fondos.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. WIZARD: LISTO / DISPOSICIONES -->
+    <section class="flow-step" id="paso4">
+      <div class="step-header">
+        <span class="step-num">Paso 05 · Onboarding (4/4)</span>
+        <h2>Listo: Muestras y Composiciones de Diseño</h2>
+        <p class="step-desc">
+          En lugar de un editor libre que permite desalinear elementos, la plataforma ofrece 5 disposiciones probadas que mantienen la identidad intacta.
+        </p>
+      </div>
+
+      <div class="grid-duo">
+        <div class="media-card">
+          <img src="capturas/05_wizard_paso4_listo.png" alt="Muestras de marca y disposiciones" onclick="abrirModal(this.src)">
+          <div class="media-caption">
+            <span>Previsualización en tiempo real con la marca aplicada</span>
+            <span class="tag">Composiciones</span>
+          </div>
+        </div>
+
+        <div class="details-panel">
+          <div class="options-box">
+            <h3>Las 5 Disposiciones (Layouts)</h3>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Disposición</th>
+                  <th>Estructura Visual</th>
+                  <th>Uso Recomendado</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Clásica</strong></td>
+                  <td>Izquierda, centrada en placa</td>
+                  <td>La más neutra y versátil</td>
+                </tr>
+                <tr>
+                  <td><strong>Titular</strong></td>
+                  <td>Título gigante, párrafo al pie</td>
+                  <td>Impacto tipo tapa de revista</td>
+                </tr>
+                <tr>
+                  <td><strong>Centrada</strong></td>
+                  <td>Simétrica entre filetes</td>
+                  <td>Anuncios formales y novedades</td>
+                </tr>
+                <tr>
+                  <td><strong>Bloque</strong></td>
+                  <td>Kicker en recuadro pleno</td>
+                  <td>Estilo afiche tipográfico</td>
+                </tr>
+                <tr>
+                  <td><strong>Ficha</strong></td>
+                  <td>Título chico sobre línea divisoria</td>
+                  <td>Explicaciones y tips técnicos</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. DASHBOARD -->
+    <section class="flow-step" id="dashboard">
+      <div class="step-header">
+        <span class="step-num">Paso 06</span>
+        <h2>Panel Principal / Dashboard</h2>
+        <p class="step-desc">
+          Centro de control con métricas de valor generado, contador de cuota y accesos directos.
+        </p>
+      </div>
+
+      <div class="grid-duo">
+        <div class="media-card">
+          <img src="capturas/06_dashboard_inicio.png" alt="Dashboard de inicio" onclick="abrirModal(this.src)">
+          <div class="media-caption">
+            <span>Panel con resumen de marca y tarjeta de valor</span>
+            <span class="tag">Dashboard</span>
+          </div>
+        </div>
+
+        <div class="details-panel">
+          <div class="options-box">
+            <h3>Acciones y Métricas</h3>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Sección</th>
+                  <th>Descripción</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Nueva publicación</strong></td>
+                  <td>Editor manual (Elegís formato, plantilla y redactás)</td>
+                </tr>
+                <tr>
+                  <td><strong>Plan de contenido</strong></td>
+                  <td>Generador de grilla semanal con IA</td>
+                </tr>
+                <tr>
+                  <td><strong>Mi marca</strong></td>
+                  <td>Modificación de color, tipografía o logo</td>
+                </tr>
+                <tr>
+                  <td><strong>Medidor de Cuota</strong></td>
+                  <td>120 placas/mes y tope de 24 placas/día</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="alert-card">
+            <strong>Honestidad de Cifras</strong>
+            El panel dice <em>"Equivalen a"</em> y no <em>"Te ahorraste"</em>, acompañado siempre del valor de referencia de mercado.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. EDITOR: FORMATO -->
+    <section class="flow-step" id="editor-formato">
+      <div class="step-header">
+        <span class="step-num">Paso 07 · Editor</span>
+        <h2>Selección de Formato y Estructura</h2>
+        <p class="step-desc">
+          Definición del lienzo antes de editar para respetar proporciones y zonas seguras de Instagram.
+        </p>
+      </div>
+
+      <div class="grid-duo">
+        <div class="carousel-container">
+          <div class="carousel-nav">
+            <button class="carousel-tab active" onclick="cambiarSlide(this, 'slide-formato')">¿Dónde va? (Feed / Historia)</button>
+            <button class="carousel-tab" onclick="cambiarSlide(this, 'slide-tipo-feed')">¿Cuántas? (Post / Carrusel)</button>
+          </div>
+          <div class="carousel-body">
+            <div class="carousel-slide active" id="slide-formato">
+              <img src="capturas/07_editor_paso1_formato.png" alt="Selección Feed vs Historia" onclick="abrirModal(this.src)">
+            </div>
+            <div class="carousel-slide" id="slide-tipo-feed">
+              <img src="capturas/07_editor_paso2_tipo_feed.png" alt="Selección Post vs Carrusel" onclick="abrirModal(this.src)">
+            </div>
+          </div>
+          <div class="media-caption">
+            <span>Flujo de selección en dos pasos antes de abrir el lienzo</span>
+            <span class="tag">Paso Previo</span>
+          </div>
+        </div>
+
+        <div class="details-panel">
+          <div class="options-box">
+            <h3>Formatos y Medidas Reales</h3>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Formato</th>
+                  <th>Medidas (px)</th>
+                  <th>Características</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Feed (Post)</strong></td>
+                  <td><code>1080×1350</code></td>
+                  <td>1 pieza independiente vertical (4:5)</td>
+                </tr>
+                <tr>
+                  <td><strong>Feed (Carrusel)</strong></td>
+                  <td><code>1080×1350</code></td>
+                  <td>Hasta 6 placas con índice numérico (<code>01/03</code>)</td>
+                </tr>
+                <tr>
+                  <td><strong>Historia</strong></td>
+                  <td><code>1080×1920</code></td>
+                  <td>Pantalla completa con zonas seguras superior e inferior</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. EDITOR EN VIVO -->
+    <section class="flow-step" id="editor-vivo">
+      <div class="step-header">
+        <span class="step-num">Paso 08 · Editor</span>
+        <h2>Editor de Placas en Vivo</h2>
+        <p class="step-desc">
+          La vista previa corre en un <code>iframe</code> con el mismo HTML/CSS y tipografías que se renderizan en el PNG final.
+        </p>
+      </div>
+
+      <div class="grid-duo">
+        <div class="carousel-container">
+          <div class="carousel-nav">
+            <button class="carousel-tab active" onclick="cambiarSlide(this, 'slide-ed-texto')">Plantilla Texto</button>
+            <button class="carousel-tab" onclick="cambiarSlide(this, 'slide-ed-oferta')">Plantilla Oferta (Chips)</button>
+          </div>
+          <div class="carousel-body">
+            <div class="carousel-slide active" id="slide-ed-texto">
+              <img src="capturas/08_editor_pantalla_principal.png" alt="Editor con plantilla Texto" onclick="abrirModal(this.src)">
+            </div>
+            <div class="carousel-slide" id="slide-ed-oferta">
+              <img src="capturas/09_editor_plantilla_oferta.png" alt="Editor con plantilla Oferta" onclick="abrirModal(this.src)">
+            </div>
+          </div>
+          <div class="media-caption">
+            <span>Sincronización en vivo sin costo de cuota</span>
+            <span class="tag">Live Preview</span>
+          </div>
+        </div>
+
+        <div class="details-panel">
+          <div class="options-box">
+            <h3>Catálogo de 7 Plantillas</h3>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Plantilla</th>
+                  <th>Campos Principales</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>portada</code></td>
+                  <td>Volanta, Título grande, Párrafo</td>
+                </tr>
+                <tr>
+                  <td><code>texto</code></td>
+                  <td>Volanta, Título, Párrafo (hasta 200 car.), Fuente</td>
+                </tr>
+                <tr>
+                  <td><code>pasos</code></td>
+                  <td>Volanta, Título, 3 a 4 pasos numerados</td>
+                </tr>
+                <tr>
+                  <td><code>oferta</code></td>
+                  <td>Emoji, Volanta, Título, Párrafo, Chips de datos</td>
+                </tr>
+                <tr>
+                  <td><code>cierre</code></td>
+                  <td>Volanta, Título de llamada a la acción, Handle</td>
+                </tr>
+                <tr>
+                  <td><code>frase</code></td>
+                  <td>Cita con peso tipográfico sobre color pleno</td>
+                </tr>
+                <tr>
+                  <td><code>foto</code></td>
+                  <td>Volanta, Título, Segunda línea, Imagen y Crédito</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9. BANCO DE FOTOS -->
+    <section class="flow-step" id="editor-banco">
+      <div class="step-header">
+        <span class="step-num">Paso 09 · Banco de Imágenes</span>
+        <h2>Integración con Openverse y Créditos Legales</h2>
+        <p class="step-desc">
+          Buscador de fotos libres para uso comercial y con permiso de modificación. La plataforma inserta el crédito obligatorio automáticamente.
+        </p>
+      </div>
+
+      <div class="grid-duo">
+        <div class="media-card">
+          <img src="capturas/10_editor_plantilla_foto_aplicada.png" alt="Buscador y foto aplicada con crédito" onclick="abrirModal(this.src)">
+          <div class="media-caption">
+            <span>Foto de banco integrada y pie con atribución legal automática</span>
+            <span class="tag">Licencias CC</span>
+          </div>
+        </div>
+
+        <div class="details-panel">
+          <div class="options-box">
+            <h3>Reglas de Imágenes y Licenciamiento</h3>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Tipo</th>
+                  <th>Requisito Legal</th>
+                  <th>Tratamiento</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Foto Propia</strong></td>
+                  <td>Subida directa del cliente</td>
+                  <td>Sin crédito necesario</td>
+                </tr>
+                <tr>
+                  <td><strong>Openverse CC BY</strong></td>
+                  <td>Uso comercial + modificación</td>
+                  <td>Crédito impreso al pie de la placa</td>
+                </tr>
+                <tr>
+                  <td><strong>Openverse CC BY-SA</strong></td>
+                  <td>ShareAlike</td>
+                  <td>Alerta visible advirtiendo la obligación de compartir derivada</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="alert-card">
+            <strong>No se generan fotos falsas</strong>
+            Una foto inventada por IA no es el local real del cliente. O es una foto del negocio o es de banco con licencia transparente.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10. PLAN CON IA -->
+    <section class="flow-step" id="plan-ia">
+      <div class="step-header">
+        <span class="step-num">Paso 10 · Plan de Contenido</span>
+        <h2>Generación de Plan Semanal con IA</h2>
+        <p class="step-desc">
+          La IA propone la estrategia de la semana, redacta el texto de las placas, los copys para el posteo y los hashtags, y renderiza todo listo para descargar.
+        </p>
+      </div>
+
+      <div class="grid-duo">
+        <div class="media-card">
+          <img src="capturas/11_plan_contenido.png" alt="Generador de Plan Semanal" onclick="abrirModal(this.src)">
+          <div class="media-caption">
+            <span>Pantalla de solicitud con selector de volumen y prompt prioritario</span>
+            <span class="tag">Generador IA</span>
+          </div>
+        </div>
+
+        <div class="details-panel">
+          <div class="options-box">
+            <h3>Parámetros de Entrada y Salida</h3>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Parámetro</th>
+                  <th>Rango / Tipo</th>
+                  <th>Función</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Posteos</strong></td>
+                  <td>1 a 4 posteos</td>
+                  <td>Piezas de feed estructuradas</td>
+                </tr>
+                <tr>
+                  <td><strong>Historias</strong></td>
+                  <td>0 a 3 historias</td>
+                  <td>Piezas verticales complementarias</td>
+                </tr>
+                <tr>
+                  <td><strong>¿Algo puntual?</strong></td>
+                  <td>Texto libre</td>
+                  <td>Prioriza novedades, lanzamientos o promociones del negocio</td>
+                </tr>
+                <tr>
+                  <td><strong>Salida</strong></td>
+                  <td>Pack completo</td>
+                  <td>PNGs + Copys formateados + Hashtags + Resumen</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- LIGHTBOX MODAL -->
+  <div class="modal" id="imageModal" onclick="cerrarModal()">
+    <img class="modal-img" id="modalImg" src="" alt="Vista ampliada">
+  </div>
+
+  <footer class="doc-foot">
+    <div class="container">
+      <p>Community Manager para micro pymes · Documento generado automáticamente con datos reales de ejecución.</p>
+    </div>
+  </footer>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'neutral',
+      fontFamily: 'Inter, sans-serif'
+    });
+
+    function abrirModal(src) {
+      const modal = document.getElementById('imageModal');
+      const img = document.getElementById('modalImg');
+      img.src = src;
+      modal.classList.add('show');
+    }
+
+    function cerrarModal() {
+      document.getElementById('imageModal').classList.remove('show');
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') cerrarModal();
+    });
+
+    function cambiarSlide(btn, slideId) {
+      const container = btn.closest('.carousel-container');
+      container.querySelectorAll('.carousel-tab').forEach(t => t.classList.remove('active'));
+      container.querySelectorAll('.carousel-slide').forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      const target = container.querySelector('#' + slideId);
+      if (target) target.classList.add('active');
+    }
+
+    // Scrollspy para nav
+    const sections = document.querySelectorAll('section.flow-step');
+    const navLinks = document.querySelectorAll('.nav-pill');
+    window.addEventListener('scroll', () => {
+      let current = '';
+      sections.forEach(sec => {
+        const top = sec.offsetTop - 120;
+        if (window.pageYOffset >= top) current = sec.getAttribute('id');
+      });
+      navLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href') === '#' + current) link.classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>

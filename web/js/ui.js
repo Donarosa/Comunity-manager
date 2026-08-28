@@ -50,19 +50,46 @@ export function demorar(fn, ms = 380) {
   }
 }
 
-export function svgLogo(logo, tam = 60) {
+export function svgLogo(logo, tam = 60, alto = null) {
   const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-  s.setAttribute('viewBox', logo.viewBox)
-  s.setAttribute('width', tam)
-  s.setAttribute('height', tam)
-  s.innerHTML = logo.inner
-  for (const p of s.querySelectorAll('path')) {
-    p.setAttribute('fill', 'none')
-    p.setAttribute('stroke', 'currentColor')
-    p.setAttribute('stroke-width', logo.strokeWidth)
-    p.setAttribute('stroke-linecap', 'round')
-    p.setAttribute('stroke-linejoin', 'round')
+  const vb = logo.viewBox || '0 0 100 100'
+  s.setAttribute('viewBox', vb)
+
+  const partesVb = vb.split(' ').map(Number)
+  const vbAncho = partesVb[2] || 100
+  const vbAlto = partesVb[3] || 100
+  const aspect = vbAncho / vbAlto
+
+  let w = tam
+  let h = alto || Math.round(tam / aspect)
+
+  s.setAttribute('width', w)
+  s.setAttribute('height', h)
+  s.style.display = 'block'
+  s.style.maxWidth = '100%'
+  s.style.maxHeight = '100%'
+
+  if (logo.esRaster || /<image\b/i.test(logo.inner || '')) {
+    s.classList.add('mark-raster')
+    s.style.background = 'rgba(255,255,255,0.92)'
+    s.style.borderRadius = '12%'
+    s.style.padding = '4px'
+    s.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)'
   }
-  for (const c of s.querySelectorAll('circle')) c.setAttribute('fill', 'currentColor')
+  s.innerHTML = logo.inner || ''
+  for (const p of s.querySelectorAll('path')) {
+    if (!p.getAttribute('fill') && !p.getAttribute('stroke')) {
+      p.setAttribute('fill', 'none')
+      p.setAttribute('stroke', 'currentColor')
+      p.setAttribute('stroke-width', logo.strokeWidth || 2)
+      p.setAttribute('stroke-linecap', 'round')
+      p.setAttribute('stroke-linejoin', 'round')
+    }
+  }
+  for (const c of s.querySelectorAll('circle')) {
+    if (!c.getAttribute('fill') && !c.getAttribute('stroke')) {
+      c.setAttribute('fill', 'currentColor')
+    }
+  }
   return s
 }

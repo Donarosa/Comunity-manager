@@ -1,11 +1,25 @@
-// Cliente HTTP. Todos los errores del servidor llegan acá como Error con
-// mensaje en castellano listo para mostrar — la API los escribe pensando en que
-// los va a leer el dueño del negocio, no un programador.
+// Cliente HTTP. Agrega autenticación Bearer automática y endpoints del dashboard.
+
+import { obtenerToken } from './auth.js'
+
+const API_BASE = (typeof window !== 'undefined' && window.location && (
+  window.location.protocol === 'file:' ||
+  (window.location.port && window.location.port !== '8787' && !['80', '443', '3000'].includes(window.location.port) && !window.location.hostname.includes('vercel.app'))
+)) ? 'http://127.0.0.1:8787' : ''
 
 async function pedir(ruta, { metodo = 'GET', cuerpo, texto = false } = {}) {
-  const res = await fetch(ruta, {
+  const headers = {}
+  if (cuerpo) headers['content-type'] = 'application/json'
+
+  const token = obtenerToken()
+  if (token) {
+    headers['authorization'] = `Bearer ${token}`
+  }
+
+  const urlCompleta = ruta.startsWith('http') ? ruta : `${API_BASE}${ruta}`
+  const res = await fetch(urlCompleta, {
     method: metodo,
-    headers: cuerpo ? { 'content-type': 'application/json' } : {},
+    headers,
     body: cuerpo ? JSON.stringify(cuerpo) : undefined,
   })
 
@@ -27,18 +41,30 @@ async function pedir(ruta, { metodo = 'GET', cuerpo, texto = false } = {}) {
 export const api = {
   catalogo: () => pedir('/catalogo'),
 
+  // Cuentas y Auth
   crearCuenta: datos => pedir('/cuentas', { metodo: 'POST', cuerpo: datos }),
   cuenta: id => pedir(`/cuentas/${id}`),
+  loginFirebase: datos => pedir('/auth/firebase-login', { metodo: 'POST', cuerpo: datos }),
 
+  // Dashboard y métricas personales
+  dashboard: id => pedir(`/cuentas/${id}/dashboard`),
+  publicaciones: id => pedir(`/cuentas/${id}/publicaciones`),
+  planes: id => pedir(`/cuentas/${id}/planes`),
+  estadisticas: id => pedir(`/cuentas/${id}/estadisticas`),
+  registrarEvento: (id, evento, metadata) => pedir(`/cuentas/${id}/estadisticas/evento`, { metodo: 'POST', cuerpo: { evento, metadata } }),
+
+  // Marca e Identidad
   guardarMarca: (id, datos) => pedir(`/cuentas/${id}/marca`, { metodo: 'POST', cuerpo: datos }),
   sugerirIdentidad: (id, negocio) => pedir(`/cuentas/${id}/identidad/sugerir`, { metodo: 'POST', cuerpo: negocio }),
   adoptarIdentidad: (id, sel) => pedir(`/cuentas/${id}/identidad/adoptar`, { metodo: 'POST', cuerpo: sel }),
   subirLogo: (id, logo) => pedir(`/cuentas/${id}/logo/subir`, { metodo: 'POST', cuerpo: logo }),
 
+  // Contenido y Placas
   previsualizar: (id, datos) => pedir(`/cuentas/${id}/previsualizar`, { metodo: 'POST', cuerpo: datos, texto: true }),
   renderizar: (id, datos) => pedir(`/cuentas/${id}/placa`, { metodo: 'POST', cuerpo: datos }),
   contenido: (id, datos) => pedir(`/cuentas/${id}/contenido`, { metodo: 'POST', cuerpo: datos }),
 
+  // Imágenes
   buscarImagenes: (q, pagina = 1, orientacion = '') =>
     pedir(`/imagenes/buscar?q=${encodeURIComponent(q)}&pagina=${pagina}&orientacion=${orientacion}`),
   traerDelBanco: (id, imagenId) => pedir(`/cuentas/${id}/imagenes/banco`, { metodo: 'POST', cuerpo: { id: imagenId } }),

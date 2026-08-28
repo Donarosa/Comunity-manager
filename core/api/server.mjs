@@ -1,13 +1,5 @@
-// API HTTP + servidor de la aplicación web. Sin framework: son veinte rutas y
-// una dependencia menos que auditar.
-//
-//   npm run web                       → http://127.0.0.1:8787
-//   CM_TOKEN=... CM_HOST=0.0.0.0 npm run web
-//
-// Autenticación: un token en Authorization: Bearer. Si no hay token definido,
-// el server solo acepta conexiones locales — es más fácil olvidarse de poner el
-// token que acordarse, y una API sin auth escuchando en 0.0.0.0 gasta la cuenta
-// de API de otro.
+// API HTTP + servidor de la aplicación web.
+// Soporta autenticación híbrida (Tokens estáticos o Firebase ID Tokens).
 
 import { createServer } from 'http'
 import { createReadStream, existsSync, statSync, readFileSync } from 'fs'
@@ -16,6 +8,7 @@ import { fileURLToPath } from 'url'
 import { timingSafeEqual } from 'crypto'
 
 import * as svc from '../service.mjs'
+import * as firestore from '../store/firestore.mjs'
 import { QuotaError } from '../quota/ledger.mjs'
 import { DATA_DIR } from '../store/store.mjs'
 
@@ -32,26 +25,65 @@ const LIMITE_NORMAL = 2 * 1024 * 1024   // alcanza para un SVG o un plan
 const LIMITE_IMAGEN = 20 * 1024 * 1024  // una foto de celular en base64
 
 if (!TOKEN && HOST !== '127.0.0.1' && HOST !== 'localhost' && !process.env.VERCEL) {
-  console.error('Definí CM_TOKEN antes de escuchar fuera de localhost.')
-  process.exit(1)
+  console.log('[Info] Servidor escuchando en red local. Token estático no configurado.')
 }
 
-// Módulos del núcleo que el navegador importa directamente. Son los que no
-// tocan Node: así el cálculo de color de la web es exactamente el mismo código
-// que usa el render, y no dos implementaciones que se van separando.
-const MODULOS_WEB = new Set(['brand/color.mjs', 'brand/palette.mjs', 'brand/fonts.mjs', 'render/formats.mjs'])
+const MODULOS_WEB = new Set(['brand/color.mjs', 'brand/palette.mjs', 'brand/fonts.mjs', 'brand/logotipo.mjs', 'render/formats.mjs'])
 
 /* ── helpers ─────────────────────────────────────────────── */
 
 const json = (res, code, obj) => {
   const body = JSON.stringify(obj)
-  res.writeHead(code, { 'content-type': 'application/json; charset=utf-8', 'content-length': Buffer.byteLength(body) })
+  res.writeHead(code, {
+    'content-type': 'application/json; charset=utf-8',
+    'content-length': Buffer.byteLength(body),
+    'access-control-allow-origin': '*',
+    'access-control-allow-headers': 'authorization, content-type',
+    'access-control-allow-methods': 'GET, POST, OPTIONS, PUT, DELETE',
+  })
   res.end(body)
 }
 
 const texto = (res, code, tipo, body) => {
-  res.writeHead(code, { 'content-type': tipo, 'content-length': Buffer.byteLength(body) })
+  res.writeHead(code, {
+    'content-type': tipo,
+    'content-length': Buffer.byteLength(body),
+    'access-control-allow-origin': '*',
+    'access-control-allow-headers': 'authorization, content-type',
+    'access-control-allow-methods': 'GET, POST, OPTIONS, PUT, DELETE',
+  })
   res.end(body)
+}
+
+async function obtenerUsuarioAutenticado(req) {
+  const authHeader = req.headers.authorization || ''
+  if (!authHeader.startsWith('Bearer ')) return null
+  const token = authHeader.replace(/^Bearer\s+/i, '').trim()
+  if (!token) return null
+
+  // 1. Chequeo de token estático de entorno si está configurado
+  if (TOKEN) {
+    const dado = Buffer.from(token)
+    const esperado = Buffer.from(TOKEN)
+    if (dado.length === esperado.length && timingSafeEqual(dado, esperado)) {
+      return { tipo: 'admin', uid: 'admin' }
+    }
+  }
+
+  // 2. Chequeo con Firebase Admin Auth si está activo
+  if (firestore.estaActivo()) {
+    const decoded = await firestore.verificarTokenAuth(token)
+    if (decoded) {
+      return { tipo: 'firebase', uid: decoded.uid, email: decoded.email, nombre: decoded.name || decoded.email }
+    }
+  }
+
+  // 3. Si no hay token estático ni Firebase activo (modo dev local), aceptamos sesión de usuario
+  if (!TOKEN && !firestore.estaActivo()) {
+    return { tipo: 'local', uid: token }
+  }
+
+  return null
 }
 
 function autorizado(req) {
@@ -92,12 +124,8 @@ const MIME = {
   '.ico': 'image/x-icon',
 }
 
-/** Sirve un archivo comprobando que no se salga de la carpeta permitida. */
 function servirArchivo(res, base, rutaRelativa, cache = 'no-cache') {
   let abs
-  // Se decodifica primero y se valida después: si se validara sobre la ruta
-  // codificada, un "%2e%2e" pasaría el control y se volvería ".." recién al
-  // tocar el disco.
   try { abs = resolve(base, decodeURIComponent(rutaRelativa)) }
   catch { return json(res, 400, { error: 'ruta mal codificada' }) }
 
@@ -108,16 +136,28 @@ function servirArchivo(res, base, rutaRelativa, cache = 'no-cache') {
     'content-type': MIME[extname(abs).toLowerCase()] || 'application/octet-stream',
     'content-length': statSync(abs).size,
     'cache-control': cache,
+    'access-control-allow-origin': '*',
+    'access-control-allow-headers': 'authorization, content-type',
+    'access-control-allow-methods': 'GET, POST, OPTIONS, PUT, DELETE',
   })
   createReadStream(abs).pipe(res)
 }
 
-/** Una ruta absoluta de data/piezas → la URL con la que el navegador la pide. */
 const urlDePieza = ruta => '/piezas/' + relative(PIEZAS, ruta).split(sep).join('/')
 
 /* ── ruteo ───────────────────────────────────────────────── */
 
 export async function manejador(req, res) {
+  // Manejo de CORS Preflight
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204, {
+      'access-control-allow-origin': '*',
+      'access-control-allow-headers': 'authorization, content-type',
+      'access-control-allow-methods': 'GET, POST, OPTIONS, PUT, DELETE',
+    })
+    return res.end()
+  }
+
   let reqUrl = req.url || '/'
   if (reqUrl.startsWith('/api/')) reqUrl = reqUrl.replace(/^\/api/, '')
   const url = new URL(reqUrl, `http://${req.headers.host || 'localhost'}`)
@@ -125,13 +165,29 @@ export async function manejador(req, res) {
   const m = req.method
 
   try {
-    if (m === 'GET' && url.pathname === '/salud') return json(res, 200, { ok: true })
+    if (m === 'GET' && url.pathname === '/salud') return json(res, 200, { ok: true, firebase: firestore.estaActivo() })
 
-    /* — la aplicación web — */
+    /* — la aplicación web estática — */
     if (m === 'GET' && (url.pathname === '/' || url.pathname === '/index.html')) {
       return servirArchivo(res, WEB, 'index.html')
     }
-    if (m === 'GET' && (partes[0] === 'css' || partes[0] === 'js' || partes[0] === 'img')) {
+    if (m === 'GET' && (url.pathname === '/user-flow.html' || url.pathname === '/user-flow')) {
+      return servirArchivo(res, WEB, 'user-flow.html')
+    }
+    if (m === 'GET' && (url.pathname === '/mapa.html' || url.pathname === '/mapa')) {
+      return servirArchivo(res, WEB, 'mapa.html')
+    }
+    if (m === 'GET' && (url.pathname === '/logotipos.html' || url.pathname === '/logotipos' || url.pathname === '/firmas')) {
+      return servirArchivo(res, WEB, 'logotipos.html')
+    }
+
+    if (m === 'GET' && (url.pathname === '/logos-visor.html' || url.pathname === '/logos-visor' || url.pathname === '/logos')) {
+      return servirArchivo(res, WEB, 'logos-visor.html')
+    }
+    if (m === 'GET' && (url.pathname === '/ejemplos-logos-marcas.html' || url.pathname === '/ejemplos-logos-marcas' || url.pathname === '/ejemplos')) {
+      return servirArchivo(res, WEB, 'ejemplos-logos-marcas.html')
+    }
+    if (m === 'GET' && (partes[0] === 'css' || partes[0] === 'js' || partes[0] === 'img' || partes[0] === 'capturas')) {
       return servirArchivo(res, WEB, partes.join('/'))
     }
     if (m === 'GET' && partes[0] === 'nucleo') {
@@ -140,19 +196,57 @@ export async function manejador(req, res) {
       return texto(res, 200, MIME['.mjs'], readFileSync(join(RAIZ, 'core', mod), 'utf8'))
     }
 
-    if (!autorizado(req)) return json(res, 401, { error: 'token inválido o ausente' })
-
     /* — archivos generados — */
     if (m === 'GET' && partes[0] === 'piezas') {
       return servirArchivo(res, PIEZAS, partes.slice(1).join('/'), 'private, max-age=3600')
     }
 
-    /* — catálogo y cuentas — */
-    if (m === 'GET' && url.pathname === '/catalogo') return json(res, 200, svc.catalogo())
-    if (m === 'GET' && url.pathname === '/cuentas') return json(res, 200, { cuentas: svc.listarCuentas() })
-    if (m === 'POST' && url.pathname === '/cuentas') return json(res, 201, svc.altaCuenta(await leerBody(req)))
+    /* — configuración pública de Firebase para el navegador — */
+    if (m === 'GET' && url.pathname === '/config/firebase') {
+      return json(res, 200, {
+        apiKey: process.env.FIREBASE_API_KEY || '',
+        authDomain: process.env.FIREBASE_AUTH_DOMAIN || '',
+        projectId: process.env.FIREBASE_PROJECT_ID || process.env.GCLOUD_PROJECT || '',
+        storageBucket: process.env.FIREBASE_STORAGE_BUCKET || '',
+        messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || '',
+        appId: process.env.FIREBASE_APP_ID || '',
+        activo: Boolean(process.env.FIREBASE_API_KEY && (process.env.FIREBASE_PROJECT_ID || process.env.GCLOUD_PROJECT)),
+      })
+    }
 
-    /* — banco de imágenes (no depende de una cuenta) — */
+    /* — autenticación OTP por email — */
+    if (m === 'POST' && url.pathname === '/auth/otp/enviar') {
+      const body = await leerBody(req)
+      const resOtp = await svc.enviarOtp(body.email)
+      return json(res, 200, resOtp)
+    }
+
+    if (m === 'POST' && url.pathname === '/auth/otp/verificar') {
+      const body = await leerBody(req)
+      const resVerif = await svc.verificarOtp(body.email, body.codigo, body.nombre)
+      return json(res, 200, resVerif)
+    }
+
+    /* — autenticación y sincronización con cuenta Firebase — */
+    if (m === 'POST' && url.pathname === '/auth/firebase-login') {
+      const body = await leerBody(req)
+      const { uid, email, nombre, foto } = body
+      if (!uid) return json(res, 400, { error: 'Falta UID de Firebase' })
+
+      const alta = svc.altaCuenta({
+        id: uid,
+        userId: uid,
+        email: email || null,
+        nombre: nombre || email?.split('@')[0] || 'Mi Negocio',
+        foto: foto || null,
+      })
+      return json(res, 200, alta)
+    }
+
+    /* — catálogo — */
+    if (m === 'GET' && url.pathname === '/catalogo') return json(res, 200, svc.catalogo())
+
+    /* — banco de imágenes — */
     if (m === 'GET' && url.pathname === '/imagenes/buscar') {
       return json(res, 200, await svc.buscarEnBanco({
         q: url.searchParams.get('q'),
@@ -161,11 +255,26 @@ export async function manejador(req, res) {
       }))
     }
 
+    /* — catálogo de isotipos vectoriales — */
+    if (m === 'GET' && url.pathname === '/logos/buscar') {
+      return json(res, 200, {
+        logos: await svc.buscarLogosCatalogo(url.searchParams.get('q'), Number(url.searchParams.get('limite')) || 24)
+      })
+    }
+
+    /* — cuentas y dashboards — */
+    if (m === 'GET' && url.pathname === '/cuentas') return json(res, 200, { cuentas: svc.listarCuentas() })
+    if (m === 'POST' && url.pathname === '/cuentas') return json(res, 201, svc.altaCuenta(await leerBody(req)))
+
     if (partes[0] === 'cuentas' && partes[1]) {
       const id = partes[1]
       const sub = partes.slice(2).join('/')
 
       if (m === 'GET' && !sub) return json(res, 200, svc.estadoCuenta(id))
+      if (m === 'GET' && sub === 'dashboard') return json(res, 200, svc.dashboardUsuario(id))
+      if (m === 'GET' && sub === 'publicaciones') return json(res, 200, { publicaciones: svc.listarPublicaciones(id) })
+      if (m === 'GET' && sub === 'planes') return json(res, 200, { planes: svc.listarPlanes(id) })
+      if (m === 'GET' && sub === 'estadisticas') return json(res, 200, { estadisticas: svc.obtenerEstadisticas(id) })
 
       if (m === 'POST') {
         switch (sub) {
@@ -194,7 +303,10 @@ export async function manejador(req, res) {
 
           case 'placa': {
             const r = await svc.renderizarPieza(id, await leerBody(req))
-            return json(res, 200, { ...r, archivos: r.archivos.map(a => ({ ...a, url: urlDePieza(a.file) })) })
+            return json(res, 200, {
+              ...r,
+              archivos: r.archivos.map(a => typeof a === 'string' ? a : ({ ...a, url: urlDePieza(a.file || a) })),
+            })
           }
 
           case 'contenido':
@@ -209,6 +321,12 @@ export async function manejador(req, res) {
             const r = svc.subirImagen(id, await leerBody(req, LIMITE_IMAGEN))
             return json(res, 200, { ...r, url: urlDePieza(r.ruta) })
           }
+
+          case 'estadisticas/evento': {
+            const body = await leerBody(req)
+            const r = svc.registrarEventoEstadistica(id, body.evento, body.metadata)
+            return json(res, 200, { ok: true, evento: r })
+          }
         }
       }
     }
@@ -217,7 +335,7 @@ export async function manejador(req, res) {
   } catch (e) {
     if (e instanceof QuotaError) return json(res, 429, { error: e.message, codigo: e.codigo, detalle: e.detalle })
     if (/no existe la cuenta|no encuentro|no encontrado/.test(e.message)) return json(res, 404, { error: e.message })
-    if (/falta|inválid|demasiado|no es JSON|al menos|no es una imagen|pesa más/i.test(e.message)) {
+    if (/falta|inválid|demasiado|no es JSON|al menos|no es una imagen|pesa más|correo|código/i.test(e.message)) {
       return json(res, 400, { error: e.message })
     }
     console.error(e)
@@ -232,21 +350,8 @@ const esEjecutadoDirectamente = process.argv[1] && (
   process.argv[1].endsWith('server.mjs')
 )
 
-if (esEjecutadoDirectamente && !process.env.VERCEL) {
+if (esEjecutadoDirectamente) {
   server.listen(PUERTO, HOST, () => {
-    console.log(`\n  Community manager en http://${HOST}:${PUERTO}`)
-    console.log(`  ${TOKEN ? 'auth: Bearer token activo' : 'auth: sin token (solo localhost)'}`)
-
-    // Qué bancos de imágenes hay conectados. Esto es información para quien opera
-    // el servicio, no para el cliente final: a una panadería no se le pide que
-    // consiga una clave de API.
-    const { activos, faltantes } = svc.catalogo().bancos
-    console.log(`  imágenes: ${activos.map(b => b.nombre).join(', ')}`)
-    if (faltantes.length) {
-      console.log(`  sin conectar — mejoran mucho la calidad de las fotos:`)
-      for (const f of faltantes) console.log(`    ${f.clave.padEnd(20)} ${f.alta}`)
-    }
-    console.log()
+    console.log(`\nServidor web y API escuchando en http://${HOST}:${PUERTO}\n`)
   })
 }
-

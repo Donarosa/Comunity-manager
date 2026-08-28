@@ -42,6 +42,99 @@ const FUENTES_MUESTRA = {
   geometrico: ['Poppins', 'DM Serif Display'],
 }
 
+function extraerIniciales(nombre = '') {
+  const palabras = String(nombre).trim().split(/\s+/).filter(Boolean)
+  if (!palabras.length) return 'M'
+  if (palabras.length === 1) return palabras[0].slice(0, 2).toUpperCase()
+  return (palabras[0][0] + (palabras[1] ? palabras[1][0] : '')).toUpperCase()
+}
+
+function escSvg(str = '') {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+function generarPropuestasLocales(negocio = {}) {
+  const nombre = escSvg(negocio.nombre || 'Mi Negocio')
+  const subtitulo = escSvg((negocio.rubro || negocio.ciudad || 'OFICIO & CALIDAD').toUpperCase())
+  const ini = extraerIniciales(negocio.nombre || 'MN')
+
+  return [
+    {
+      id: 'logo-firma',
+      nombre: 'Firma / Caligráfico',
+      concepto: 'Tipografía de autor continua con subtítulo artesanal.',
+      logo: {
+        viewBox: '0 0 300 110',
+        inner: `
+          <g text-anchor="middle" fill="currentColor">
+            <text x="150" y="58" font-family="'Alex Brush', 'Dancing Script', cursive" font-size="44" transform="rotate(-2 150 58)">${nombre}</text>
+            <line x1="40" y1="72" x2="260" y2="72" stroke="currentColor" stroke-width="1.2" opacity="0.75" />
+            <text x="150" y="88" font-family="'Plus Jakarta Sans', sans-serif" font-size="10.5" font-weight="700" letter-spacing="4.5" opacity="0.85">${subtitulo}</text>
+          </g>
+        `,
+        strokeWidth: 4,
+        strokeWidthSmall: 3,
+        origen: 'sugerido',
+      },
+    },
+    {
+      id: 'logo-pastilla',
+      nombre: 'Pastilla / Caja de Marca',
+      concepto: 'Bloque sólido de alto impacto con máxima legibilidad.',
+      logo: {
+        viewBox: '0 0 300 110',
+        inner: `
+          <rect x="18" y="18" width="264" height="74" rx="37" fill="currentColor" opacity="0.08"/>
+          <rect x="22" y="22" width="256" height="66" rx="33" fill="none" stroke="currentColor" stroke-width="3.5"/>
+          <text x="150" y="57" text-anchor="middle" dominant-baseline="central" font-family="'Syne', 'Montserrat', sans-serif" font-size="23" font-weight="800" letter-spacing="2" fill="currentColor">${nombre.toUpperCase()}</text>
+          <text x="150" y="75" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="9" font-weight="700" letter-spacing="3.5" fill="currentColor" opacity="0.8">${subtitulo}</text>
+        `,
+        strokeWidth: 4,
+        strokeWidthSmall: 3,
+        origen: 'sugerido',
+      },
+    },
+    {
+      id: 'logo-sello',
+      nombre: 'Sello / Medallón Circular',
+      concepto: 'Insignia tradicional con texto arqueado y símbolo central.',
+      logo: {
+        viewBox: '0 0 100 100',
+        inner: `
+          <circle cx="50" cy="50" r="47" fill="none" stroke="currentColor" stroke-width="2.5"/>
+          <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" stroke-width="0.8"/>
+          <circle cx="50" cy="50" r="26" fill="none" stroke="currentColor" stroke-width="0.8"/>
+          <text x="50" y="50" text-anchor="middle" dominant-baseline="central" font-family="'Plus Jakarta Sans', sans-serif" font-size="${ini.length > 1 ? 16 : 22}" font-weight="800" fill="currentColor">${ini}</text>
+        `,
+        strokeWidth: 4,
+        strokeWidthSmall: 3,
+        origen: 'sugerido',
+      },
+    },
+    {
+      id: 'logo-monograma',
+      nombre: 'Monograma de Diseñador',
+      concepto: 'Iniciales entrelazadas en marco geométrico de autor.',
+      logo: {
+        viewBox: '0 0 300 110',
+        inner: `
+          <rect x="25" y="15" width="80" height="80" rx="14" fill="none" stroke="currentColor" stroke-width="3"/>
+          <text x="65" y="55" text-anchor="middle" dominant-baseline="central" font-family="'Plus Jakarta Sans', sans-serif" font-size="28" font-weight="800" fill="currentColor">${ini}</text>
+          <text x="125" y="50" font-family="'Playfair Display', serif" font-size="24" font-weight="700" fill="currentColor">${nombre}</text>
+          <text x="125" y="72" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="600" letter-spacing="3" fill="currentColor" opacity="0.8">${subtitulo}</text>
+        `,
+        strokeWidth: 4,
+        strokeWidthSmall: 3,
+        origen: 'sugerido',
+      },
+    },
+  ]
+}
+
 export function iniciarWizard({ contenedor, catalogo, cuentaId, alTerminar }) {
   const st = {
     cuentaId,
@@ -52,18 +145,40 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, alTerminar }) {
     color: null,
     tipografia: null,
     disposicion: 'clasica',
+    logotipoTipo: 'palabra-simbolo',
+    logotipoTratamiento: 'linea',
+    logotipoEscudo: 'circulo',
+    logotipoFuente: 'mismo',
     sugerencia: null,
     paso: 0,
   }
 
   function pintar() {
     vaciar(contenedor)
-    const riel = el('nav.riel', {}, el('ol', {},
-      PASOS.map(([nombre], i) =>
-        el('li', { class: i === st.paso ? 'actual' : i < st.paso ? 'hecho' : '' }, nombre))
-    ))
-    const panel = el('div.paso')
-    contenedor.append(el('div.wizard', {}, riel, panel))
+
+    const pasosConfig = [
+      { id: '01 NEGOCIO', dot: 'process__dot--mint' },
+      { id: '02 QUÉ TENÉS', dot: 'process__dot--cyan' },
+      { id: '03 IDENTIDAD', dot: 'process__dot--pear' },
+      { id: '04 LISTO', dot: 'process__dot--coral' },
+    ]
+
+    const processStrip = el('div.process')
+    pasosConfig.forEach((p, idx) => {
+      const step = el('div.process__step', {
+        class: idx === st.paso ? 'is-active' : ''
+      },
+        el('span.process__dot.' + p.dot),
+        el('span', {}, p.id)
+      )
+      processStrip.append(step)
+      if (idx < pasosConfig.length - 1) {
+        processStrip.append(el('span.process__link'))
+      }
+    })
+
+    const panel = el('div.card', { style: 'margin-top:10px;' })
+    contenedor.append(el('div.wizard', {}, processStrip, panel))
 
     ;[pasoNegocio, pasoTenencia, pasoIdentidad, pasoListo][st.paso](panel)
     window.scrollTo({ top: 0, behavior: 'instant' })
@@ -77,11 +192,11 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, alTerminar }) {
     const campos = [
       ['nombre', 'Cómo se llama', 'Como lo conocen tus clientes. Va a ir arriba de cada placa.', 'Panadería Mendieta', false],
       ['rubro', 'A qué se dedica', 'En pocas palabras.', 'panadería de barrio', false],
-      ['ciudad', 'Dónde está', '', 'Rosario', false],
+      ['ciudad', 'Dónde está', 'Tu ciudad o barrio para armar hashtags locales. Si vendés solo por internet, poné "Online".', 'Rosario (u "Online")', false],
       ['queVende', 'Qué vende', 'Lo concreto, no las categorías.', 'pan de masa madre, facturas, tortas por encargo', true],
       ['publico', 'Quién le compra', '', 'vecinos del barrio, familias', true],
       ['diferencial', 'Por qué te eligen a vos', 'Lo que decís cuando alguien pregunta por qué comprar acá y no en la de enfrente. Es lo que más cambia el contenido.', 'masa madre propia, todo sale del horno a las 7 de la mañana', true],
-      ['handle', 'Tu usuario de Instagram', 'Sin el arroba. Si no tenés, lo dejamos vacío.', 'panaderiamendieta', false],
+      ['handle', 'Tu usuario de Instagram', 'Sin el arroba. Se estampa en el cierre de las placas y en los llamados a la acción. Podés completarlo después.', 'panaderiamendieta', false],
     ]
 
     const inputs = {}
@@ -124,9 +239,9 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, alTerminar }) {
 
   function pasoTenencia(panel) {
     const preguntas = [
-      ['logo', '¿Tenés logo?', 'Un archivo SVG hecho de trazos. Si lo tenés en JPG o PNG no sirve para esto.'],
-      ['color', '¿Tenés un color de marca?', 'Aunque sea "el bordó ese" sin saber el código exacto.'],
-      ['tipo', '¿Tenés una tipografía definida?', 'La mayoría de los negocios chicos no, y está bien.'],
+      ['logo', '¿Tenés logo?', 'Un archivo vectorial de diseño (.SVG). Si solo tenés una foto o imagen con fondo (.JPG o .PNG), te conviene pedirnos una propuesta para que quede nítido y sin fondo.'],
+      ['color', '¿Tenés un color de marca?', 'Aunque sea una idea general ("el bordó ese") sin saber el código exacto.'],
+      ['tipo', '¿Tenés una tipografía definida?', 'La mayoría de las marcas al empezar no la tienen, y está perfecto.'],
     ]
 
     const cont = el('div')
@@ -165,7 +280,7 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, alTerminar }) {
     panel.append(
       el('span.rotulo', {}, 'Paso 2 de 4'),
       el('h2', {}, '¿Qué tenés ya armado?'),
-      el('p.intro', {}, 'Preguntamos por separado porque casi ningún negocio chico tiene las tres cosas, y casi todos tienen alguna. Lo que no tengas, lo proponemos nosotros.'),
+      el('p.intro', {}, 'Preguntamos por separado porque cada marca tiene su propio punto de partida: es normal tener alguna cosa lista y otras pendientes. Lo que te falte, te lo proponemos nosotros.'),
       cont, error,
       el('div.acciones-paso', {}, seguir, el('button.btn.texto', { onclick: () => ir(0) }, '← Volver'))
     )
@@ -194,11 +309,12 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, alTerminar }) {
       try {
         st.sugerencia = await api.sugerirIdentidad(st.cuentaId, st.negocio)
       } catch (e) {
-        espera.remove()
-        secciones.append(aviso(`No pudimos generar la propuesta. ${e.message}`, 'malo'))
-        secciones.append(el('p.apunte.chico', { style: 'margin-top:10px' },
-          'Podés seguir igual y cargar lo tuyo, o probar de nuevo más tarde.'))
-        st.tiene = { logo: true, color: true, tipo: true }
+        // Fallback inmediato y fluido
+        st.sugerencia = {
+          logos: generarPropuestasLocales(st.negocio),
+          colores: [],
+          tipografia: { preset: 'moderno' },
+        }
       }
       espera.remove()
     }
@@ -210,6 +326,7 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, alTerminar }) {
     seccionLogo(secciones)
     seccionColor(secciones)
     seccionTipografia(secciones)
+    seccionLogotipo(secciones)
 
     const error = el('div')
     secciones.append(error)
@@ -224,6 +341,10 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, alTerminar }) {
             ...st.negocio,
             color: st.color || undefined,
             tipografia: st.tipografia || undefined,
+            logotipoTipo: st.logotipoTipo,
+            logotipoTratamiento: st.logotipoTratamiento,
+            logotipoEscudo: st.logotipoEscudo,
+            logotipoFuente: st.logotipoFuente,
             logo: st.logo || undefined,
           })
           ir(3)
@@ -246,66 +367,106 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, alTerminar }) {
     ))
   }
 
-  // Confirmación de que el logo entró. Se dibuja tanto al subirlo como al
-  // volver a pintar el paso: sin esto, extraer los colores del archivo
-  // re-renderizaba la sección y borraba la única señal de que salió bien, así
-  // que el usuario creía que había fallado y volvía a subirlo.
   function mostrarLogoCargado(destino, logo) {
-    vaciar(destino).append(
-      el('div', { style: 'display:flex;gap:14px;align-items:center;margin-top:6px' },
-        svgLogo(logo, 52),
-        el('span.apunte.chico', {},
-          'Listo. Lo dibujamos en un solo color para que funcione sobre fondo claro y oscuro.')),
-      st.coloresDelLogo.length
-        ? el('p.apunte.chico', { style: 'margin-top:8px' },
-            `Encontramos ${st.coloresDelLogo.length} color(es) en el archivo. Están abajo, en la pestaña «Del logo que subiste».`)
-        : null
+    const esRaster = Boolean(logo.esRaster || /<image\b/i.test(logo.inner || ''))
+
+    const btnQuitar = el('button.btn.texto.chico', {
+      style: 'color:var(--malo, #c0392b);cursor:pointer;padding:4px 8px;font-size:12px;margin-left:auto',
+      onclick: async () => {
+        st.logo = null
+        st.coloresDelLogo = []
+        vaciar(destino).append(el('p.apunte.chico', { style: 'color:var(--tinta-suave,#666);margin-top:6px' }, 'Logo quitado. Tus placas usarán la firma tipográfica de autor configurada abajo.'))
+      }
+    }, '✕ Quitar logo subido')
+
+    const tarjeta = el('div', {
+      style: 'display:flex;gap:14px;align-items:center;margin-top:8px;padding:10px 14px;background:#F9FBFB;border:1px solid var(--borde,#ddd);border-radius:8px'
+    },
+      svgLogo(logo, 52),
+      el('div', { style: 'flex:1' },
+        el('b', { style: 'display:block;font-size:13px;color:var(--tinta,#111)' }, esRaster ? 'Imagen raster cargada (.PNG / .JPG)' : 'Vector cargado (.SVG)'),
+        el('span.apunte.chico', {}, esRaster
+          ? 'Ubicado arriba a la izquierda con pastilla protectora de contraste.'
+          : 'Dibujado en un solo color para máxima nitidez en fondos claros y oscuros.'
+        )
+      ),
+      btnQuitar
     )
+
+    const avisoRaster = esRaster
+      ? el('div.aviso', { style: 'margin-top:8px;font-size:12px;background:#FFF9E6;border-color:#F5D061;color:#7A5E0B' },
+          '⚠️ Al no ser un vector (.SVG), puede perder nitidez o no contrastar bien en algunos fondos. Si no te gusta cómo queda en las placas, podés quitarlo arriba y usar únicamente la firma tipográfica de autor abajo.')
+      : null
+
+    const avisoColores = st.coloresDelLogo.length
+      ? el('p.apunte.chico', { style: 'margin-top:8px' },
+          `Encontramos ${st.coloresDelLogo.length} color(es) en el archivo. Están abajo, en la pestaña «Del logo que subiste».`)
+      : null
+
+    vaciar(destino).append(tarjeta, avisoRaster, avisoColores)
   }
 
   function seccionLogo(cont) {
-    if (st.tiene.logo) {
-      const estado = el('div', { style: 'margin-top:10px' })
-      if (st.logo) mostrarLogoCargado(estado, st.logo)
-      const entrada = el('input', {
-        type: 'file', accept: '.svg,image/svg+xml',
-        onchange: async ev => {
-          const archivo = ev.target.files?.[0]
-          if (!archivo) return
+    const estado = el('div', { style: 'margin-top:10px' })
+    if (st.logo) mostrarLogoCargado(estado, st.logo)
+
+    const entrada = el('input', {
+      type: 'file',
+      accept: '.svg,.png,.jpg,.jpeg,image/svg+xml,image/png,image/jpeg',
+      onchange: async ev => {
+        const archivo = ev.target.files?.[0]
+        if (!archivo) return
+        vaciar(estado)
+
+        const esRaster = archivo.type.includes('png') || archivo.type.includes('jpeg') || archivo.type.includes('jpg') || /\.(png|jpe?g)$/i.test(archivo.name)
+
+        if (esRaster) {
+          const reader = new FileReader()
+          reader.onload = async () => {
+            const base64Data = reader.result
+            const inner = `<image href="${base64Data}" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>`
+            try {
+              const r = await api.subirLogo(st.cuentaId, {
+                viewBox: '0 0 100 100',
+                inner,
+                src: base64Data,
+                esRaster: true,
+                strokeWidth: 2,
+              })
+              st.logo = r.logo
+              st.coloresDelLogo = []
+              mostrarLogoCargado(estado, r.logo)
+            } catch (e) {
+              vaciar(estado).append(aviso(e.message, 'malo'))
+            }
+          }
+          reader.readAsDataURL(archivo)
+        } else {
           const texto = await archivo.text()
           st.coloresDelLogo = coloresDeSVG(texto)
-          const viewBox = texto.match(/viewBox\s*=\s*"([^"]+)"/)?.[1] || '0 0 100 100'
-          const inner = texto.replace(/^[\s\S]*?<svg[^>]*>/i, '').replace(/<\/svg>[\s\S]*$/i, '')
-          vaciar(estado)
+          
+          // Extraer viewBox robusto (comillas dobles o simples)
+          let viewBox = texto.match(/viewBox\s*=\s*["']([^"']+)["']/i)?.[1]
+          if (!viewBox) {
+            const w = parseFloat(texto.match(/\bwidth\s*=\s*["']([\d.]+)["']/i)?.[1] || '100')
+            const h = parseFloat(texto.match(/\bheight\s*=\s*["']([\d.]+)["']/i)?.[1] || '100')
+            viewBox = `0 0 ${w} ${h}`
+          }
+
+          const inner = texto.replace(/^[\s\S]*?<svg[^>]*>/i, '').replace(/<\/svg>[\s\S]*$/i, '').trim()
           try {
             const r = await api.subirLogo(st.cuentaId, { viewBox, inner, strokeWidth: 8 })
             st.logo = r.logo
-            // Repintar el paso entero para que el selector de color ofrezca los
-            // colores del archivo. `mostrarLogoCargado` se encarga de que la
-            // confirmación sobreviva al repintado.
             if (st.coloresDelLogo.length) pintar()
             else mostrarLogoCargado(estado, r.logo)
           } catch (e) {
             vaciar(estado).append(aviso(e.message, 'malo'))
           }
-        },
-      })
-      bloque(cont, 'Logo', 'Tiene que ser un SVG hecho de trazos: exportalo con el texto convertido a curvas y sin imágenes incrustadas.', entrada, estado)
-      return
-    }
+        }
+      },
+    })
 
-    const opciones = st.sugerencia?.logos || []
-    if (!opciones.length) return
-
-    const grilla = el('div.logos')
-    for (const op of opciones) {
-      const b = el('button.logo-op', {
-        onclick: () => { st.logo = op.logo; elegirEnGrupo(grilla, b) },
-      }, svgLogo(op.logo, 62), el('div.concepto', {}, op.concepto))
-      if (st.logo?.inner === op.logo.inner) b.classList.add('elegida')
-      grilla.append(b)
-    }
-    bloque(cont, 'Elegí tu logo', 'Cuatro ideas distintas, no la misma forma girada. Se van a ver a 40 píxeles en la esquina de cada placa.', grilla)
+    bloque(cont, 'Logo de tu negocio (Opcional)', 'Si tenés un logo propio lo ubicamos arriba a la izquierda de tus placas. Si no tenés o preferís no subirlo, tus piezas se firman con la identidad tipográfica configurada abajo.', entrada, estado)
   }
 
   function seccionColor(cont) {
@@ -368,6 +529,176 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, alTerminar }) {
     }
 
     bloque(cont, 'Tipografía', 'Las dos líneas de arriba de cada opción son las que vas a ver en tus placas.', grupo)
+  }
+
+  function seccionLogotipo(cont) {
+    const cat = catalogo.logotipos
+    if (!cat) return
+
+    const dosPalabras = (st.negocio.nombre || '').trim().split(/\s+/).length > 1
+    const tratamientos = cat.tratamientos.filter(t => !t.requiereDosPalabras || dosPalabras)
+
+    const cont2 = el('div')
+    const filaTratamientos = el('div')
+
+    function pintarTratamientos() {
+      vaciar(filaTratamientos)
+      if (st.logotipoTipo === 'simbolo') return
+      const grupo = el('div.opciones')
+      for (const t of tratamientos) {
+        const b = el('button.opcion', {
+          onclick: () => { st.logotipoTratamiento = t.id; elegirEnGrupo(grupo, b); refrescarMuestra() },
+        }, el('b', {}, t.label), el('span', {}, t.descripcion))
+        if (t.id === st.logotipoTratamiento) b.classList.add('elegida')
+        grupo.append(b)
+      }
+      filaTratamientos.append(
+        el('label', { style: 'display:block;font-weight:600;font-size:.92rem;margin:22px 0 8px' }, 'Cómo se resuelve el nombre'),
+        grupo
+      )
+    }
+
+    const filaFuentes = el('div')
+
+    function pintarFuentes() {
+      vaciar(filaFuentes)
+      if (st.logotipoTipo === 'simbolo') return
+      const grupo = el('div.opciones.dos')
+      for (const f of cat.fuentesLogotipo || []) {
+        const b = el('button.opcion', {
+          onclick: () => { st.logotipoFuente = f.id; elegirEnGrupo(grupo, b); refrescarMuestra() },
+        }, el('b', {}, f.label), el('span', {}, f.vibe))
+        if (f.id === st.logotipoFuente) b.classList.add('elegida')
+        grupo.append(b)
+      }
+      filaFuentes.append(
+        el('label', { style: 'display:block;font-weight:600;font-size:.92rem;margin:22px 0 8px' }, 'Con qué letra se escribe tu nombre'),
+        grupo
+      )
+    }
+
+    const filaSimbolos = el('div')
+
+    function pintarSimbolos() {
+      vaciar(filaSimbolos)
+      if (st.logotipoTipo === 'palabra' || st.logo) return
+      const grupo = el('div.opciones.dos')
+      for (const e of cat.escudos) {
+        const b = el('button.opcion', {
+          onclick: () => { st.logotipoEscudo = e.id; elegirEnGrupo(grupo, b); refrescarMuestra() },
+        }, el('b', {}, e.label), el('span', {}, e.descripcion))
+        if (e.id === st.logotipoEscudo) b.classList.add('elegida')
+        grupo.append(b)
+      }
+      filaSimbolos.append(
+        el('label', { style: 'display:block;font-weight:600;font-size:.92rem;margin:22px 0 8px' }, 'Cómo se resuelve el símbolo'),
+        grupo
+      )
+    }
+
+    const grupoTipos = el('div.opciones')
+    for (const t of cat.tipos) {
+      const b = el('button.opcion', {
+        onclick: () => { st.logotipoTipo = t.id; elegirEnGrupo(grupoTipos, b); pintarTratamientos(); pintarSimbolos(); pintarFuentes(); refrescarMuestra() },
+      }, el('b', {}, t.label), el('span', {}, t.descripcion))
+      if (t.id === st.logotipoTipo) b.classList.add('elegida')
+      grupoTipos.append(b)
+    }
+
+    const muestra = el('div', { style: 'margin-top:20px' })
+    function refrescarMuestra() {
+      vaciar(muestra).append(
+        el('span.rotulo', { style: 'display:block;margin-bottom:8px' }, 'Así firma tus placas'),
+        el('div', { style: 'border:1px solid var(--linea-fuerte);border-radius:var(--r);background:#fff;padding:20px 22px' },
+          muestraLogotipo())
+      )
+    }
+
+    function muestraLogotipo() {
+      const nombre = st.negocio.nombre || 'Tu negocio'
+      const partes = nombre.trim().split(/\s+/)
+      const base = partes.length > 1 ? partes.slice(0, -1).join(' ') + ' ' : nombre
+      const acc = partes.length > 1 ? partes[partes.length - 1] : ''
+      const color = st.color || '#A83A1C'
+      const fuente = (FUENTES_MUESTRA[st.tipografia] || ['Inter'])[0]
+
+      const lf = (cat.fuentesLogotipo || []).find(f => f.id === st.logotipoFuente)
+      const fuenteLogo = lf?.family || fuente
+      const fuenteMono = lf?.monograma === false ? fuente : fuenteLogo
+      if (lf?.importUrl && !document.querySelector(`link[href="${lf.importUrl}"]`)) {
+        document.head.append(el('link', { rel: 'stylesheet', href: lf.importUrl }))
+      }
+      const ini = partes.length > 1
+        ? (partes[0][0] + partes[partes.length - 1][0]).toUpperCase()
+        : nombre.slice(0, 1).toUpperCase()
+
+      const conSimbolo = st.logotipoTipo !== 'palabra'
+      const conNombre = st.logotipoTipo !== 'simbolo'
+      const t = st.logotipoTratamiento
+
+      const e = st.logotipoEscudo
+      const letras = e === 'barra' ? '' : e === 'letra' ? ini.slice(0, 1) : ini
+      const cuerpo = (letras.length > 1 ? 16 : 21) * (e === 'letra' ? 1.5 : e === 'contorno' ? 0.92 : 1)
+      const fondo = {
+        circulo: `border-radius:50%;background:${color};color:#fff`,
+        cuadrado: `border-radius:16%;background:${color};color:#fff`,
+        contorno: `border-radius:50%;border:2.5px solid ${color};color:${color}`,
+        letra: `color:${color}`,
+        barra: `background:${color};border-radius:2px`,
+      }[e] || `border-radius:50%;background:${color};color:#fff`
+      const ancho = e === 'barra' ? 10 : 40
+      const sim = conSimbolo
+        ? `<span style="display:inline-flex;align-items:center;justify-content:center;flex:none;width:${ancho}px;height:40px;font-weight:700;font-size:${cuerpo}px;letter-spacing:-.04em;font-family:'${fuenteMono}',sans-serif;${fondo}">${letras}</span>`
+        : ''
+
+      const estilos = {
+        linea: `font-weight:400`,
+        apilado: `display:flex;flex-direction:column;line-height:.92;letter-spacing:-.045em;font-size:26px`,
+        filete: `font-size:27px;font-weight:500;letter-spacing:0`,
+        caja: `font-weight:700`,
+        empastillado: `font-weight:700`,
+      }[t] || ''
+      const accEstilo = {
+        linea: `font-weight:800;color:${color}`,
+        apilado: `font-weight:800;color:${color}`,
+        filete: `font-weight:700;color:${color}`,
+        caja: `font-weight:700;background:${color};color:#fff;padding:2px 10px;border-radius:3px;margin-left:6px`,
+        empastillado: `font-weight:700;background:${color};color:#fff;padding:2px 10px;border-radius:3px;margin-left:6px`,
+      }[t] || `color:${color}`
+
+      const caps = lf?.caps ? 'text-transform:uppercase;' : ''
+      const track = `letter-spacing:${lf?.tracking || '-.03em'};`
+      const nom = conNombre
+        ? `<span style="font-family:'${fuenteLogo}',sans-serif;font-size:31px;font-weight:700;${track}${caps}color:#14121F;${estilos}">${base}${acc ? `<span style="${accEstilo}">${acc}</span>` : ''}</span>`
+        : ''
+
+      const bj = [st.negocio.rubro, st.negocio.ciudad].map(x => (x || '').trim()).filter(Boolean).join(' · ')
+      const bajada = bj && conNombre
+        ? `<span style="font-family:ui-monospace,monospace;font-size:11px;font-weight:600;letter-spacing:.19em;text-transform:uppercase;color:#6B7176;white-space:nowrap">${bj}</span>`
+        : ''
+
+      const filete = t === 'filete' && conNombre
+        ? `<span style="grid-column:1/-1;width:38px;height:3px;background:${color};border-radius:2px"></span>`
+        : ''
+
+      const caja = t === 'filete' && conNombre
+        ? `display:grid;grid-template-columns:auto auto;justify-content:start;align-items:center;gap:6px 11px`
+        : `display:flex;align-items:center;gap:13px`
+
+      const d = el('div', { style: `${caja};font-family:'${fuente}',sans-serif` })
+      d.innerHTML = filete + sim + (nom
+        ? `<span style="display:flex;flex-direction:column;gap:4px;min-width:0">${nom}${bajada}</span>`
+        : '')
+      return d
+    }
+
+    pintarTratamientos()
+    pintarSimbolos()
+    pintarFuentes()
+    refrescarMuestra()
+    cont2.append(grupoTipos, filaFuentes, filaTratamientos, filaSimbolos, muestra)
+
+    bloque(cont, 'Tu logo', 'Un logo es tu nombre bien resuelto, no un icono de catálogo. Si no subiste uno propio, el símbolo se arma con tus iniciales — así es tuyo y nadie más lo tiene.', cont2)
   }
 
   /* ── 4. listo ──────────────────────────────────────────── */

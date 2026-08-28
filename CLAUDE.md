@@ -21,9 +21,11 @@ core/
   brand/      identidad del cliente
     color.mjs          conversiones OKLCH y contraste
     palette.mjs        un color → paleta de 16, con contraste forzado
-    fonts.mjs          catálogo de tipografías (familia + importUrl juntas)
+    fonts.mjs          tipografías de texto y de logotipo (familia + importUrl juntas)
     schema.mjs         normalizeBrand() y saneado del logo
-    logo.mjs           generación de isotipos SVG por IA
+    logo.mjs           isotipos desde el repositorio curado
+    logotipo.mjs       cómo firma la marca: 4 tipos × 5 tratamientos × 6 símbolos,
+                       más la bajada y el sello circular en SVG
   content/
     plan.mjs           plan de contenido → spec renderizable
   quota/      plan único, topes mensuales y diarios
@@ -35,11 +37,13 @@ core/
     proveedores/       un archivo por banco; leé su README antes de tocarlos
   quota/      plan único, topes mensuales y diarios
   store/      un JSON por cuenta, bajo data/
-  ai/claude.mjs        cliente de la Claude API, con costeo
+  ai/gemini.mjs        cliente de la API de Gemini, con costeo
   api/server.mjs       API HTTP + servidor de la web
   service.mjs          los casos de uso — es la capa que combina todo
 
 web/          la aplicación: landing, wizard de alta y editor de placas
+  logotipos.html     visor de firmas, en vivo — /logotipos
+  logos-visor.html   visor de isotipos del repositorio — /logos (otra cosa)
   css/app.css        el sistema visual y por qué es así
   js/color.js        el selector de color en dos pasos
   js/wizard.js       el onboarding
@@ -48,7 +52,9 @@ web/          la aplicación: landing, wizard de alta y editor de placas
 cm.mjs              CLI del producto
 render-placa.mjs    CLI del motor solo (compatibilidad con /placa)
 pruebas/smoke.mjs   pruebas que no necesitan API
-pruebas/muestras.mjs genera las placas de la portada del sitio
+pruebas/muestras.mjs genera las placas de la portada
+pruebas/logotipos.mjs cada combinación de logotipo, para compararlas
+pruebas/muestrario.mjs cinco negocios distintos con su firma aplicada del sitio
 ```
 
 **El navegador importa módulos del núcleo directamente.** `core/brand/color.mjs`,
@@ -68,6 +74,26 @@ cáscaras la exponen — no la escribas dos veces.
 - **La identidad va en el objeto `brand`, nunca en el motor ni en el spec.** Si
   hace falta un color o una fuente que no está, se agrega a la derivación de
   marca. Nada de valores de marca hardcodeados en un template: son multi-cliente.
+- **El logotipo se arma con tipografía, no con iconos.** Un icono de catálogo
+  lo comparten miles de negocios y no es registrable como marca. Si no hay logo
+  propio, el símbolo es el monograma con las iniciales del nombre.
+- **El logotipo tiene su propia tipografía, distinta a la del texto**
+  (`LOGO_FONTS` en `fonts.mjs`). Con una sola familia para las dos cosas todas
+  las marcas salen en el mismo registro. Toda fuente que se agregue tiene que
+  ser OFL —verificalo en `google/fonts`, no alcanza que esté en Google Fonts—:
+  la OFL permite uso comercial y no reclama nada sobre lo que compongas, así
+  que el logotipo queda registrable como marca del cliente.
+- **La bajada sale del rubro y la ciudad del alta, o no sale.** Es la línea en
+  mayúsculas espaciadas debajo del nombre, y es lo que hace que se lea como un
+  logo y no como un nombre en una tipografía linda. Sin rubro no se dibuja:
+  una bajada genérica tipo "CALIDAD Y SERVICIO" es peor que ninguna.
+- **El sello circular va en SVG, no en CSS,** porque el texto en curva no
+  existe en CSS. Las banderas del arco de abajo son `0,0` y no se toquetean:
+  con large-arc 1 la leyenda sale cabeza abajo. Los ids del `<defs>` llevan el
+  slug de la marca, o dos sellos en la misma página comparten el arco.
+- **Una manuscrita no sirve para el monograma.** Dos letras enlazadas en 40px
+  no se leen: esas fuentes llevan `monograma: false` y la sigla cae al palo
+  seco del texto.
 - **La composición va en `disposiciones.mjs`,** y el orden de las reglas es
   base → disposición → formato: el anclado abajo en historia es zona segura de
   Instagram y tiene que ganar sobre cualquier disposición.
@@ -113,11 +139,13 @@ npm run web                       # la aplicación en localhost:8787
 node cm.mjs ayuda                 # el producto por CLI
 npm run ejemplo                   # los 7 templates con brand.json
 npm run muestras                  # regenera las placas de la portada
+npm run logotipos                 # las 12 combinaciones de firma, una por PNG
+npm run muestrario                # 5 negocios distintos: ¿se distinguen entre sí?
 ```
 
-Las rutas con IA necesitan `ANTHROPIC_API_KEY` en el entorno (o un perfil de
-`ant auth login`). Las demás no.
+Las rutas con IA necesitan `GEMINI_API_KEY` en el entorno — se saca gratis en
+https://aistudio.google.com/app/apikey. Las demás no.
 
-Cambiar el modelo: `CM_MODEL=claude-sonnet-5`. Si lo cambiás, actualizá también
-la tabla de precios en `core/ai/claude.mjs` — el costo reportado es lo que
+Cambiar el modelo: `CM_MODEL=gemini-2.5-flash`. Si lo cambiás, actualizá también
+la tabla de precios en `core/ai/gemini.mjs` — el costo reportado es lo que
 después define el precio de la suscripción.

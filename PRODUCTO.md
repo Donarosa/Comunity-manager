@@ -144,6 +144,20 @@ rompa la placa —textos pisados, cosas fuera de la zona segura, jerarquías
 invertidas— y el resultado deja de ser confiable. Cinco composiciones diseñadas
 dan variedad real sin que nadie pueda arruinar la salida.
 
+**El logotipo se construye con tipografía, no se elige de un catálogo.** El
+primer intento tomaba iconos de librerías de interfaz (Lucide, Phosphor). Falla
+por dos motivos: un icono está dibujado para leerse a 20px dentro de un botón,
+no para sostener una identidad; y sobre todo, **cinco negocios del mismo rubro
+terminan con el mismo logo** — y un icono público no es registrable como marca,
+le falta distintividad. Es darle al cliente algo que no puede defender como suyo.
+
+Ahora hay tres formas —solo el nombre, nombre y símbolo, solo el símbolo— y
+cuatro tratamientos tipográficos para el nombre (apilado, en una línea, con
+filete, con caja). Cuando no hay logo propio, el símbolo es un **monograma** con
+las iniciales del negocio: es único por definición, hereda la tipografía de la
+marca y sí se puede registrar. Nada de esto llama a un modelo: es tipografía y
+reglas, así que sale igual siempre y no cuesta por cliente.
+
 **El cromo de la aplicación es deliberadamente austero.** El único color fuerte
 de la pantalla tiene que ser el de la marca del cliente. Si la interfaz también
 grita, el usuario no puede juzgar su propia placa.
@@ -167,28 +181,37 @@ hacer es escribir `cuenta.plan` y `cuenta.estado`.
 
 ## Costos de API
 
-El modelo es `claude-opus-5` (US$5 por millón de tokens de entrada, US$25 de
-salida). El bloque de reglas del generador de contenido —que es idéntico para
-todas las cuentas— va con caché de prompt: a partir del segundo cliente se lee
-a una décima parte del precio.
+El modelo es `gemini-2.0-flash` (US$0.10 por millón de tokens de entrada,
+US$0.40 de salida). Antes era `claude-opus-5`, cincuenta veces más caro por
+token. El cambio de proveedor movió el costo de API de "el 10% del
+ingreso" a "ruido contable", y eso cambia dos cosas del negocio, no una.
 
-**Estimación, sin medir todavía:**
+**El tier gratuito son 1.500 pedidos por día.** Un plan de contenido es un
+pedido. Una sugerencia de identidad, otro. O sea: el producto entero corre en
+cero hasta unos cientos de clientes activos. La API deja de ser un costo
+variable a vigilar y pasa a ser un umbral lejano.
+
+**Estimación, sin medir todavía** (tier pago; en el gratuito es US$0):
 
 | Acción | Costo estimado |
 |---|---|
-| Un plan de contenido (5 piezas con captions) | ~US$0.13 |
-| Tres propuestas de logo | ~US$0.08 |
+| Un plan de contenido (5 piezas con captions) | ~US$0.003 |
+| Tres propuestas de logo | ~US$0.002 |
 | Una placa manual | US$0 |
-| **Un usuario que agota el plan en un mes** | **~US$1.65** |
+| **Un usuario que agota el plan en un mes** | **~US$0.04** |
 
-Son estimaciones de sobremesa. **El sistema ya reporta el costo real de cada
-llamada** (`costoUSD` en cada respuesta, acumulado en `consumo[mes].costoUSD`),
-así que el primer mes de uso real da el número verdadero. Antes de fijar el
-precio de la suscripción, mirá ese número, no este cuadro.
+Son estimaciones de sobremesa, escaladas desde las que había con Opus por la
+diferencia de precio por token — no medidas de nuevo. **El sistema ya reporta el
+costo real de cada llamada** (`costoUSD` en cada respuesta, acumulado en
+`consumo[mes].costoUSD`), así que el primer mes de uso real da el número
+verdadero. Antes de fijar el precio de la suscripción, mirá ese número, no este
+cuadro.
 
-Para dimensionar: si el plan se vende a un equivalente de US$15–20, la API es
-alrededor del 10% del ingreso. El costo dominante del negocio no va a ser la
-API, va a ser conseguir los clientes.
+La conclusión de fondo no cambió, se acentuó: el costo dominante del negocio no
+va a ser la API, va a ser conseguir los clientes. Con Opus la API era el 10% de
+un plan de US$15–20; con Flash es menos del 1%. Lo que sí hay que revisar es si
+los topes de cuota (`core/quota/plan.mjs`) siguen teniendo sentido: se fijaron
+para contener un costo de API que ya no existe.
 
 ---
 

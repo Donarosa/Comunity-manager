@@ -7,6 +7,7 @@
 import { derivePalette } from './palette.mjs'
 import { resolveFonts, DEFAULT_FONT } from './fonts.mjs'
 import { resolverDisposicion, DISPOSICION_POR_DEFECTO } from '../render/disposiciones.mjs'
+import { resolverTipo, resolverTratamiento, resolverEscudo, tratamientosPara } from './logotipo.mjs'
 
 /* ── logo ───────────────────────────────────────────────── */
 
@@ -32,9 +33,8 @@ export function sanitizeLogoInner(inner) {
     let a
     while ((a = attrRe.exec(m[2]))) {
       const name = a[1].toLowerCase()
-      if (!ALLOWED[tag].includes(name)) continue
+      if (!ALLOWED[tag]?.includes(name)) continue
       const value = a[2]
-      // Solo números, letras de comando de path, comas, puntos, signos y espacios.
       if (!/^[-0-9.,\sA-Za-z]*$/.test(value)) continue
       attrs.push(`${name}="${value}"`)
     }
@@ -52,19 +52,23 @@ export const DEFAULT_LOGO = {
 
 export function normalizeLogo(logo) {
   if (!logo) return { ...DEFAULT_LOGO, origen: 'default' }
-  const inner = sanitizeLogoInner(logo.inner)
-  if (!inner) return { ...DEFAULT_LOGO, origen: 'default' }
-  const vb = String(logo.viewBox || '0 0 100 100')
-  if (!/^-?[\d.]+ -?[\d.]+ [\d.]+ [\d.]+$/.test(vb)) {
-    throw new Error(`viewBox inválido: "${vb}"`)
+  let rawInner = logo.inner
+  if (logo.src && !rawInner) {
+    rawInner = `<image href="${logo.src}" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>`
   }
+  const esRaster = Boolean(logo.esRaster || logo.src || /<image\b/i.test(rawInner || ''))
+  const inner = esRaster ? rawInner : sanitizeLogoInner(rawInner)
+  if (!inner) return { ...DEFAULT_LOGO, origen: 'default' }
+  const vb = String(logo.viewBox || '0 0 100 100').trim()
   const sw = Number(logo.strokeWidth)
   return {
-    viewBox: vb,
+    viewBox: vb || '0 0 100 100',
     inner,
+    esRaster,
+    src: logo.src || null,
     strokeWidth: Number.isFinite(sw) && sw > 0 && sw <= 24 ? sw : 8,
     strokeWidthSmall: Number(logo.strokeWidthSmall) || Math.max(1, Math.round((sw || 8) * 0.85)),
-    origen: logo.origen || 'usuario',
+    origen: logo.origen || (esRaster ? 'usuario:raster' : 'usuario'),
   }
 }
 
@@ -99,7 +103,7 @@ export function normalizeBrand(input = {}) {
     deep: input.colorSecundario,
   })
 
-  const fonts = resolveFonts(input.tipografia || DEFAULT_FONT)
+  const fonts = resolveFonts(input.tipografia || DEFAULT_FONT, input.logotipoFuente)
   // Falla fuerte si el id no existe, igual que con la tipografía.
   const disposicion = resolverDisposicion(input.disposicion || DISPOSICION_POR_DEFECTO).id
   const logo = normalizeLogo(input.logo)
@@ -108,14 +112,38 @@ export function normalizeBrand(input = {}) {
   }
 
   const slug = slugify(nombre)
+
+  // Sin usuario de Instagram no se inventa uno. Derivarlo del nombre estampa en
+  // cada placa una dirección que probablemente no exista, y el cliente reparte
+  // material que manda a la nada. El pie cae al nombre del negocio, que es
+  // cierto siempre.
   const handle = input.handle
     ? '@' + String(input.handle).replace(/^@/, '')
-    : '@' + slug
-  const site = String(input.sitio || `instagram.com/${handle.slice(1)}`).replace(/^https?:\/\//, '')
+    : null
+  if (!handle && !input.sitio) {
+    warnings.push('Sin usuario de Instagram: las placas cierran con el nombre del negocio. Cargalo y pasan a cerrar con el usuario.')
+  }
+  const site = String(
+    input.sitio || (handle ? `instagram.com/${handle.slice(1)}` : nombre)
+  ).replace(/^https?:\/\//, '')
+
+  const wordmark = input.wordmark?.base ? input.wordmark : deriveWordmark(nombre)
+
+  // El tratamiento "apilado" necesita dos palabras. Si el negocio tiene una
+  // sola y viene pedido igual, se cae al de una línea en vez de romper: es una
+  // preferencia, no un dato que valga cortar el alta.
+  const permitidos = tratamientosPara(wordmark).map(t => t.id)
+  const tratPedido = resolverTratamiento(input.logotipoTratamiento).id
+  const logotipo = {
+    tipo: resolverTipo(input.logotipoTipo).id,
+    tratamiento: permitidos.includes(tratPedido) ? tratPedido : permitidos[0],
+    escudo: resolverEscudo(input.logotipoEscudo).id,
+  }
 
   const brand = {
     nombre,
-    wordmark: input.wordmark?.base ? input.wordmark : deriveWordmark(nombre),
+    wordmark,
+    logotipo,
     handle,
     site,
     altSite: input.altSitio ? String(input.altSitio).replace(/^https?:\/\//, '') : site,

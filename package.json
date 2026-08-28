@@ -10,11 +10,15 @@
     "api": "node --env-file-if-exists=.env core/api/server.mjs",
     "placa": "node render-placa.mjs",
     "prueba": "node --env-file-if-exists=.env pruebas/smoke.mjs",
+    "prueba-auth": "node --env-file-if-exists=.env pruebas/auth-dashboard-firebase.mjs",
     "muestras": "node pruebas/muestras.mjs",
-    "ejemplo": "node render-placa.mjs spec-ejemplo.json"
+    "ejemplo": "node render-placa.mjs spec-ejemplo.json",
+    "logotipos": "node pruebas/logotipos.mjs && open placas/logotipos",
+    "muestrario": "node pruebas/muestrario.mjs && open placas/muestrario"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.117.1",
+    "@google/genai": "^0.7.0",
+    "firebase-admin": "^14.3.0",
     "puppeteer-core": "^25.0.4"
   }
 }

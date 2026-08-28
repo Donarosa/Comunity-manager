@@ -55,6 +55,9 @@ export function htmlFor(slide, brand, formatName) {
  * @param {function}[o.onSlide] callback (name, path) por placa
  * @returns {Promise<Array<{name,file,format,style,type}>>}
  */
+// Las familias que la placa necesita sí o sí antes de la foto.
+const familiasDe = F => [...new Set([F.sans, F.serif, F.mono, F.logo?.family, F.logo?.monogramaFamily].filter(Boolean))]
+
 export async function renderSpec({ spec, brand, outDir, onSlide }) {
   if (!spec?.slides?.length) throw new Error('el spec no tiene slides')
 
@@ -88,9 +91,20 @@ export async function renderSpec({ spec, brand, outDir, onSlide }) {
         : s.style === 'foto' ? fotoHTML(s, ctx, fmt)
         : flatHTML(s, ctx, fmt)
 
-      await page.setContent(html, { waitUntil: 'domcontentloaded' })
-      await page.evaluate(async () => { await document.fonts.ready })
-      await new Promise(r => setTimeout(r, s.style === 'foto' ? 600 : 350))
+      // 'load' y no 'domcontentloaded': con domcontentloaded las hojas de
+      // fuentes pueden no estar parseadas todavía, así que sus @font-face no
+      // están registradas y `document.fonts.ready` resuelve antes de tiempo —
+      // la placa sale con la fuente de sistema. Se notó al sumar la segunda
+      // familia (texto + logotipo): con una sola ganaba la carrera por poco.
+      await page.setContent(html, { waitUntil: 'load' })
+      await page.evaluate(async (familias) => {
+        await document.fonts.ready
+        // `ready` no garantiza que ESTA familia haya cargado si nada la usó
+        // todavía. Se pide explícitamente y se espera a que esté disponible.
+        await Promise.all(familias.map(f => document.fonts.load(`700 31px "${f}"`)))
+        await document.fonts.ready
+      }, familiasDe(ctx.F))
+      await new Promise(r => setTimeout(r, s.style === 'foto' ? 600 : 250))
 
       const file = `${dir}/${s.name}.png`
       await page.screenshot({ path: file })
