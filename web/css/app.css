@@ -2873,3 +2873,60 @@ input:focus, select:focus, textarea:focus {
   background: #14130E;
   border: 1.5px solid #2A2820;
 }
+
+/* ══════════════════════════════════════════════════════════
+ * PASO 4: DISPOSICIÓN & STEPPER INTERACTIVO
+ * ══════════════════════════════════════════════════════════ */
+.process__step.is-done {
+  cursor: pointer;
+  opacity: 0.85;
+  transition: opacity 0.2s ease, transform 0.15s ease;
+}
+.process__step.is-done:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+.paso-disposicion-grid {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 28px;
+  align-items: start;
+  margin-top: 20px;
+}
+
+@media (max-width: 860px) {
+  .paso-disposicion-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.disposicion-preview-card {
+  background: #fff;
+  border: 2px solid var(--color-rule);
+  border-radius: 24px;
+  padding: 16px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.disposicion-preview-card .lienzo {
+  width: 300px;
+  height: 375px;
+  border-radius: 18px;
+  overflow: hidden;
+  position: relative;
+  background: var(--color-paper-2);
+  border: 1.5px solid var(--color-rule);
+}
+
+.disposicion-preview-card .lienzo iframe {
+  width: 1080px;
+  height: 1350px;
+  transform-origin: 0 0;
+  transform: scale(0.2777);
+  border: none;
+}

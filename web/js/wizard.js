@@ -165,8 +165,11 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, alTerminar }) {
 
     const processStrip = el('div.process')
     pasosConfig.forEach((p, idx) => {
+      const esPasado = idx < st.paso
       const step = el('div.process__step', {
-        class: idx === st.paso ? 'is-active' : ''
+        class: `${idx === st.paso ? 'is-active' : ''} ${esPasado ? 'is-done' : ''}`.trim(),
+        title: esPasado ? `Volver a ${p.id}` : '',
+        onclick: esPasado ? () => ir(idx) : null,
       },
         el('span.process__dot.' + p.dot),
         el('span', {}, p.id)
@@ -715,15 +718,19 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, alTerminar }) {
       el('p.intro', {}, 'Tu color y tu logo ya distinguen tus placas de las de otro negocio. La disposición las termina de separar: es cómo se ordena el texto adentro. Elegí la que te represente y mirá el cambio en la placa de al lado.')
     )
 
-    const lienzo = el('div.lienzo', { style: 'width:340px;height:425px;flex:none' })
+    const lienzo = el('div.lienzo')
     const marco = el('iframe', {
       width: 1080, height: 1350, scrolling: 'no',
-      style: 'transform:scale(0.3148)',
     })
     lienzo.append(marco)
 
-    const opciones = el('div.opciones', { style: 'flex:1;min-width:0' })
-    const errorVista = el('div')
+    const previewBox = el('div.disposicion-preview-card', {},
+      el('span.rotulo', { style: 'margin-bottom:2px' }, 'Vista previa en tiempo real'),
+      lienzo
+    )
+
+    const opciones = el('div.opciones', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:12px' })
+    const errorVista = el('div', { style: 'margin-top:14px' })
 
     const placaDeMuestra = {
       plantilla: 'texto',
@@ -738,11 +745,19 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, alTerminar }) {
     async function refrescar() {
       vaciar(errorVista)
       try {
-        // marcaTemporal deja probar la disposición sin guardarla todavía.
         marco.srcdoc = await api.previsualizar(st.cuentaId, {
           canal: 'feed',
           placa: placaDeMuestra,
-          marcaTemporal: { disposicion: st.disposicion },
+          marcaTemporal: {
+            color: st.color,
+            tipografia: st.tipografia,
+            disposicion: st.disposicion,
+            logotipoTipo: st.logotipoTipo,
+            logotipoTratamiento: st.logotipoTratamiento,
+            logotipoEscudo: st.logotipoEscudo,
+            logotipoFuente: st.logotipoFuente,
+            logo: st.logo,
+          },
         })
       } catch (e) {
         errorVista.append(aviso(`No pudimos generar la vista previa: ${e.message}`, 'malo'))
@@ -757,12 +772,9 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, alTerminar }) {
       opciones.append(b)
     }
 
-    panel.append(
-      el('div', { style: 'display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap' }, lienzo, opciones),
-      errorVista
-    )
+    const gridCont = el('div.paso-disposicion-grid', {}, previewBox, opciones)
 
-    const acciones = el('div.acciones-paso')
+    const acciones = el('div.acciones-paso', { style: 'margin-top:28px;padding-top:20px;border-top:1px solid var(--color-rule)' })
     const listo = el('button.btn', {
       onclick: async () => {
         listo.disabled = true
@@ -776,11 +788,12 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, alTerminar }) {
           listo.textContent = 'Empezar a publicar'
         }
       },
-    }, 'Empezar a publicar')
+    }, 'Empezar a publicar ➔')
 
-    acciones.append(listo, el('button.btn.texto', { onclick: () => ir(2) }, '← Cambiar la marca'))
-    panel.append(acciones)
+    const btnVolver = el('button.btn.btn--outline.btn--mint', { onclick: () => ir(2) }, '← Volver a identidad')
+    acciones.append(listo, btnVolver)
 
+    panel.append(gridCont, errorVista, acciones)
     refrescar()
   }
 
