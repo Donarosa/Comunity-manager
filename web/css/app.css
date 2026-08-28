@@ -2674,3 +2674,37 @@ input:focus, select:focus, textarea:focus {
   color: var(--color-ink);
   margin: 2px 0;
 }
+
+/* ══════════════════════════════════════════════════════════
+ * AVATARES PERSONALIZADOS POR RUBRO DE NEGOCIO
+ * ══════════════════════════════════════════════════════════ */
+.story-avatar-box {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1.5px solid var(--color-ink);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+}
+.story-avatar--pan {
+  background: #FAF0E6;
+  border-color: var(--color-mint);
+}
+.story-avatar--hoja {
+  background: #E8F8F5;
+  border-color: #2ECC71;
+}
+.story-avatar--cerebro {
+  background: #EBF5FB;
+  border-color: var(--color-accent-2);
+}
+.story-avatar--diente {
+  background: #FDEDEC;
+  border-color: var(--color-accent-3);
+}
+.story-avatar--auto {
+  background: #FEF9E7;
+  border-color: var(--color-accent);
+}
