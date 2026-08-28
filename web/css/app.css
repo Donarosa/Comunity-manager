@@ -2398,3 +2398,279 @@ input:focus, select:focus, textarea:focus {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* ══════════════════════════════════════════════════════════
+ * SMARTPHONE MOCKUPS COMPLETOS PARA EL CARRUSEL
+ * ══════════════════════════════════════════════════════════ */
+.phone-mockup {
+  flex: 0 0 clamp(230px, 30vw, 270px);
+  aspect-ratio: 9 / 18.5;
+  background: #111;
+  border: 4px solid var(--color-ink);
+  border-radius: 36px;
+  overflow: hidden;
+  box-shadow: 0 16px 36px -10px oklch(20% 0.012 250 / 0.16),
+              0 2px 8px oklch(20% 0.012 250 / 0.08);
+  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.45s ease,
+              opacity 0.45s ease,
+              border-color 0.45s ease;
+  position: relative;
+  cursor: pointer;
+  opacity: 0.65;
+  transform: scale(0.90);
+  display: flex;
+  flex-direction: column;
+}
+
+.phone-mockup:hover {
+  opacity: 0.88;
+  transform: scale(0.94) translateY(-4px);
+}
+
+.phone-mockup.is-active {
+  opacity: 1;
+  transform: scale(1.06) translateY(-8px);
+  border-color: var(--color-mint-deep);
+  box-shadow: 0 30px 60px -15px oklch(80% 0.16 150 / 0.40),
+              0 8px 24px oklch(20% 0.012 250 / 0.12);
+  z-index: 10;
+}
+
+/* Speaker / Notch */
+.phone-notch {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70px;
+  height: 14px;
+  background: #000;
+  border-radius: 10px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.phone-notch::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1a1a1a;
+  margin-left: 20px;
+}
+
+/* Pantalla interna del teléfono */
+.phone-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 28px 16px 14px;
+  position: relative;
+  overflow: hidden;
+  font-family: var(--font-body);
+}
+
+/* Barra superior de historia de Instagram */
+.story-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  z-index: 5;
+}
+.story-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-mint);
+  object-fit: cover;
+}
+.story-name {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.story-time {
+  font-size: 10px;
+  opacity: 0.65;
+  font-weight: 400;
+}
+
+/* Contenido de la placa */
+.placa-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  z-index: 5;
+}
+
+.placa-eyebrow {
+  font-family: var(--font-label);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  display: inline-block;
+}
+
+.placa-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.15rem, 2.2vw, 1.35rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  margin: 0 0 8px;
+}
+
+.placa-text {
+  font-size: 0.82rem;
+  line-height: 1.4;
+  opacity: 0.88;
+  margin: 0 0 10px;
+}
+
+/* Footer de la historia */
+.story-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.15);
+  z-index: 5;
+  font-size: 10px;
+  font-family: var(--font-label);
+  letter-spacing: 0.05em;
+}
+
+/* Variantes de Placas */
+/* 1. DARK + MINT */
+.phone-screen--dark {
+  background: #14130E;
+  color: #FAF7F0;
+}
+.phone-screen--dark .placa-eyebrow { color: var(--color-mint); }
+.phone-screen--dark .story-footer { border-color: rgba(255,255,255,0.12); color: rgba(255,255,255,0.7); }
+
+/* 2. LIGHT + CYAN */
+.phone-screen--light {
+  background: #FAF7F0;
+  color: #14130E;
+}
+.phone-screen--light .placa-eyebrow { color: var(--color-accent-2-deep); }
+.phone-screen--light .story-footer { border-color: rgba(0,0,0,0.1); color: rgba(0,0,0,0.6); }
+
+/* Pasos numerados */
+.pasos-mini-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 8px 0;
+}
+.paso-mini-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid var(--color-rule);
+  padding: 5px 8px;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.paso-num-chip {
+  font-family: var(--font-label);
+  font-size: 9px;
+  font-weight: 800;
+  background: var(--tint-cyan);
+  color: var(--color-accent-2-deep);
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+/* 3. FOTO REAL DE FONDO */
+.phone-screen--photo {
+  background: url('/img/foto-fondo-1.jpg') center/cover no-repeat;
+  color: #fff;
+  position: relative;
+}
+.phone-screen--photo::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.85) 90%);
+  z-index: 1;
+}
+.placa-btn-whatsapp {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-mint);
+  color: var(--color-ink);
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 6px 12px;
+  border-radius: 999px;
+  box-shadow: 0 3px 0 var(--color-mint-deep);
+  width: fit-content;
+  margin-top: 4px;
+}
+
+/* 4. WINE / CORAL MANIFIESTO */
+.phone-screen--wine {
+  background: #280C12;
+  color: #FAF7F0;
+}
+.phone-screen--wine .placa-eyebrow { color: var(--color-accent-3); }
+.placa-quote-mark {
+  font-family: 'Fraunces', serif;
+  font-size: 2.2rem;
+  line-height: 1;
+  color: var(--color-accent-3);
+  margin-bottom: -10px;
+}
+.placa-title--serif {
+  font-family: 'Fraunces', 'Playfair Display', serif;
+  font-style: italic;
+  font-weight: 600;
+}
+
+/* 5. PROMO PEAR / 3D CARD */
+.phone-screen--promo {
+  background: #F4EED9;
+  color: #14130E;
+}
+.promo-3d-box {
+  background: #fff;
+  border: 2px solid var(--color-ink);
+  border-radius: 14px;
+  padding: 10px;
+  box-shadow: 0 4px 0 var(--color-ink);
+  margin: 6px 0;
+  text-align: center;
+}
+.promo-badge-tag {
+  background: var(--color-accent);
+  border: 1.5px solid var(--color-ink);
+  border-radius: 999px;
+  font-family: var(--font-label);
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 8px;
+  display: inline-block;
+  margin-bottom: 4px;
+}
+.promo-cifra {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--color-ink);
+  margin: 2px 0;
+}

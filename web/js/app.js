@@ -336,20 +336,19 @@ function iniciarCarruselPantallas() {
 
   if (!container || !track) return
 
-  const items = Array.from(track.querySelectorAll('.placa-mockup'))
+  const items = Array.from(track.querySelectorAll('.phone-mockup, .placa-mockup'))
   const total = items.length
   if (total === 0) return
 
   let indiceActual = 0
   let timerAutoplay = null
   let pausado = false
-  let translateActual = 0
 
   // Generar dots interactivos
   vaciar(dotsContainer)
   items.forEach((_, i) => {
     const dot = el('button.carrusel-dot', {
-      'aria-label': `Ir a placa ${i + 1}`,
+      'aria-label': `Ir a pantalla ${i + 1}`,
       class: i === 0 ? 'is-active' : '',
     })
     dot.addEventListener('click', () => irAPlaca(i))
@@ -357,28 +356,6 @@ function iniciarCarruselPantallas() {
   })
 
   const dots = Array.from(dotsContainer.querySelectorAll('.carrusel-dot'))
-
-  function calcularTranslate(idx) {
-    // Usamos getBoundingClientRect con el track en su posición actual
-    const containerRect = container.getBoundingClientRect()
-    const containerMid = containerRect.left + containerRect.width / 2
-
-    const item = items[idx]
-    // getBoundingClientRect del item incluye el transform actual
-    // Para tener la posición "natural", temporalmente quitamos el transform
-    const currentTransform = track.style.transform
-    track.style.transition = 'none'
-    track.style.transform = `translateX(${translateActual}px)`
-    const itemRect = item.getBoundingClientRect()
-    const itemMid = itemRect.left + itemRect.width / 2
-    const delta = containerMid - itemMid
-    track.style.transform = currentTransform
-    // Force reflow para restaurar transition en el siguiente frame
-    requestAnimationFrame(() => {
-      track.style.transition = ''
-    })
-    return translateActual + delta
-  }
 
   function actualizarPosicion() {
     items.forEach((item, i) => {
@@ -388,8 +365,14 @@ function iniciarCarruselPantallas() {
       dot.classList.toggle('is-active', i === indiceActual)
     })
 
-    translateActual = calcularTranslate(indiceActual)
-    track.style.transform = `translateX(${translateActual}px)`
+    const itemActivo = items[indiceActual]
+    if (itemActivo && container) {
+      const containerWidth = container.clientWidth
+      const itemWidth = itemActivo.offsetWidth
+      const itemOffsetLeft = itemActivo.offsetLeft
+      const targetTranslate = -(itemOffsetLeft - (containerWidth / 2) + (itemWidth / 2))
+      track.style.transform = `translateX(${targetTranslate}px)`
+    }
   }
 
   function irAPlaca(idx) {
@@ -398,19 +381,31 @@ function iniciarCarruselPantallas() {
     reiniciarTimer()
   }
 
-  function siguiente() { irAPlaca(indiceActual + 1) }
-  function anterior() { irAPlaca(indiceActual - 1) }
+  function siguiente() {
+    irAPlaca(indiceActual + 1)
+  }
+
+  function anterior() {
+    irAPlaca(indiceActual - 1)
+  }
 
   function iniciarTimer() {
     detenerTimer()
-    timerAutoplay = setInterval(() => { if (!pausado) siguiente() }, 3000)
+    timerAutoplay = setInterval(() => {
+      if (!pausado) siguiente()
+    }, 3200)
   }
 
   function detenerTimer() {
-    if (timerAutoplay) { clearInterval(timerAutoplay); timerAutoplay = null }
+    if (timerAutoplay) {
+      clearInterval(timerAutoplay)
+      timerAutoplay = null
+    }
   }
 
-  function reiniciarTimer() { iniciarTimer() }
+  function reiniciarTimer() {
+    iniciarTimer()
+  }
 
   if (btnPrev) btnPrev.addEventListener('click', () => anterior())
   if (btnNext) btnNext.addEventListener('click', () => siguiente())
@@ -421,16 +416,13 @@ function iniciarCarruselPantallas() {
 
   container.addEventListener('mouseenter', () => { pausado = true })
   container.addEventListener('mouseleave', () => { pausado = false })
-
-  window.addEventListener('resize', () => {
-    translateActual = 0
-    track.style.transition = 'none'
-    track.style.transform = 'translateX(0)'
-    requestAnimationFrame(() => {
-      track.style.transition = ''
-      actualizarPosicion()
-    })
+  container.addEventListener('touchstart', () => { pausado = true }, { passive: true })
+  container.addEventListener('touchend', () => {
+    pausado = false
+    reiniciarTimer()
   }, { passive: true })
+
+  window.addEventListener('resize', () => actualizarPosicion(), { passive: true })
 
   // Inicializar — esperamos que el DOM esté pintado
   setTimeout(() => {
