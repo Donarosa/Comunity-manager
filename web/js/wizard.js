@@ -135,26 +135,49 @@ function generarPropuestasLocales(negocio = {}) {
   ]
 }
 
-export function iniciarWizard({ contenedor, catalogo, cuentaId, alTerminar }) {
+export function iniciarWizard({ contenedor, catalogo, cuentaId, marca = null, modoEdicion = false, alTerminar }) {
   const st = {
     cuentaId,
-    negocio: {},
-    tiene: { logo: null, color: null, tipo: null },
-    logo: null,
+    negocio: {
+      nombre: marca?.nombre || '',
+      rubro: marca?.negocio?.rubro || '',
+      ciudad: marca?.negocio?.ciudad || '',
+      queVende: marca?.negocio?.queVende || '',
+      publico: marca?.negocio?.publico || '',
+      diferencial: marca?.negocio?.diferencial || '',
+      handle: marca?.handle || '',
+    },
+    tiene: { logo: marca?.logo ? true : null, color: marca?.meta?.colorOriginal ? true : null, tipo: marca?.fonts?.preset ? true : null },
+    logo: marca?.logo || null,
     coloresDelLogo: [],
-    color: null,
-    tipografia: null,
-    disposicion: 'clasica',
-    logotipoTipo: 'palabra-simbolo',
-    logotipoTratamiento: 'linea',
-    logotipoEscudo: 'circulo',
-    logotipoFuente: 'mismo',
+    color: marca?.colors?.accent?.bg || marca?.meta?.colorOriginal || '#A83A1C',
+    tipografia: marca?.fonts?.preset || 'moderno',
+    disposicion: marca?.disposicion || 'clasica',
+    logotipoTipo: marca?.logotipo?.tipo || 'palabra-simbolo',
+    logotipoTratamiento: marca?.logotipo?.tratamiento || 'linea',
+    logotipoEscudo: marca?.logotipo?.escudo || 'circulo',
+    logotipoFuente: marca?.logotipo?.fuente || 'mismo',
     sugerencia: null,
     paso: 0,
+    modoEdicion: Boolean(modoEdicion || (marca && marca.nombre)),
+    subModuloActivo: null,
+    mensajeExito: null,
   }
 
   function pintar() {
     vaciar(contenedor)
+
+    if (st.modoEdicion && !st.subModuloActivo) {
+      renderizarHubEdicion(contenedor)
+      window.scrollTo({ top: 0, behavior: 'instant' })
+      return
+    }
+
+    if (st.modoEdicion && st.subModuloActivo) {
+      renderizarSubModulo(contenedor, st.subModuloActivo)
+      window.scrollTo({ top: 0, behavior: 'instant' })
+      return
+    }
 
     const pasosConfig = [
       { id: '01 NEGOCIO', dot: 'process__dot--mint' },
@@ -188,6 +211,228 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, alTerminar }) {
   }
 
   const ir = n => { st.paso = n; pintar() }
+
+  /* ══════════════════════════════════════════════════════════
+   * HUB MODULAR DE EDICIÓN DE MARCA (4 CARDS PRINCIPALES)
+   * ══════════════════════════════════════════════════════════ */
+  function renderizarHubEdicion(cont) {
+    const hub = el('div.edicion-marca-hub', { style: 'max-width:820px;margin:0 auto;' })
+
+    const cabecera = el('div', { style: 'margin-bottom:24px;' },
+      el('span.rotulo', {}, 'Configuración de Marca'),
+      el('h2', { style: 'margin:6px 0 8px;' }, 'Editar Identidad de Marca'),
+      el('p.intro', { style: 'margin:0;' }, 'Elegí qué aspecto querés modificar. Los cambios que guardes se aplicarán de inmediato a tus próximas placas.')
+    )
+
+    const avisoExito = st.mensajeExito
+      ? el('div.aviso.bien', { style: 'margin-bottom:20px;' }, st.mensajeExito)
+      : null
+
+    const grid = el('div.edicion-marca-grid')
+
+    // Card 1: Negocio
+    const cardNegocio = el('div.edicion-card', {
+      onclick: () => { st.subModuloActivo = 'negocio'; st.mensajeExito = null; pintar() }
+    },
+      el('div.edicion-card__header', {},
+        el('div.edicion-card__icon', {}, '🏪'),
+        el('h3.edicion-card__title', {}, 'Datos del negocio')
+      ),
+      el('div.edicion-card__body', {},
+        el('b', { style: 'display:block;margin-bottom:2px;' }, st.negocio.nombre || 'Sin nombre'),
+        el('span', {}, `${st.negocio.rubro || 'Rubro'} · ${st.negocio.ciudad || 'Ubicación'}`),
+        st.negocio.handle ? el('div', { style: 'color:var(--color-ink-3);font-size:12px;margin-top:4px;' }, `@${st.negocio.handle}`) : null
+      ),
+      el('div.edicion-card__footer', {},
+        el('span', {}, 'Editar información ➔')
+      )
+    )
+
+    // Card 2: Color
+    const cardColor = el('div.edicion-card', {
+      onclick: () => { st.subModuloActivo = 'color'; st.mensajeExito = null; pintar() }
+    },
+      el('div.edicion-card__header', {},
+        el('div.edicion-card__icon', {}, '🎨'),
+        el('h3.edicion-card__title', {}, 'Paleta de color')
+      ),
+      el('div.edicion-card__body', {},
+        el('div', { style: 'display:flex;align-items:center;gap:10px;margin-bottom:4px;' },
+          el('span', { style: `width:22px;height:22px;border-radius:50%;background:${st.color};border:1.5px solid rgba(0,0,0,0.15);display:inline-block;` }),
+          el('b', {}, st.color)
+        ),
+        el('span', {}, 'Color de acento y contraste calculado para tus piezas.')
+      ),
+      el('div.edicion-card__footer', {},
+        el('span', {}, 'Cambiar color ➔')
+      )
+    )
+
+    // Card 3: Tipografía
+    const cardTipo = el('div.edicion-card', {
+      onclick: () => { st.subModuloActivo = 'tipografia'; st.mensajeExito = null; pintar() }
+    },
+      el('div.edicion-card__header', {},
+        el('div.edicion-card__icon', {}, '✍️'),
+        el('h3.edicion-card__title', {}, 'Tipografía')
+      ),
+      el('div.edicion-card__body', {},
+        el('b', { style: 'display:block;text-transform:capitalize;margin-bottom:2px;' }, `Preset ${st.tipografia}`),
+        el('span', {}, 'Fuentes para títulos principales, volantas y frases de impacto.')
+      ),
+      el('div.edicion-card__footer', {},
+        el('span', {}, 'Cambiar tipografía ➔')
+      )
+    )
+
+    // Card 4: Logo y Firma
+    const cardFirma = el('div.edicion-card', {
+      onclick: () => { st.subModuloActivo = 'firma'; st.mensajeExito = null; pintar() }
+    },
+      el('div.edicion-card__header', {},
+        el('div.edicion-card__icon', {}, '🔤'),
+        el('h3.edicion-card__title', {}, 'Logo y firma')
+      ),
+      el('div.edicion-card__body', {},
+        el('b', { style: 'display:block;margin-bottom:2px;' }, st.logo ? '✓ Logo propio cargado' : `Firma: ${st.logotipoTipo}`),
+        el('span', {}, 'Cómo se estampa tu marca en el encabezado y pie de tus placas.')
+      ),
+      el('div.edicion-card__footer', {},
+        el('span', {}, 'Editar firma y logo ➔')
+      )
+    )
+
+    // Card 5: Disposición del texto
+    const cardDisp = el('div.edicion-card', {
+      onclick: () => { st.subModuloActivo = 'disposicion'; st.mensajeExito = null; pintar() }
+    },
+      el('div.edicion-card__header', {},
+        el('div.edicion-card__icon', {}, '📐'),
+        el('h3.edicion-card__title', {}, 'Disposición del texto')
+      ),
+      el('div.edicion-card__body', {},
+        el('b', { style: 'display:block;text-transform:capitalize;margin-bottom:2px;' }, `Estilo ${st.disposicion}`),
+        el('span', {}, 'Cómo se acomoda el título, kicker y párrafos adentro del post.')
+      ),
+      el('div.edicion-card__footer', {},
+        el('span', {}, 'Cambiar disposición ➔')
+      )
+    )
+
+    grid.append(cardNegocio, cardColor, cardTipo, cardFirma, cardDisp)
+
+    const pie = el('div', { style: 'display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:20px;border-top:1px solid var(--color-rule);' },
+      el('button.btn.btn--outline.btn--mint', { onclick: alTerminar }, '← Volver al Dashboard'),
+      el('button.btn', { onclick: alTerminar }, 'Listo, volver a publicar')
+    )
+
+    hub.append(cabecera, avisoExito, grid, pie)
+    cont.append(hub)
+  }
+
+  /* ── SUBMÓDULO ESPECÍFICO DE EDICIÓN ── */
+  function renderizarSubModulo(cont, modulo) {
+    const wrapper = el('div.card', { style: 'max-width:820px;margin:0 auto;' })
+    cont.append(wrapper)
+
+    const guardarYVolver = async (nombreModulo) => {
+      try {
+        await api.guardarMarca(st.cuentaId, {
+          ...st.negocio,
+          color: st.color || undefined,
+          tipografia: st.tipografia || undefined,
+          disposicion: st.disposicion || undefined,
+          logotipoTipo: st.logotipoTipo,
+          logotipoTratamiento: st.logotipoTratamiento,
+          logotipoEscudo: st.logotipoEscudo,
+          logotipoFuente: st.logotipoFuente,
+          logo: st.logo || undefined,
+        })
+        st.subModuloActivo = null
+        st.mensajeExito = `✓ Cambios guardados con éxito en ${nombreModulo}.`
+        pintar()
+      } catch (e) {
+        alert(`Error al guardar: ${e.message}`)
+      }
+    }
+
+    if (modulo === 'negocio') {
+      const campos = [
+        ['nombre', 'Cómo se llama', 'Como lo conocen tus clientes.', 'Panadería Mendieta', false],
+        ['rubro', 'A qué se dedica', 'En pocas palabras.', 'panadería de barrio', false],
+        ['ciudad', 'Dónde está', 'Tu ciudad o barrio.', 'Rosario', false],
+        ['queVende', 'Qué vende', 'Lo concreto.', 'pan de masa madre, facturas', true],
+        ['publico', 'Quién le compra', '', 'vecinos del barrio', true],
+        ['diferencial', 'Por qué te eligen a vos', 'Tu diferencial de marca.', 'masa madre propia', true],
+        ['handle', 'Tu usuario de Instagram', 'Sin el arroba.', 'panaderiamendieta', false],
+      ]
+      const inputs = {}
+      const form = el('div')
+      for (const [clave, etiqueta, ayuda, ejemplo, largo] of campos) {
+        const entrada = largo ? el('textarea', { rows: 2 }) : el('input', { type: 'text' })
+        entrada.value = st.negocio[clave] || ''
+        inputs[clave] = entrada
+        form.append(el('div.campo', {}, el('label', {}, etiqueta), ayuda && el('span.ayuda', {}, ayuda), entrada))
+      }
+      wrapper.append(
+        el('span.rotulo', {}, 'Edición de Negocio'),
+        el('h2', {}, 'Datos del negocio'),
+        form,
+        el('div.acciones-paso', { style: 'margin-top:20px;' },
+          el('button.btn', {
+            onclick: async () => {
+              for (const [k, v] of Object.entries(inputs)) st.negocio[k] = v.value.trim()
+              await guardarYVolver('Datos del negocio')
+            }
+          }, 'Guardar cambios ➔'),
+          el('button.btn.btn--outline.btn--mint', { onclick: () => { st.subModuloActivo = null; pintar() } }, '← Volver a opciones')
+        )
+      )
+    } else if (modulo === 'color') {
+      const contColor = el('div')
+      seccionColor(contColor)
+      wrapper.append(
+        el('span.rotulo', {}, 'Edición de Color'),
+        el('h2', {}, 'Paleta de color'),
+        contColor,
+        el('div.acciones-paso', { style: 'margin-top:20px;' },
+          el('button.btn', { onclick: () => guardarYVolver('Color de marca') }, 'Guardar cambios ➔'),
+          el('button.btn.btn--outline.btn--mint', { onclick: () => { st.subModuloActivo = null; pintar() } }, '← Volver a opciones')
+        )
+      )
+    } else if (modulo === 'tipografia') {
+      const contTipo = el('div')
+      seccionTipografia(contTipo)
+      wrapper.append(
+        el('span.rotulo', {}, 'Edición de Tipografía'),
+        el('h2', {}, 'Tipografía de placas'),
+        contTipo,
+        el('div.acciones-paso', { style: 'margin-top:20px;' },
+          el('button.btn', { onclick: () => guardarYVolver('Tipografía') }, 'Guardar cambios ➔'),
+          el('button.btn.btn--outline.btn--mint', { onclick: () => { st.subModuloActivo = null; pintar() } }, '← Volver a opciones')
+        )
+      )
+    } else if (modulo === 'firma') {
+      const contFirma = el('div')
+      seccionIdentidadYFirma(contFirma)
+      wrapper.append(
+        el('span.rotulo', {}, 'Edición de Firma y Logo'),
+        el('h2', {}, 'Logo y firma de autor'),
+        contFirma,
+        el('div.acciones-paso', { style: 'margin-top:20px;' },
+          el('button.btn', { onclick: () => guardarYVolver('Logo y firma') }, 'Guardar cambios ➔'),
+          el('button.btn.btn--outline.btn--mint', { onclick: () => { st.subModuloActivo = null; pintar() } }, '← Volver a opciones')
+        )
+      )
+    } else if (modulo === 'disposicion') {
+      const contDisp = el('div')
+      pasoListo(contDisp)
+      wrapper.append(
+        el('span.rotulo', {}, 'Edición de Disposición'),
+        contDisp
+      )
+    }
+  }
 
   /* ── 1. el negocio ─────────────────────────────────────── */
 

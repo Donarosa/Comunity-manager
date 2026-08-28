@@ -2930,3 +2930,85 @@ input:focus, select:focus, textarea:focus {
   transform: scale(0.2777);
   border: none;
 }
+
+/* ══════════════════════════════════════════════════════════
+ * HUB MODULAR DE EDICIÓN DE MARCA (BUBBLE CARDS)
+ * ══════════════════════════════════════════════════════════ */
+.edicion-marca-hub {
+  padding: 10px 0 30px;
+}
+
+.edicion-marca-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin: 24px 0 32px;
+}
+
+.edicion-card {
+  background: #fff;
+  border: 2px solid var(--color-rule);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.2s var(--ease-spring);
+  text-align: left;
+}
+.edicion-card:hover {
+  border-color: var(--color-ink);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+}
+
+.edicion-card__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.edicion-card__icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--color-paper-2);
+  border: 1.5px solid var(--color-rule);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex: 0 0 auto;
+}
+
+.edicion-card__title {
+  font-size: 1.1rem;
+  font-weight: 750;
+  color: var(--color-ink);
+  margin: 0;
+}
+
+.edicion-card__body {
+  flex: 1;
+  font-size: 13.5px;
+  color: var(--color-ink-2);
+  margin-bottom: 14px;
+}
+
+.edicion-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--color-rule);
+  padding-top: 12px;
+  font-family: var(--font-label);
+  font-size: 11.5px;
+  font-weight: 750;
+  color: var(--color-accent-1);
+}
+.edicion-card:hover .edicion-card__footer {
+  color: var(--color-ink);
+}

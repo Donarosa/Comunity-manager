@@ -105,6 +105,8 @@ function abrirWizard() {
     contenedor: cont,
     catalogo,
     cuentaId: cuenta.id,
+    marca: cuenta.marca,
+    modoEdicion: Boolean(cuenta.marca),
     alTerminar: async () => {
       await recargarCuenta()
       abrirDashboard()
