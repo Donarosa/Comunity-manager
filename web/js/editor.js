@@ -238,15 +238,19 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
 
     /* — cabecera — */
     form.append(
-      el('div', { style: 'display:flex;justify-content:space-between;align-items:baseline;gap:14px;margin-bottom:18px' },
+      el('div', { style: 'display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--color-rule);' },
         el('div', {},
-          el('span.rotulo', {}, esHistoria ? 'Historia' : esCarrusel ? `Carrusel · placa ${st.activa + 1} de ${st.placas.length}` : 'Post de feed'),
-          el('h2', { style: 'margin-top:2px' }, 'Escribí tu placa')),
-        el('button.btn.texto', { onclick: () => { st.canal = null; st.tipo = null; st.placas = []; st.activa = 0; pintar() } }, 'Cambiar formato')
+          el('span.rotulo', {}, esHistoria ? 'Historia (1080×1920)' : esCarrusel ? `Carrusel · placa ${st.activa + 1} de ${st.placas.length}` : 'Post de feed (1080×1350)'),
+          el('h2', { style: 'margin:2px 0 0;' }, 'Escribí tu placa')
+        ),
+        el('div', { style: 'display:flex;gap:8px;align-items:center;' },
+          el('button.btn.btn--outline.btn--mint.chico', { onclick: () => { st.canal = null; st.tipo = null; st.placas = []; st.activa = 0; pintar() } }, '📐 Cambiar formato'),
+          alVolver ? el('button.btn.fantasma.chico', { onclick: alVolver }, '← Volver al Dashboard') : null
+        )
       )
     )
 
-    /* — selector de plantilla — */
+    /* — selector de plantilla visual con chips — */
     const p = placa()
     const disponibles = Object.entries(PLANTILLAS).filter(([id]) => {
       if (!esCarrusel) return id !== 'portada' && id !== 'cierre'
@@ -254,33 +258,46 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
       return true
     })
 
-    const sel = el('select', {
-      onchange: () => {
-        const conservar = { kicker: p.kicker, titulo: p.titulo, cuerpo: p.cuerpo, foto: p.foto, credito: p.credito, disposicion: p.disposicion }
-        st.placas[st.activa] = { ...vacia(sel.value), ...conservar }
-        editarDeNuevo()
-      },
-    }, disponibles.map(([id, def]) => el('option', { value: id, selected: id === p.plantilla }, def.label)))
+    const ICONOS_PLANTILLA = {
+      portada: '🎯',
+      texto: '📝',
+      pasos: '🔢',
+      oferta: '🏷️',
+      cierre: '🚀',
+      frase: '💬',
+      foto: '📸',
+    }
+
+    const grillaPlantillas = el('div.pestanas', { style: 'margin-top:6px;gap:8px;' })
+    disponibles.forEach(([id, def]) => {
+      const btn = el('button.pestana' + (id === p.plantilla ? '.activa' : ''), {
+        onclick: () => {
+          const conservar = { kicker: p.kicker, titulo: p.titulo, cuerpo: p.cuerpo, foto: p.foto, credito: p.credito, disposicion: p.disposicion }
+          st.placas[st.activa] = { ...vacia(id), ...conservar }
+          editarDeNuevo()
+        }
+      }, `${ICONOS_PLANTILLA[id] || '📄'} ${def.label}`)
+      grillaPlantillas.append(btn)
+    })
 
     form.append(el('div.campo', {},
-      el('label', {}, 'Plantilla'),
+      el('label', {}, 'Tipo de plantilla'),
       el('span.ayuda', {}, PLANTILLAS[p.plantilla].para),
-      sel
+      grillaPlantillas
     ))
 
-    // La disposición sale de la marca para que todas las placas del negocio se
-    // parezcan entre sí. Acá se puede variar una pieza suelta sin cambiar eso.
+    // Disposición con selector estilizado
     if (catalogo?.disposiciones?.length) {
       const selDisp = el('select', {
         onchange: () => { p.disposicion = selDisp.value || null; refrescarDemorado() },
       },
-        el('option', { value: '', selected: !p.disposicion }, 'La de tu marca'),
+        el('option', { value: '', selected: !p.disposicion }, 'La de tu marca (por defecto)'),
         catalogo.disposiciones.map(d =>
-          el('option', { value: d.id, selected: p.disposicion === d.id }, d.label))
+          el('option', { value: d.id, selected: p.disposicion === d.id }, `${d.label} — ${d.descripcion}`))
       )
       form.append(el('div.campo', {},
-        el('label', {}, 'Disposición'),
-        el('span.ayuda', {}, 'Cómo se acomoda el texto. Cambiala solo si esta placa puntual lo pide.'),
+        el('label', {}, 'Disposición del texto'),
+        el('span.ayuda', {}, 'Cómo se distribuyen los bloques en esta placa puntual.'),
         selDisp
       ))
     }
