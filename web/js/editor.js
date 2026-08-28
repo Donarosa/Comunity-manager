@@ -312,6 +312,27 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
     }
     for (const campo of PLANTILLAS[p.plantilla].campos) form.append(armarCampo(campo, p, refrescarDemorado, medidor))
 
+    // En historias, todas las plantillas pueden llevar foto de fondo (opcional).
+    // La plantilla 'foto' ya la incluye arriba; el resto la recibe como extra.
+    if (esHistoria && p.plantilla !== 'foto') {
+      const selFoto = selectorDeImagen({
+        cuentaId: cuenta.id,
+        orientacion: 'vertical',
+        inicial: p.foto,
+        onElegir: img => {
+          p.foto = img
+          p.credito = img.credito || ''
+          refrescarDemorado()
+        },
+      })
+      form.append(el('div.campo', {},
+        el('label', {}, '📸 Foto de fondo'),
+        el('span.ayuda', {}, 'Opcional. Sin foto la historia usa el color de tu marca como fondo.'),
+        !p.foto ? el('div.aviso', { style: 'margin-bottom:10px' }, 'Sin foto, la placa usa el color de tu marca de fondo. Podés dejarlo así.') : null,
+        selFoto.nodo
+      ))
+    }
+
     refrescar()
 
     function editarDeNuevo() { vaciar(contenedor); editar() }
