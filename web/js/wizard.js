@@ -848,7 +848,7 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, marca = null, mo
         apilado: `display:flex;flex-direction:column;line-height:.92;letter-spacing:-.045em;font-size:24px`,
         filete: `font-size:24px;font-weight:600;letter-spacing:0`,
         caja: `font-weight:700`,
-        empastillado: `font-weight:700`,
+        pastilla: `font-weight:700`,
       }[t] || ''
 
       const accEstilo = {
@@ -856,7 +856,7 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, marca = null, mo
         apilado: `font-weight:800;color:${color}`,
         filete: `font-weight:700;color:${color}`,
         caja: `font-weight:700;background:${color};color:#fff;padding:2px 8px;border-radius:4px;margin-left:4px`,
-        empastillado: `font-weight:700;background:${color};color:#fff;padding:2px 8px;border-radius:4px;margin-left:4px`,
+        pastilla: `font-weight:700;background:${color};color:#fff;padding:2px 8px;border-radius:4px;margin-left:4px`,
       }[t] || `color:${color}`
 
       const caps = lf?.caps ? 'text-transform:uppercase;' : ''
@@ -926,7 +926,7 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, marca = null, mo
         { id: 'linea', label: 'En una línea', desc: 'Nombre corrido con acento de color.' },
         { id: 'apilado', label: 'Apilado', desc: 'En dos renglones compactos con peso.' },
         { id: 'filete', label: 'Con filete', desc: 'Línea superior con el color de tu marca.' },
-        { id: 'empastillado', label: 'En pastilla', desc: 'Recuadro suave de protección.' },
+        { id: 'pastilla', label: 'En pastilla', desc: 'Recuadro suave de protección.' },
       ].filter(t => t.id !== 'apilado' || dosPalabras)
 
       for (const t of tratLimpios) {
