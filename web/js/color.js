@@ -106,12 +106,18 @@ export function selectorDeColor({ inicial = '#A83A1C', delLogo = [], onCambio } 
     let p
     try { p = derivePalette({ accent: elegido }) } catch { return }
     const muestras = [
-      [p.flat.darkBg, 'oscuro'], [p.flat.accent, 'acento'], [p.flat.accentDeep, 'profundo'],
-      [p.flat.tint, 'tinte'], [p.flat.bg, 'fondo'], [p.flat.ink, 'texto'],
+      [p.flat.darkBg, 'Oscuro'], [p.flat.accent, 'Acento'], [p.flat.accentDeep, 'Profundo'],
+      [p.flat.tint, 'Tinte'], [p.flat.bg, 'Fondo'], [p.flat.ink, 'Texto'],
     ]
     for (const [hex, nom] of muestras) {
       const claro = hex === p.flat.bg || hex === p.flat.tint
-      tira.append(el('div', { style: `background:${hex};color:${claro ? '#555' : 'rgba(255,255,255,.75)'}` }, nom))
+      const bloqueMuestra = el('div', {
+        style: `background:${hex};color:${claro ? '#14121F' : '#FAF7F0'};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:14px 4px`
+      },
+        el('span', { style: 'font-weight:800;font-size:11px;letter-spacing:0.04em' }, nom),
+        el('span', { style: 'font-size:9.5px;opacity:0.75;font-family:var(--font-mono, monospace)' }, hex)
+      )
+      tira.append(bloqueMuestra)
     }
     for (const a of p.warnings) avisos.append(el('div.aviso', {}, a))
   }

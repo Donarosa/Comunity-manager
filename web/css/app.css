@@ -2708,3 +2708,168 @@ input:focus, select:focus, textarea:focus {
   background: #FEF9E7;
   border-color: var(--color-accent);
 }
+
+/* ══════════════════════════════════════════════════════════
+ * SELECTOR DE COLORES (BUBBLE / HUM-07 STYLING)
+ * ══════════════════════════════════════════════════════════ */
+.pestanas {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.pestana {
+  font-family: var(--font-label);
+  font-size: 11.5px;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1.5px solid var(--color-rule);
+  background: #fff;
+  color: var(--color-ink-2);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.pestana:hover {
+  background: var(--color-paper-2);
+  border-color: var(--color-rule-2);
+}
+.pestana.activa {
+  background: var(--color-ink);
+  color: #fff;
+  border-color: var(--color-ink);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.18);
+}
+
+.familias {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(115px, 1fr));
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.familia {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #fff;
+  border: 1.5px solid var(--color-rule);
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-ink);
+  transition: all 0.15s ease;
+}
+.familia:hover {
+  background: var(--color-paper-2);
+  border-color: var(--color-rule-2);
+}
+.familia.elegida {
+  border-color: var(--color-ink);
+  background: var(--color-paper-2);
+  box-shadow: 0 2px 0 var(--color-ink);
+}
+
+.familia .tono {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0,0,0,0.15);
+  flex: 0 0 auto;
+}
+.familia .nom {
+  text-transform: capitalize;
+}
+
+.tonos {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  background: #fff;
+  border: 1.5px solid var(--color-rule);
+  border-radius: 18px;
+  padding: 14px;
+  box-shadow: var(--shadow-card);
+}
+
+.tono-btn {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  border: 2.5px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s var(--ease-spring), box-shadow 0.15s ease;
+}
+.tono-btn:hover {
+  transform: scale(1.12);
+  z-index: 2;
+}
+.tono-btn.elegido {
+  border-color: var(--color-ink);
+  transform: scale(1.18);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.25);
+  z-index: 3;
+}
+
+.tira {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1.5px solid var(--color-rule);
+  margin-top: 10px;
+  box-shadow: var(--shadow-card);
+}
+
+.tira > div {
+  padding: 16px 6px;
+  text-align: center;
+  font-family: var(--font-label);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ══════════════════════════════════════════════════════════
+ * FIRMA TIPOGRÁFICA Y PREVIEW INTERACTIVO EN VIVO
+ * ══════════════════════════════════════════════════════════ */
+.firma-preview-card {
+  background: #fff;
+  border: 2px solid var(--color-rule);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: var(--shadow-card);
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.firma-preview-duo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.firma-caja-muestra {
+  border-radius: 14px;
+  padding: 24px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 85px;
+  transition: background-color 0.25s ease;
+}
+.firma-caja-muestra.clara {
+  background: #FAF7F0;
+  border: 1.5px solid var(--color-rule);
+}
+.firma-caja-muestra.oscura {
+  background: #14130E;
+  border: 1.5px solid #2A2820;
+}
