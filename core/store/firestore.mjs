@@ -37,11 +37,10 @@ export async function inicializarFirebase() {
   let credencial = null
 
   try {
-    const admin = await import('firebase-admin')
-    const cert = admin.default?.credential?.cert || admin.credential?.cert
-    const initializeApp = admin.default?.initializeApp || admin.initializeApp
-    const getFirestore = admin.default?.firestore || admin.firestore
-    const getAuth = admin.default?.auth || admin.auth
+    const { initializeApp, cert, getApps } = await import('firebase-admin/app')
+    const { getFirestore } = await import('firebase-admin/firestore')
+    const { getAuth } = await import('firebase-admin/auth')
+    const { getStorage } = await import('firebase-admin/storage')
 
     if (credsPath && existsSync(resolve(credsPath))) {
       try {
@@ -76,18 +75,18 @@ export async function inicializarFirebase() {
       const storageBucket = process.env.FIREBASE_STORAGE_BUCKET
         || (projectId ? `${projectId}.appspot.com` : undefined)
 
-      adminApp = initializeApp({
+      const apps = getApps()
+      adminApp = apps.length > 0 ? apps[0] : initializeApp({
         credential: credencial,
         projectId,
         ...(storageBucket ? { storageBucket } : {}),
       })
-      db = getFirestore()
-      auth = getAuth()
+      db = getFirestore(adminApp)
+      auth = getAuth(adminApp)
 
       if (storageBucket) {
         try {
-          const getStorage = admin.default?.storage || admin.storage
-          bucket = getStorage().bucket()
+          bucket = getStorage(adminApp).bucket()
           console.log(`[Firebase] Almacenamiento de placas en: ${storageBucket}`)
         } catch (err) {
           console.warn('[Firebase] Storage no disponible:', err.message)
