@@ -11,6 +11,7 @@ import * as svc from '../service.mjs'
 import * as firestore from '../store/firestore.mjs'
 import { QuotaError } from '../quota/ledger.mjs'
 import { DATA_DIR } from '../store/store.mjs'
+import { esServerless } from '../render/engine.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const RAIZ = resolve(HERE, '../..')
@@ -28,7 +29,10 @@ if (!TOKEN && HOST !== '127.0.0.1' && HOST !== 'localhost' && !process.env.VERCE
   console.log('[Info] Servidor escuchando en red local. Token estático no configurado.')
 }
 
-const MODULOS_WEB = new Set(['brand/color.mjs', 'brand/palette.mjs', 'brand/fonts.mjs', 'brand/logotipo.mjs', 'render/formats.mjs'])
+export const MODULOS_WEB = new Set([
+  'brand/color.mjs', 'brand/palette.mjs', 'brand/fonts.mjs', 'brand/logotipo.mjs',
+  'render/formats.mjs', 'content/plantillas.mjs',
+])
 
 /* ── helpers ─────────────────────────────────────────────── */
 
@@ -158,14 +162,35 @@ export async function manejador(req, res) {
     return res.end()
   }
 
-  let reqUrl = req.url || '/'
+  // En Vercel o proxies inversos, x-matched-path o x-now-route-matches contiene la ruta solicitada original
+  let reqUrl = req.headers['x-matched-path'] || req.url || '/'
   if (reqUrl.startsWith('/api/')) reqUrl = reqUrl.replace(/^\/api/, '')
+  if (reqUrl === '/api') reqUrl = '/'
+  
   const url = new URL(reqUrl, `http://${req.headers.host || 'localhost'}`)
   const partes = url.pathname.split('/').filter(Boolean)
   const m = req.method
 
   try {
-    if (m === 'GET' && url.pathname === '/salud') return json(res, 200, { ok: true, firebase: firestore.estaActivo() })
+    // Además de "está vivo", dice con qué está corriendo. Diagnosticar por qué
+    // el render fallaba en producción llevó varios despliegues a ciegas: la
+    // arquitectura y el runtime son justo lo que hay que mirar cuando el
+    // navegador no arranca, y desde afuera no se ven.
+    if (m === 'GET' && url.pathname === '/salud') {
+      return json(res, 200, {
+        ok: true,
+        firebase: firestore.estaActivo(),
+        almacen: firestore.hayAlmacen(),
+        ia: Boolean(process.env.GEMINI_API_KEY),
+        entorno: {
+          node: process.version,
+          arch: process.arch,
+          plataforma: process.platform,
+          serverless: esServerless(),
+          region: process.env.VERCEL_REGION || null,
+        },
+      })
+    }
 
     /* — la aplicación web estática — */
     if (m === 'GET' && (url.pathname === '/' || url.pathname === '/index.html')) {
@@ -198,7 +223,27 @@ export async function manejador(req, res) {
 
     /* — archivos generados — */
     if (m === 'GET' && partes[0] === 'piezas') {
-      return servirArchivo(res, PIEZAS, partes.slice(1).join('/'), 'private, max-age=3600')
+      const relativa = partes.slice(1).join('/')
+      // El disco es el camino rápido y el único que hay cuando corre en una
+      // máquina. Con el servidor como función, /tmp se vació entre
+      // invocaciones y la placa solo está en el almacén remoto.
+      const enDisco = resolve(PIEZAS, decodeURIComponent(relativa))
+      if (enDisco.startsWith(PIEZAS + sep) && existsSync(enDisco)) {
+        return servirArchivo(res, PIEZAS, relativa, 'private, max-age=3600')
+      }
+      if (firestore.hayAlmacen()) {
+        const buf = await firestore.leerPieza(decodeURIComponent(relativa))
+        if (buf) {
+          res.writeHead(200, {
+            'content-type': 'image/png',
+            'content-length': buf.length,
+            'cache-control': 'private, max-age=31536000',
+            'access-control-allow-origin': '*',
+          })
+          return res.end(buf)
+        }
+      }
+      return json(res, 404, { error: 'no encontrado' })
     }
 
     /* — configuración pública de Firebase para el navegador — */
@@ -275,6 +320,12 @@ export async function manejador(req, res) {
       if (m === 'GET' && sub === 'publicaciones') return json(res, 200, { publicaciones: svc.listarPublicaciones(id) })
       if (m === 'GET' && sub === 'planes') return json(res, 200, { planes: svc.listarPlanes(id) })
       if (m === 'GET' && sub === 'estadisticas') return json(res, 200, { estadisticas: svc.obtenerEstadisticas(id) })
+      // ?refrescar=1 pide temas nuevos aunque los guardados sigan vigentes.
+      if (m === 'GET' && sub === 'temas') {
+        return json(res, 200, await svc.temasParaPublicar(id, {
+          refrescar: url.searchParams.get('refrescar') === '1',
+        }))
+      }
 
       if (m === 'POST') {
         switch (sub) {
@@ -334,6 +385,11 @@ export async function manejador(req, res) {
     json(res, 404, { error: `no hay ruta para ${m} ${url.pathname}` })
   } catch (e) {
     if (e instanceof QuotaError) return json(res, 429, { error: e.message, codigo: e.codigo, detalle: e.detalle })
+    // La IA apagada no es un error del pedido: es una función que este servidor
+    // no tiene prendida. 503 y el mensaje ya viene escrito para el usuario.
+    if (e.codigo === 'sin_ia') return json(res, 503, { error: e.message, codigo: e.codigo })
+    // Falta un paso del alta, no falló el pedido.
+    if (e.codigo === 'sin_marca') return json(res, 409, { error: e.message, codigo: e.codigo })
     if (/no existe la cuenta|no encuentro|no encontrado/.test(e.message)) return json(res, 404, { error: e.message })
     if (/falta|inválid|demasiado|no es JSON|al menos|no es una imagen|pesa más|correo|código/i.test(e.message)) {
       return json(res, 400, { error: e.message })

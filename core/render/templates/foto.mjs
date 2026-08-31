@@ -5,6 +5,7 @@ import { readFileSync, existsSync } from 'fs'
 import { resolve, isAbsolute } from 'path'
 import { tune, rgba } from '../../brand/color.mjs'
 import { resolverDisposicion } from '../disposiciones.mjs'
+import { lockupCSS, lockupHTML, clasesDeLogotipo } from '../../brand/logotipo.mjs'
 
 const MIME = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp' }
 
@@ -21,8 +22,9 @@ export function photoSource(s) {
 }
 
 export function fotoHTML(s, ctx, fmt) {
-  const { B, F, LOGO, mark, markCss, fontsLink, wordmarkHTML } = ctx
+  const { B, F, LOGO, markCss, fontsLink } = ctx
   const P = B.colors.foto
+  const C = B.colors.flat
   const bg = photoSource(s)
   const pos = s.objectPos || '50% 40%'
   const scale = s.scale || 1.0
@@ -47,16 +49,21 @@ export function fotoHTML(s, ctx, fmt) {
   return `<!DOCTYPE html><html><head><meta charset="utf-8">
 ${fontsLink}
 <style>
-:root{--bg:${P.bg};--accent:${P.accent};--font:'${F.sans}',sans-serif;--font-logo:'${F.logo.family}',sans-serif;--font-mono-marca:'${F.logo.monogramaFamily}',sans-serif;--track-logo:${F.logo.tracking};--mono:'${F.mono}',monospace}
+:root{--bg:${P.bg};--accent:${P.accent};--accent-dark:${P.accent};--accent-deep:${C.accentDeep};--dark-bg:${C.darkBg};--tint:${C.tint};--ink:${C.ink};--muted:${C.muted};--font:'${F.sans}',sans-serif;--font-logo:'${F.logo.family}',sans-serif;--font-mono-marca:'${F.logo.monogramaFamily}',sans-serif;--track-logo:${F.logo.tracking};--mono:'${F.mono}',monospace}
 *{box-sizing:border-box;margin:0;padding:0}body{font-family:var(--font);-webkit-font-smoothing:antialiased}
 .post{width:${fmt.w}px;height:${fmt.h}px;position:relative;overflow:hidden;background:var(--bg)}
 .photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:${pos};transform:scale(${scale});transform-origin:${pos}}
 .scrim{position:absolute;inset:0;background:linear-gradient(180deg,${rgba(deep, 0.66)} 0%,${rgba(deep, 0.3)} 30%,${rgba(deep, 0.36)} 55%,${rgba(deep, 0.86)} 100%),radial-gradient(120% 80% at 50% 120%,${rgba(glow, 0.6)},transparent 60%)}
 ${markCss('.mark', LOGO.strokeWidthSmall ?? LOGO.strokeWidth)}
-.lockup{display:flex;align-items:center;gap:18px;color:#fff}
-.lockup .wm{font-size:38px;font-weight:600;letter-spacing:-.04em;line-height:1;text-transform:lowercase}.lockup .wm .run{color:var(--accent)}
+${markCss('.brand .sw', LOGO.strokeWidth)}
+/* La firma es la misma que en flat: sale de lockupHTML(), así que respeta el
+   tipo, el tratamiento y el símbolo que el cliente eligió en el alta. Antes
+   este template la dibujaba a mano y le pasaba por encima a esa elección. */
+${lockupCSS()}
 .top{position:absolute;top:${fmt.id === 'story' ? 200 : 64}px;left:72px;right:72px;display:flex;align-items:center;justify-content:space-between;color:#fff;z-index:5}
 .top .kick{font-family:var(--mono);font-size:19px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.62)}
+/* Sobre la foto el texto lleva sombra para separarse de cualquier imagen. */
+.top .brand .wm,.top .brand .bajada{text-shadow:0 2px 10px rgba(0,0,0,.55)}
 .headline{position:absolute;left:72px;right:72px;bottom:${fmt.fotoHeadlineBottom}px;color:#fff;z-index:5}
 .headline .ey{font-family:var(--mono);font-size:22px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:24px}
 .headline .badge-flotante{display:inline-block;background:var(--accent);color:#111;font-family:var(--mono);font-size:20px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:8px 20px;border-radius:999px;margin-bottom:24px;box-shadow:0 8px 20px rgba(0,0,0,.35)}
@@ -67,17 +74,17 @@ ${markCss('.mark', LOGO.strokeWidthSmall ?? LOGO.strokeWidth)}
 ${extra}
 .footer{position:absolute;left:72px;right:72px;bottom:${fmt.fotoFooterBottom}px;display:flex;align-items:center;justify-content:space-between;color:#fff;z-index:5}
 .footer .src{font-family:var(--mono);font-size:19px;font-weight:500;letter-spacing:.08em;color:rgba(255,255,255,.7)}.footer .src b{color:#fff;font-weight:600}
-</style></head><body>
+</style></head><body class="dark ${clasesDeLogotipo(B)}">
 <div class="post">
   <img class="photo" src="${bg}" alt="">
   <div class="scrim"></div>
-  <div class="top"><div class="lockup">${mark(48)}<span class="wm">${wordmarkHTML('run')}</span></div>${s.kick ? '<span class="kick">' + s.kick + '</span>' : ''}</div>
+  <div class="top">${lockupHTML(ctx, 44)}${s.kick ? '<span class="kick">' + s.kick + '</span>' : ''}</div>
   <div class="headline">
     ${s.badge ? `<div class="badge-flotante">${s.badge}</div>` : (s.eyebrow ? `<div class="ey">${s.eyebrow}</div>` : '')}
     <h1><span class="l1">${s.line1 || s.title || ''}</span>${s.line2 ? '<br><span class="l2">' + s.line2 + '</span>' : ''}</h1>
     ${s.body ? `<p>${s.body}</p>` : ''}
     ${s.cta ? `<div class="btn-cta">${s.cta}</div>` : ''}
   </div>
-  <div class="footer"><span class="src">${s.src || ''}</span><div class="lockup">${mark(34)}</div></div>
+  <div class="footer"><span class="src">${s.src || ''}</span></div>
 </div></body></html>`
 }

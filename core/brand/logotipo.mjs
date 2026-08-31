@@ -254,11 +254,51 @@ export function descriptorHTML(brand) {
  * misma página (el visor, por ejemplo) con ids iguales, el segundo referencia
  * el arco del primero y sale torcido.
  */
+/**
+ * Ajusta una leyenda al arco que la tiene que contener.
+ *
+ * Un semicírculo de radio r mide π·r, y eso es todo el espacio que hay: un
+ * nombre largo no "sobra un poco", se sale del recorrido y el navegador le
+ * come las letras de las puntas sin avisar —"BICICLETERÍA EL RAYO" salía
+ * "ICICLETERÍA EL RAY"—. Así que primero se achica la letra hasta donde sigue
+ * siendo legible, y si con eso todavía no entra se declara `textLength` para
+ * que el propio SVG la comprima al largo exacto del arco. Entre las dos, la
+ * leyenda nunca se corta.
+ */
+function ajustarAlArco(texto, { radio, fsMax, fsMin, tracking }) {
+  const largoArco = Math.PI * radio * 0.94   // 6% de aire en las puntas
+  const n = texto.length
+  if (!n) return { fs: fsMax, ls: tracking, textLength: null }
+
+  // Ancho aproximado por carácter en una grotesca de caja alta: ~0.62 del
+  // cuerpo, más el tracking. Es una estimación, no una medida: en el servidor
+  // no hay con qué medir texto antes de renderizar.
+  const anchoCon = fs => n * (fs * 0.62 + tracking * (fs / fsMax))
+  const fs = Math.max(fsMin, Math.min(fsMax, (largoArco / n - tracking) / 0.62))
+  const ls = tracking * (fs / fsMax)
+  const ancho = anchoCon(fs)
+
+  // Cuando la leyenda pasa de cuatro quintos del arco se declara el largo
+  // exacto y el ajuste deja de depender de que la estimación haya acertado: si
+  // se quedó corta, el navegador comprime en vez de comerse las puntas. Un
+  // nombre corto no lo lleva — estirarlo al arco entero lo desfiguraría.
+  const apretado = ancho > largoArco * 0.8
+
+  return {
+    fs: Number(fs.toFixed(2)),
+    ls: Number(ls.toFixed(2)),
+    textLength: apretado ? Math.min(ancho, largoArco).toFixed(1) : null,
+  }
+}
+
 export function selloHTML({ nombre, rubro = '', px = 108, slug = 's' }) {
   const arriba = String(nombre || '').trim().toUpperCase()
   const abajo = String(rubro || '').trim().toUpperCase()
   const ini = iniciales(nombre)
   const idA = `arco-${slug}`, idB = `arco-b-${slug}`
+  const A = ajustarAlArco(arriba, { radio: 37, fsMax: 7.6, fsMin: 5, tracking: 1.7 })
+  const Bj = ajustarAlArco(abajo, { radio: 31, fsMax: 5.4, fsMin: 3.6, tracking: 1.5 })
+  const ajuste = t => t.textLength ? ` textLength="${t.textLength}" lengthAdjust="spacingAndGlyphs"` : ''
   // Radios sobre una caja de 100. Las banderas del arco de abajo son
   // `0,0` (large-arc 0, sweep 0) y no son negociables: con large-arc 1 el
   // semicírculo elige el camino de vuelta y la leyenda sale cabeza abajo.
@@ -271,11 +311,11 @@ export function selloHTML({ nombre, rubro = '', px = 108, slug = 's' }) {
   <circle cx="50" cy="50" r="47.5" fill="none" stroke="currentColor" stroke-width="2"/>
   <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" stroke-width="0.7"/>
   <circle cx="50" cy="50" r="26" fill="none" stroke="currentColor" stroke-width="0.7"/>
-  <text font-size="7.6" font-weight="700" letter-spacing="1.7" fill="currentColor">
-    <textPath href="#${idA}" startOffset="50%" text-anchor="middle">${arriba}</textPath>
+  <text font-size="${A.fs}" font-weight="700" letter-spacing="${A.ls}" fill="currentColor">
+    <textPath href="#${idA}" startOffset="50%" text-anchor="middle"${ajuste(A)}>${arriba}</textPath>
   </text>${abajo ? `
-  <text font-size="5.4" font-weight="600" letter-spacing="1.5" fill="currentColor">
-    <textPath href="#${idB}" startOffset="50%" text-anchor="middle">${abajo}</textPath>
+  <text font-size="${Bj.fs}" font-weight="600" letter-spacing="${Bj.ls}" fill="currentColor">
+    <textPath href="#${idB}" startOffset="50%" text-anchor="middle"${ajuste(Bj)}>${abajo}</textPath>
   </text>` : ''}
   <text x="50" y="50" text-anchor="middle" dominant-baseline="central"
     font-size="${ini.length > 1 ? 17 : 23}" font-weight="700" letter-spacing="-0.5"

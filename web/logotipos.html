@@ -52,11 +52,21 @@
   .item{border:1px solid var(--linea);border-radius:10px;overflow:hidden;background:#fff;
         display:flex;flex-direction:column}
   .item .lienzo{padding:30px 26px;min-height:112px;display:flex;align-items:center;
-        flex:1;overflow-x:auto}
-  /* Una firma no se parte en dos renglones: "en una línea" tiene que verse en
-     una línea. Si no entra, la tarjeta scrollea. */
-  .item .lienzo .brand{white-space:nowrap}
-  .item .lienzo .c-lg-apilado .wm,.item .lienzo.c-lg-apilado .brand .wm{white-space:normal}
+        flex:1;overflow:hidden;position:relative}
+  /* La firma se dibuja al ancho real que tiene en una placa de feed y se achica
+     para entrar en la tarjeta, igual que la vista previa del editor.
+     Antes iba a tamaño real con `white-space:nowrap` en una tarjeta de 320px:
+     un nombre de pyme cualquiera —"Panadería y Confitería Don José"— se salía y
+     la tarjeta lo recortaba a la mitad. Y como el visor promete que lo que se
+     ve es lo que sale, además mostraba algo falso: en la placa ese nombre entra
+     porque envuelve a dos renglones. Con la escala, envuelve donde envuelve de
+     verdad. */
+  .item .lienzo .escala{width:var(--ancho-placa);transform-origin:0 0;flex:none}
+  /* La firma ocupa lo que ocupa, y envuelve recién al llegar al ancho de la
+     placa. Sin esto el .brand —que es un flex de bloque— medía los 904px
+     enteros y la escala salía calculada contra un ancho que la firma no usa:
+     todas se veían diminutas. */
+  .item .lienzo .escala .brand{width:fit-content;max-width:var(--ancho-placa)}
   .item .pie{border-top:1px solid var(--linea);padding:8px 14px;font-size:.78rem;
              display:flex;justify-content:space-between;gap:10px;background:var(--papel)}
   .item .pie b{font-weight:600}
@@ -110,6 +120,7 @@ import { catalogoLogotipos, lockupCSS, monogramaCSS, monogramaHTML, selloHTML,
          resolverTipo, resolverTratamiento } from '/nucleo/brand/logotipo.mjs'
 import { derivePalette } from '/nucleo/brand/palette.mjs'
 import { FONT_PRESETS, LOGO_FONTS, resolveFonts } from '/nucleo/brand/fonts.mjs'
+import { FORMATS } from '/nucleo/render/formats.mjs'
 
 const $ = id => document.getElementById(id)
 const cat = catalogoLogotipos()
@@ -150,12 +161,42 @@ function tarjeta({ nombre, wm, tipo, tratamiento, escudo, etiqueta, detalle, osc
   if (tipo === 'palabra') clases.push('c-lg-solo-palabra')
   if (oscuro) clases.push('c-dark')
   if (caps) clases.push('c-lg-caps')
+  const firma = tipo === 'sello'
+    ? `<div class="brand">${selloHTML({ nombre, rubro: bajada, px: 108, slug: detalle })}</div>`
+    : `<div class="brand">${simbolo}${tipo === 'simbolo' ? '' : `<span class="nom"><span class="wm">${nom}</span>${baj}</span>`}</div>`
   return `<div class="item${oscuro ? ' oscuro' : ''}">
-    <div class="lienzo ${clases.join(' ')}">${tipo === 'sello'
-      ? `<div class="brand">${selloHTML({ nombre, rubro: bajada, px: 108, slug: detalle })}</div>`
-      : `<div class="brand">${simbolo}${tipo === 'simbolo' ? '' : `<span class="nom"><span class="wm">${nom}</span>${baj}</span>`}</div>`}</div>
+    <div class="lienzo ${clases.join(' ')}"><div class="escala">${firma}</div></div>
     <div class="pie"><b>${etiqueta}</b><code>${detalle}</code></div>
   </div>`
+}
+
+/**
+ * Achica cada firma para que entre en su tarjeta.
+ *
+ * El lockup se dibuja al ancho útil de una placa de feed —1080 menos los
+ * márgenes— y después se escala. Así el punto donde el nombre corta de renglón
+ * es el mismo que en el PNG, que es lo único que hace útil a este visor.
+ */
+function ajustarEscalas() {
+  const anchoPlaca = FORMATS.feed.w - 88 * 2
+  document.documentElement.style.setProperty('--ancho-placa', anchoPlaca + 'px')
+  for (const lienzo of document.querySelectorAll('.item .lienzo')) {
+    const caja = lienzo.querySelector('.escala')
+    const firma = caja?.querySelector('.brand')
+    if (!firma) continue
+    // La caja mide lo que mide una placa —eso decide dónde corta el renglón—,
+    // pero la escala se calcula sobre lo que la firma ocupa de verdad. Escalar
+    // contra el ancho de la placa entera dejaba las firmas cortas diminutas,
+    // porque casi ninguna usa los 904px disponibles.
+    caja.style.transform = 'none'
+    const anchoFirma = Math.max(1, firma.getBoundingClientRect().width)
+    const disponible = lienzo.clientWidth - 52   // el padding lateral del lienzo
+    const k = Math.min(1, disponible / anchoFirma)
+    caja.style.transform = `scale(${k})`
+    // Al escalar, el alto de layout no cambia: se lo fijamos a mano para que el
+    // pie de la tarjeta no quede flotando lejos de la firma.
+    lienzo.style.height = Math.max(112, firma.getBoundingClientRect().height + 60) + 'px'
+  }
 }
 
 function seccion(titulo, bajada, html) {
@@ -209,9 +250,13 @@ function pintar() {
     html += `<p class="aviso">${warnings.join(' · ')}</p>`
   }
   $('salida').innerHTML = html
+  ajustarEscalas()
 }
 
 for (const id of ['nombre', 'rubro', 'color', 'tipo', 'logofuente']) $(id).addEventListener('input', pintar)
+// Las tarjetas son elásticas: al cambiar el ancho de la ventana cambia cuánto
+// hay que achicar cada firma.
+addEventListener('resize', ajustarEscalas)
 pintar()
 </script>
 </body>

@@ -8,6 +8,8 @@
 
 import { resolverDisposicion, cssDeDisposiciones } from '../disposiciones.mjs'
 import { lockupCSS, lockupHTML, clasesDeLogotipo } from '../../brand/logotipo.mjs'
+import { photoSource } from './foto.mjs'
+import { tune, rgba } from '../../brand/color.mjs'
 
 export function flatCSS(ctx, fmt, disp) {
   const { B, F, LOGO, markCss } = ctx
@@ -21,6 +23,22 @@ body.light .frame{background:var(--bg);color:var(--fg)}
 body.trial .frame{background:var(--tint);color:var(--fg)}
 body.dark .frame{background:linear-gradient(155deg,var(--dark-bg) 0%,var(--accent-deep) 100%);color:#fff}
 body.dark .frame::after{content:'';position:absolute;top:-140px;right:-140px;width:520px;height:520px;background:radial-gradient(circle,rgba(255,255,255,.06) 0%,transparent 70%);border-radius:50%}
+/* Foto de fondo. Es opcional y solo aparece si la placa trae una: sin foto,
+   nada de esto se dibuja y la placa queda igual que siempre. Va con el mismo
+   velo que usa el template de foto, que es lo que garantiza que el texto se
+   lea sobre cualquier imagen, y teñido con el color de la marca en vez de un
+   gris fijo. El contenido ya va en z-index 2, así que la imagen se apoya
+   abajo sin tocar el resto de las reglas. */
+.bg-foto{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 40%;z-index:0}
+.bg-scrim{position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,${rgba(tune(C.darkBg, { L: 0.13 }), 0.72)} 0%,${rgba(tune(C.darkBg, { L: 0.13 }), 0.42)} 34%,${rgba(tune(C.darkBg, { L: 0.13 }), 0.5)} 58%,${rgba(tune(C.darkBg, { L: 0.13 }), 0.9)} 100%)}
+/* Sobre una foto el halo del tema oscuro no aporta: solo ensucia la imagen. */
+body.con-foto .frame{background:var(--dark-bg)}
+body.con-foto .frame::after{display:none}
+body.con-foto .title,body.con-foto .body{text-shadow:0 3px 14px rgba(0,0,0,.45)}
+/* El crédito de la foto tiene su propio renglón, encima del pie: si compartiera
+   la ranura del pie competiría con el "Deslizá →" de una portada y se perdería
+   uno de los dos. Una licencia de banco no es negociable — sale siempre. */
+.cred-foto{position:relative;z-index:2;margin-bottom:14px;font-family:var(--mono);font-size:17px;letter-spacing:.05em;color:rgba(255,255,255,.62)}
 .top{display:flex;justify-content:space-between;align-items:center;position:relative;z-index:2}
 ${markCss('.brand .sw', LOGO.strokeWidth)}
 .brand .sw{width:40px;height:40px;color:var(--accent);display:block}
@@ -64,6 +82,9 @@ body.dark .foot{color:rgba(255,255,255,.5)}
 .emoji{font-size:104px;line-height:1;margin-bottom:30px}
 .chips{display:flex;gap:13px;flex-wrap:wrap;margin-top:38px}
 .chip{font-family:var(--mono);font-size:19px;font-weight:600;letter-spacing:.03em;padding:12px 20px;border-radius:999px;background:var(--tint);color:var(--accent-deep)}
+/* Dentro de la caja de la promo el contenido va centrado, así que los datos
+   duros —los precios, las condiciones— se centran con él. */
+.chips--promo{justify-content:center;margin-top:26px}
 .pill{display:inline-flex;align-items:center;gap:10px;background:var(--paper);border-radius:999px;padding:15px 26px;font-family:var(--mono);font-size:18px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:34px;box-shadow:0 10px 30px -14px rgba(20,40,20,.4)}
 .pill .dot{width:9px;height:9px;border-radius:50%;background:var(--accent)}
 .refs{list-style:none;counter-reset:r;margin-top:10px}
@@ -90,13 +111,25 @@ export function flatHTML(s, ctx, fmt) {
   const disp = resolverDisposicion(s.disposicion || B.disposicion)
   const css = flatCSS(ctx, fmt, disp)
 
+  // Cualquier plantilla puede llevar una foto de fondo: el editor la ofrece en
+  // las historias y hasta acá la imagen viajaba y se descartaba. Con foto, la
+  // placa pasa al tema oscuro —que es el que tiene los colores resueltos para
+  // texto claro— y la imagen se apoya debajo del contenido.
+  const conFoto = Boolean(s.photo || s.photoData)
+  const fondo = conFoto
+    ? `<img class="bg-foto" src="${photoSource(s)}" alt=""><div class="bg-scrim"></div>`
+    : ''
+
   const page = (theme, inner) =>
     `<!DOCTYPE html><html><head><meta charset="utf-8">${fontsLink}<style>${css}</style></head>` +
-    `<body class="${theme} fmt-${fmt.id} disp-${disp.id} ${clasesDeLogotipo(B)}"><div class="frame">${inner}</div></body></html>`
+    `<body class="${conFoto ? 'dark con-foto' : theme} fmt-${fmt.id} disp-${disp.id} ${clasesDeLogotipo(B)}">` +
+    `<div class="frame">${fondo}${inner}</div></body></html>`
 
   const brandLockup = lockupHTML(ctx, 40)
   const top = idx => `<div class="top">${brandLockup}${idx ? `<span class="idx">${idx}</span>` : ''}</div>`
-  const foot = (l, h) => `<div class="foot"><span>${l || B.site}</span>${h ? `<span class="hint">${h}</span>` : ''}</div>`
+  const foot = (l, h) =>
+    (conFoto && s.credito ? `<div class="cred-foto">${s.credito}</div>` : '') +
+    `<div class="foot"><span>${l || B.site}</span>${h ? `<span class="hint">${h}</span>` : ''}</div>`
 
   const opt = (clase, valor) => (valor == null || valor === '' ? '' : `<div class="${clase}">${valor}</div>`)
   const req = (clase, valor, campo) => {
@@ -106,9 +139,11 @@ export function flatHTML(s, ctx, fmt) {
 
   switch (s.type) {
     case 'cover':
+      // "Deslizá →" solo si hay algo que deslizar: en una placa suelta sin
+      // índice de carrusel es una instrucción que no lleva a ninguna parte.
       return page('dark', top(s.idx) +
         `<div class="content">${opt('kick', s.kick)}${req('title big', s.title, 'título')}${opt('body', s.body)}${s.src ? `<div class="cover-src">${s.src}</div>` : ''}</div>` +
-        foot(B.site, s.hint || B.hints?.cover || 'Deslizá →'))
+        foot(B.site, s.hint || B.hints?.cover || (s.idx ? 'Deslizá →' : '')))
 
     case 'body':
       return page(s.theme || 'light', top(s.idx) +
@@ -119,12 +154,15 @@ export function flatHTML(s, ctx, fmt) {
     case 'quote':
       return page(s.theme || 'dark', top(s.idx) +
         `<div class="content"><div class="quote-mark">“</div><div class="title title--serif">${s.title}</div>${opt('body', s.body)}</div>` +
-        foot(B.site, s.hint || 'FILOSOFÍA DE MARCA'))
+        foot(B.site, s.hint))
 
+    // La cifra y la leyenda del pie se dibujan solo si el cliente las escribió.
+    // Con un valor por defecto, una oferta a medio llenar sale anunciando un
+    // "2 × 1" que el negocio no está haciendo — y eso se publica.
     case 'promo':
       return page('light', top(s.idx) +
-        `<div class="content">${opt('kick', s.kick)}<div class="title">${s.title}</div><div class="promo-box-3d">${s.badge ? `<div class="promo-badge">${s.badge}</div>` : ''}<div class="promo-cifra">${s.cifra || ''}</div>${opt('body', s.body)}</div>${s.cta ? `<div class="btn-cta">${s.cta}</div>` : ''}</div>` +
-        foot(B.site, s.hint || 'BENEFICIO EXCLUSIVO'))
+        `<div class="content">${opt('kick', s.kick)}${req('title', s.title, 'título')}<div class="promo-box-3d">${s.badge ? `<div class="promo-badge">${s.badge}</div>` : ''}${opt('promo-cifra', s.cifra)}${opt('body', s.body)}${(s.chips || []).length ? `<div class="chips chips--promo">${s.chips.map(c => `<span class="chip">${c}</span>`).join('')}</div>` : ''}</div>${s.cta ? `<div class="btn-cta">${s.cta}</div>` : ''}</div>` +
+        foot(B.site, s.hint))
 
     case 'steps':
       return page('light', top(s.idx) +
@@ -136,8 +174,10 @@ export function flatHTML(s, ctx, fmt) {
         `<div class="content">${opt('emoji', s.emoji)}${opt('kick', s.kick)}${req('title', s.title, 'título')}${opt('body', s.body)}<div class="chips">${(s.chips || []).map(c => `<span class="chip">${c}</span>`).join('')}</div></div>` +
         foot(B.site, s.hint || B.altSite || ''))
 
+    // El cierre lleva su índice como cualquier otra: es la última de un
+    // carrusel y sin el "03/03" es la única de la serie que no dice dónde está.
     case 'trial':
-      return page('trial', top('') +
+      return page('trial', top(s.idx) +
         `<div class="content">${s.pill ? `<div class="pill"><span class="dot"></span>${s.pill}</div>` : ''}${req('title', s.title, 'título')}${opt('body', s.body)}</div>` +
         foot(B.site, s.hint || B.hints?.trial || ''))
 

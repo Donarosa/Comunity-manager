@@ -37,6 +37,40 @@ export function findChrome() {
   return found
 }
 
+/**
+ * En una función serverless no hay Chrome instalado.
+ *
+ * `puppeteer-core` —a diferencia de `puppeteer`— no trae el navegador, y las
+ * rutas de arriba son todas de escritorio: en Vercel ninguna existe, así que
+ * el render fallaba con "no encuentro Chrome" y no salía ni una placa en
+ * producción. `@sparticuz/chromium` es un Chromium empaquetado para ese
+ * entorno; se importa solo si hace falta, para no cargarlo en la máquina de
+ * quien desarrolla.
+ */
+export const esServerless = () =>
+  Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT)
+
+async function abrirNavegador() {
+  if (esServerless()) {
+    const { default: chromium } = await import('@sparticuz/chromium')
+    // Las placas son CSS y tipografía: no hay WebGL ni canvas 3D. Apagar el
+    // modo gráfico evita descomprimir swiftshader, que es la parte más lenta
+    // y pesada del arranque en una función.
+    chromium.setGraphicsMode = false
+    return puppeteer.launch({
+      args: [...chromium.args, '--font-render-hinting=none'],
+      executablePath: await chromium.executablePath(),
+      headless: true,
+      defaultViewport: null,
+    })
+  }
+  return puppeteer.launch({
+    executablePath: findChrome(),
+    headless: 'new',
+    args: ['--no-sandbox', '--font-render-hinting=none'],
+  })
+}
+
 /** HTML de una placa. Útil para previsualizar sin abrir Chrome. */
 export function htmlFor(slide, brand, formatName) {
   const ctx = brandContext(brand)
@@ -67,11 +101,7 @@ export async function renderSpec({ spec, brand, outDir, onSlide }) {
   mkdirSync(dir, { recursive: true })
 
   const ctx = brandContext(brand)
-  const browser = await puppeteer.launch({
-    executablePath: findChrome(),
-    headless: 'new',
-    args: ['--no-sandbox', '--font-render-hinting=none'],
-  })
+  const browser = await abrirNavegador()
 
   const out = []
   try {
@@ -96,7 +126,15 @@ export async function renderSpec({ spec, brand, outDir, onSlide }) {
       // están registradas y `document.fonts.ready` resuelve antes de tiempo —
       // la placa sale con la fuente de sistema. Se notó al sumar la segunda
       // familia (texto + logotipo): con una sola ganaba la carrera por poco.
-      await page.setContent(html, { waitUntil: 'load' })
+      // Con tope de tiempo: si Google Fonts no contesta, la placa sale con la
+      // tipografía de reserva en vez de colgar la función hasta que la corten.
+      // El HTML ya quedó puesto aunque venza la espera de los recursos.
+      try {
+        await page.setContent(html, { waitUntil: 'load', timeout: 15000 })
+      } catch (e) {
+        if (!/timeout/i.test(e.message)) throw e
+        console.warn(`[render] ${s.name}: los recursos tardaron más de 15s, sigo igual`)
+      }
       await page.evaluate(async (familias) => {
         await document.fonts.ready
         // `ready` no garantiza que ESTA familia haya cargado si nada la usó

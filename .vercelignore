@@ -1,0 +1,21 @@
+# Lo que no tiene que salir de esta máquina.
+#
+# El CLI de Vercel no mira .gitignore: sin este archivo, un `vercel deploy`
+# hecho a mano sube data/ con las cuentas y las placas de los clientes dentro
+# del paquete de la función.
+data/
+placas/
+.playwright-mcp/
+web/capturas/
+.claude/
+
+# Nada de esto lo usa el servidor en producción.
+pruebas/
+/content/
+*.md
+!web/**/*.md
+brand.json
+brand.flowrun-ejemplo.json
+spec-ejemplo.json
+mapa.html
+user-flow.html

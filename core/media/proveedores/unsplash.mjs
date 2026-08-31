@@ -51,6 +51,11 @@ export default {
       page: String(pagina),
       per_page: String(Math.min(30, cantidad)),
       content_filter: 'high',
+      // Sin esto Unsplash busca el texto tal cual contra un índice en inglés y
+      // una consulta en español devuelve cero. No fallaba: respondía 200 con la
+      // lista vacía, así que el banco figuraba como activo y no aportaba nada.
+      // "taller de bicicletas" pasa de 0 a 3.400 resultados con lang=es.
+      lang: 'es',
     })
     const o = ORIENTACION.unsplash[orientacion]
     if (o) p.set('orientation', o)

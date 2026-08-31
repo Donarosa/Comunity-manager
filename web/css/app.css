@@ -592,8 +592,11 @@ nav a.apunte:hover, .nav__links a:hover {
 }
 
 /* ═══ WIZARD & DASHBOARD UI ═══ */
+/* La barra de navegación es fija y mide --bar-h: el contenido tiene que
+   arrancar por debajo o el primer renglón de cada pantalla queda tapado. Con
+   3rem de padding le faltaban 22px y se comía el rótulo del paso. */
 #app-cuerpo {
-  padding: 3rem 0 6rem;
+  padding: calc(var(--bar-h) + 1.5rem) 0 6rem;
   max-width: 58rem;
   margin: 0 auto;
 }
@@ -3029,6 +3032,7 @@ input:focus, select:focus, textarea:focus {
 @media (max-width: 960px) {
   .editor {
     grid-template-columns: 1fr;
+    gap: 20px;
   }
 }
 
@@ -3041,6 +3045,10 @@ input:focus, select:focus, textarea:focus {
   border-radius: 24px;
   padding: 28px;
   box-shadow: var(--shadow-card);
+  /* Un ítem de grid no baja de su ancho de contenido salvo que se le diga:
+     sin esto la columna 1fr no puede encoger y el formulario se sale de la
+     pantalla en un teléfono. */
+  min-width: 0;
 }
 
 .editor-vista {
@@ -3057,21 +3065,51 @@ input:focus, select:focus, textarea:focus {
   box-shadow: var(--shadow-card);
 }
 
+/* El lienzo es una caja de proporción fija —el JS le pone el aspect-ratio del
+   formato— y el iframe va apoyado en su esquina, al tamaño real de la placa y
+   achicado con un transform.
+
+   No puede ser flex: el iframe entraría como flex item y se encogería de 1080
+   a lo que mida la caja, y encima de eso se aplicaría la escala. La placa
+   terminaba dibujada a un tercio de su tamaño y corrida fuera del recuadro. */
 .editor-vista .lienzo {
   border-radius: 18px;
   overflow: hidden;
   position: relative;
+  width: 100%;
+  margin: 0 auto;
   background: var(--color-paper-2);
   border: 1.5px solid var(--color-rule);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   box-shadow: 0 8px 24px rgba(0,0,0,0.08);
 }
 
 .editor-vista .lienzo iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
   border: none;
   transform-origin: 0 0;
+}
+
+/* Mientras el motor devuelve el HTML nuevo, la placa anterior se atenúa: sin
+   esto no hay ninguna señal de que la vista previa se está actualizando. */
+.editor-vista .lienzo.cargando iframe {
+  opacity: .45;
+  transition: opacity .18s ease;
+}
+.editor-vista .lienzo.cargando::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 20%, rgba(255,255,255,.55) 50%, transparent 80%);
+  animation: lienzo-brillo 1.1s ease-in-out infinite;
+}
+@keyframes lienzo-brillo {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .editor-vista .lienzo.cargando::after { animation: none; }
 }
 
 .editor-vista .btn {
@@ -3118,4 +3156,457 @@ input:focus, select:focus, textarea:focus {
   object-fit: cover;
   display: block;
   pointer-events: none;
+}
+
+/* ══════════════════════════════════════════════════════════
+ * CLASES QUE EL JS USABA SIN REGLA
+ *
+ * Estas veintisiete clases se escribían en el JS y no existían en ninguna hoja.
+ * No era una cuestión estética: el modal de ingreso salía sin fondo y descolgado
+ * al pie de la página, la barra de placas del carrusel salía como "010203"
+ * pegado y la pestaña de actividad como una lista con viñetas de navegador.
+ * `pruebas/smoke.mjs` ahora compara las dos listas para que no se vuelvan a
+ * separar.
+ * ══════════════════════════════════════════════════════════ */
+
+/* ── ingreso con Google y por código ──────────────────────── */
+
+.btn-google {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #fff;
+  color: var(--color-ink);
+  border: 1.5px solid var(--color-rule);
+  box-shadow: none;
+}
+.btn-google:hover:not(:disabled) {
+  background: var(--color-paper-2);
+  border-color: var(--color-rule-2);
+}
+.btn-google svg { flex: none; }
+
+/* "o con código por correo": una línea con el texto encima. */
+.separador-o {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0 14px;
+  font-family: var(--font-label);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+.separador-o::before,
+.separador-o::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--color-rule);
+}
+
+/* Los seis dígitos se leen de a uno: espaciados y en monoespaciada. */
+.input-otp {
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 1.7rem;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 0.42em;
+  text-indent: 0.42em;
+  padding: 14px 12px;
+}
+
+.btn-cerrar-modal {
+  all: unset;
+  cursor: pointer;
+  line-height: 1;
+  font-size: 1.4rem;
+  color: var(--color-muted);
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+.btn-cerrar-modal:hover { color: var(--color-ink); background: var(--color-paper-2); }
+.btn-cerrar-modal:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+
+/* ── estructura de pasos y textos de apoyo ───────────────── */
+
+.wizard { max-width: 860px; margin: 0 auto; }
+
+.acciones-paso {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 26px;
+}
+
+.intro {
+  max-width: 66ch;
+  color: var(--color-muted);
+  margin: 0 0 22px;
+}
+
+/* Espera con puntos: dice que algo está pasando sin bloquear la pantalla. */
+.cargando-txt {
+  color: var(--color-muted);
+  font-size: 0.95rem;
+  padding: 18px 0;
+}
+.cargando-txt::after {
+  content: "…";
+  display: inline-block;
+  width: 1.2em;
+  text-align: left;
+  animation: puntos-espera 1.2s steps(4, end) infinite;
+}
+@keyframes puntos-espera {
+  0%   { clip-path: inset(0 100% 0 0); }
+  100% { clip-path: inset(0 0 0 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cargando-txt::after { animation: none; }
+}
+
+.credito {
+  font-family: var(--font-label);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  color: var(--color-muted);
+  display: block;
+  margin-top: 6px;
+}
+
+.aviso-sin-foto {
+  border-style: dashed;
+  color: var(--color-muted);
+}
+
+.btn--mint {
+  background: var(--color-mint);
+  color: var(--color-ink);
+  border-color: var(--color-mint-deep);
+}
+.btn--mint:hover:not(:disabled) { background: var(--color-mint-deep); }
+.btn.btn--outline.btn--mint {
+  background: transparent;
+  color: var(--color-mint-deep);
+  border: 1.5px solid var(--color-mint);
+}
+.btn.btn--outline.btn--mint:hover:not(:disabled) {
+  background: var(--tint-mint);
+}
+
+/* El logo del cliente cuando llega como imagen y no como SVG. */
+.mark-raster { object-fit: contain; display: block; }
+
+/* ── barra de placas del carrusel ─────────────────────────── */
+
+.tira-placas {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-bottom: 16px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--color-rule);
+}
+
+/* Cada placa del carrusel es un botón con su número. Sin regla, los tres
+   salían pegados y se leían como un solo número: "010203". */
+.mini {
+  all: unset;
+  cursor: pointer;
+  font-family: var(--font-label);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--color-muted);
+  background: var(--color-paper-2);
+  border: 1.5px solid var(--color-rule);
+  border-radius: 10px;
+  padding: 8px 12px;
+  min-width: 42px;
+  text-align: center;
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.mini:hover { border-color: var(--color-rule-2); color: var(--color-ink); }
+.mini:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.mini.activa {
+  background: var(--color-ink);
+  border-color: var(--color-ink);
+  color: var(--color-paper);
+}
+/* Las historias son verticales: la ficha lo muestra en la proporción. */
+.mini.historia { border-radius: 8px; padding: 10px 12px; }
+
+/* ── pestaña de actividad ─────────────────────────────────── */
+
+.dash-tab-cuerpo { padding-top: 6px; }
+
+.lista-actividad {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--color-rule);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--r-card);
+  overflow: hidden;
+}
+.item-actividad {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 16px;
+  align-items: baseline;
+  background: #fff;
+  padding: 14px 18px;
+}
+.item-actividad strong { font-weight: 600; color: var(--color-ink); }
+.fecha-actividad {
+  grid-row: span 2;
+  font-family: var(--font-label);
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  color: var(--color-muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.meta-actividad {
+  grid-column: 2;
+  font-size: 0.86rem;
+  color: var(--color-muted);
+}
+
+/* ── dashboard: piezas que faltaban ──────────────────────── */
+
+.dash-acciones-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.dash-plan-card {
+  background: #fff;
+  border: 1px solid var(--color-rule);
+  border-radius: var(--r-card);
+  padding: 20px 22px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow-card);
+}
+.dash-plan-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.dash-plan-pubs-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.dash-plan-pub-item {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 0.92rem;
+  padding: 10px 12px;
+  background: var(--color-paper-2);
+  border-radius: 12px;
+}
+
+/* Hueco de una publicación cuya miniatura todavía no está. */
+.dash-pub-placeholder {
+  aspect-ratio: 4 / 5;
+  background: var(--color-paper-2);
+  border: 1px dashed var(--color-rule);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-muted);
+  font-family: var(--font-label);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* ══════════════════════════════════════════════════════════
+ * TELÉFONO
+ *
+ * El producto es para publicar en Instagram y quien lo usa está parado atrás
+ * del mostrador con el teléfono en la mano. El escritorio es el caso raro.
+ * ══════════════════════════════════════════════════════════ */
+
+@media (max-width: 620px) {
+  .editor-form { padding: 18px 16px; border-radius: 18px; gap: 14px; }
+  .editor-vista { position: static; padding: 18px 16px; border-radius: 18px; }
+
+  /* La vista previa va primero: es lo que la persona mira mientras escribe. */
+  .editor { display: flex; flex-direction: column; padding: 12px 0 60px; }
+  .editor-vista { order: -1; }
+
+  /* Cinco columnas de fotos en 390px son miniaturas de 60px: no se ve nada. */
+  .galeria { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+
+  .dash-metricas-grid { grid-template-columns: repeat(2, 1fr); }
+  .dash-header { flex-direction: column; align-items: flex-start; gap: 14px; }
+  .dash-acciones-top { width: 100%; }
+
+  .item-actividad { grid-template-columns: 1fr; gap: 3px; }
+  .fecha-actividad { grid-row: auto; }
+  .meta-actividad { grid-column: 1; }
+
+  .modal-caja { padding: 26px 20px; border-radius: 18px; }
+  .modal-fondo { padding: 12px; align-items: flex-end; }
+
+  /* Los controles se tocan con el pulgar: nada por debajo de 44px de alto, y
+     16px de cuerpo en los campos para que iOS no haga zoom al enfocarlos. */
+  .btn { min-height: 44px; }
+  input, textarea, select { font-size: 16px; }
+  .opcion { padding: 16px; }
+  .acciones-paso .btn { flex: 1 1 auto; justify-content: center; }
+}
+
+/* Ninguna pantalla scrollea de costado: lo ancho scrollea dentro de su caja. */
+body { overflow-x: hidden; }
+.orden-scroll, .tabla-scroll { overflow-x: auto; }
+
+/* ══════════════════════════════════════════════════════════
+ * DOCK DE ACCIONES
+ *
+ * Las dos acciones principales —escribir una placa o pedir que la sugieran—
+ * viven en una píldora flotante abajo al centro. El producto se usa desde el
+ * mostrador con el teléfono en la mano: ahí quedan siempre bajo el pulgar, sin
+ * importar cuánto se haya scrolleado. Antes estaban en el medio de la página y
+ * se perdían apenas se bajaba a mirar las placas.
+ * ══════════════════════════════════════════════════════════ */
+
+.dock-acciones {
+  position: fixed;
+  left: 50%;
+  bottom: max(18px, env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 400;
+  display: flex;
+  gap: 10px;
+  padding: 8px;
+  background: oklch(97% 0.012 95 / 0.92);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--r-pill);
+  box-shadow: var(--shadow-card-hover);
+  animation: dock-entra 380ms var(--ease-spring) both;
+}
+@keyframes dock-entra {
+  from { opacity: 0; transform: translate(-50%, 14px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dock-acciones { animation: none; }
+}
+
+/* El dock tapa una franja del pie: la pantalla que lo muestra termina con aire
+   suficiente para que la última tarjeta no quede debajo de la píldora. */
+#app-cuerpo:has(.dock-acciones) { padding-bottom: calc(6rem + 76px); }
+
+@media (max-width: 620px) {
+  .dock-acciones {
+    left: 12px;
+    right: 12px;
+    transform: none;
+    justify-content: center;
+    animation: none;
+  }
+  .dock-acciones .btn { flex: 1 1 0; min-width: 0; }
+}
+
+/* ── ideas de tema ─────────────────────────────────────────
+ * Los atajos de "¿de qué querés hablar?". Se ven como lo que son: sugerencias
+ * que se toman de a una, no un formulario para completar. */
+.chips-temas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.chip-tema {
+  all: unset;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  line-height: 1.3;
+  padding: 8px 14px;
+  border-radius: var(--r-pill);
+  background: #fff;
+  border: 1.5px solid var(--color-rule);
+  color: var(--color-ink-2);
+  transition: border-color 140ms ease, background 140ms ease;
+}
+.chip-tema:hover { border-color: var(--color-rule-2); background: var(--color-paper-2); }
+.chip-tema:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.chip-tema.elegido {
+  background: var(--tint-cyan);
+  border-color: var(--color-accent-2);
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+/* ── cuota con barras ──────────────────────────────────────
+ * Un límite se entiende viéndolo llenarse. "117 piezas" no dice si es mucho o
+ * poco hasta saber contra qué, y esconde que hay dos topes corriendo a la vez:
+ * pueden quedar cien en el mes y ninguna hoy. */
+.dash-metrica-card--cuota { justify-content: flex-start; gap: 14px; }
+
+.cuota-barras { display: flex; flex-direction: column; gap: 14px; margin-top: 4px; }
+.cuota-linea { display: block; }
+
+.cuota-cab {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 0.86rem;
+  color: var(--color-muted);
+  margin-bottom: 6px;
+}
+.cuota-cab b {
+  font-family: var(--font-label);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.cuota-riel {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--color-paper-3);
+  overflow: hidden;
+}
+/* El relleno es lo gastado: la barra se llena a medida que se usa el plan. */
+.cuota-relleno {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--color-mint-deep);
+  transition: width 420ms var(--ease-out);
+}
+.cuota-relleno.justa   { background: var(--color-accent-deep); }
+.cuota-relleno.agotada { background: var(--color-accent-3); }
+
+@media (prefers-reduced-motion: reduce) {
+  .cuota-relleno { transition: none; }
 }

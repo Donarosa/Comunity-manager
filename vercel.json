@@ -1,16 +1,60 @@
 {
   "version": 2,
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 60,
+      "includeFiles": "core/**"
+    }
+  },
   "rewrites": [
-    { "source": "/css/(.*)", "destination": "/web/css/$1" },
-    { "source": "/js/(.*)", "destination": "/web/js/$1" },
-    { "source": "/img/(.*)", "destination": "/web/img/$1" },
-    { "source": "/nucleo/(.*)", "destination": "/api" },
-    { "source": "/salud", "destination": "/api" },
-    { "source": "/catalogo", "destination": "/api" },
-    { "source": "/cuentas(.*)", "destination": "/api" },
-    { "source": "/imagenes/(.*)", "destination": "/api" },
-    { "source": "/piezas/(.*)", "destination": "/api" },
-    { "source": "/", "destination": "/web/index.html" },
-    { "source": "/index.html", "destination": "/web/index.html" }
-  ]
+    {
+      "source": "/api/(.*)",
+      "destination": "/api"
+    },
+    {
+      "source": "/config/(.*)",
+      "destination": "/api"
+    },
+    {
+      "source": "/auth/(.*)",
+      "destination": "/api"
+    },
+    {
+      "source": "/nucleo/(.*)",
+      "destination": "/api"
+    },
+    {
+      "source": "/salud",
+      "destination": "/api"
+    },
+    {
+      "source": "/catalogo",
+      "destination": "/api"
+    },
+    {
+      "source": "/cuentas(.*)",
+      "destination": "/api"
+    },
+    {
+      "source": "/imagenes/(.*)",
+      "destination": "/api"
+    },
+    {
+      "source": "/piezas/(.*)",
+      "destination": "/api"
+    },
+    {
+      "source": "/logos/buscar",
+      "destination": "/api"
+    },
+    {
+      "source": "/logotipos",
+      "destination": "/logotipos.html"
+    },
+    {
+      "source": "/logos",
+      "destination": "/logos-visor.html"
+    }
+  ],
+  "outputDirectory": "web"
 }

@@ -10,6 +10,11 @@
 import { api } from './api.js'
 import { el, $, $$, vaciar, aviso, elegirEnGrupo, svgLogo } from './ui.js'
 import { selectorDeColor, coloresDeSVG } from './color.js'
+// El sello viene del mismo módulo que usa el motor. Tener una segunda versión
+// acá era tener dos sellos distintos: el de la vista previa salía con la
+// leyenda de abajo cabeza abajo y el del PNG no.
+import { selloHTML } from '/nucleo/brand/logotipo.mjs'
+import { derivePalette } from '/nucleo/brand/palette.mjs'
 
 const PASOS = [
   ['Tu negocio', 'negocio'],
@@ -40,6 +45,19 @@ const FUENTES_MUESTRA = {
   tecnico: ['Chivo', 'Instrument Serif'],
   clasico: ['Source Sans 3', 'Lora'],
   geometrico: ['Poppins', 'DM Serif Display'],
+}
+
+/**
+ * El acento tal como queda sobre el fondo oscuro de la marca.
+ *
+ * Es el mismo cálculo que hace el motor —sale de la misma derivación de
+ * paleta—, así que la muestra oscura del wizard y la placa oscura coinciden.
+ * Si el color no se puede derivar, se devuelve tal cual antes que romper la
+ * previsualización.
+ */
+function acentoSobreOscuro(hex) {
+  try { return derivePalette({ accent: hex }).flat.accentOnDark }
+  catch { return hex }
 }
 
 function extraerIniciales(nombre = '') {
@@ -308,11 +326,11 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, marca = null, mo
     },
       el('div.edicion-card__header', {},
         el('div.edicion-card__icon', {}, '📐'),
-        el('h3.edicion-card__title', {}, 'Disposición del texto')
+        el('h3.edicion-card__title', {}, 'Cómo se acomoda el texto')
       ),
       el('div.edicion-card__body', {},
         el('b', { style: 'display:block;text-transform:capitalize;margin-bottom:2px;' }, `Estilo ${st.disposicion}`),
-        el('span', {}, 'Cómo se acomoda el título, kicker y párrafos adentro del post.')
+        el('span', {}, 'Cómo se acomoda el título, la etiqueta y el texto adentro de la placa.')
       ),
       el('div.edicion-card__footer', {},
         el('span', {}, 'Cambiar disposición ➔')
@@ -427,7 +445,7 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, marca = null, mo
     } else if (modulo === 'disposicion') {
       wrapper.append(
         el('span.rotulo', {}, 'Edición de Disposición'),
-        el('h2', {}, 'Disposición del texto')
+        el('h2', {}, 'Cómo se acomoda el texto')
       )
       pasoListo(wrapper)
     }
@@ -496,10 +514,18 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, marca = null, mo
       const grupo = el('div.opciones.dos')
       const marcar = (v, b) => { st.tiene[clave] = v; elegirEnGrupo(grupo, b) }
 
+      // Sin logo propio la firma se arma con el monograma de las iniciales, no
+      // con un icono de catálogo. Conviene decirlo acá: "que lo proponga la
+      // plataforma" hacía esperar una propuesta de logo que nunca llega.
+      const SIN = {
+        logo: ['No tengo', 'Firmamos con tus iniciales'],
+        color: ['No, sugerime', 'Elegimos uno y lo ajustamos'],
+        tipo: ['No, sugerime', 'Elegimos una que combine'],
+      }
       const si = el('button.opcion', { onclick: () => marcar(true, si) },
         el('b', {}, 'Sí, lo tengo'), el('span', {}, clave === 'logo' ? 'Lo subo yo' : 'Lo elijo yo'))
       const no = el('button.opcion', { onclick: () => marcar(false, no) },
-        el('b', {}, 'No, sugerime'), el('span', {}, 'Que lo proponga la plataforma'))
+        el('b', {}, SIN[clave][0]), el('span', {}, SIN[clave][1]))
 
       if (st.tiene[clave] === true) si.classList.add('elegida')
       if (st.tiene[clave] === false) no.classList.add('elegida')
@@ -793,27 +819,20 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, marca = null, mo
       const esOscuro = tema === 'oscura'
       const colorTexto = esOscuro ? '#FAF7F0' : '#14121F'
 
-      // Caso especial: Sello circular de autor
+      // El sello lo dibuja el núcleo, igual que en la placa. Acá solo se elige
+      // el color: el SVG usa currentColor, así que hereda el del contenedor.
       if (st.logotipoTipo === 'sello') {
-        const idArco = `arco-sello-${tema}-${Date.now().toString(36)}`
-        const idArcoInf = `arco-inf-${tema}-${Date.now().toString(36)}`
-        const rubro = (st.negocio.rubro || 'EST. 2026').toUpperCase()
-        const selloSvg = `
-          <svg viewBox="0 0 100 100" width="70" height="70" style="overflow:visible">
-            <defs>
-              <path id="${idArco}" d="M 12,50 A 38,38 0 1,1 88,50" fill="none"/>
-              <path id="${idArcoInf}" d="M 88,50 A 38,38 0 0,1 12,50" fill="none"/>
-            </defs>
-            <circle cx="50" cy="50" r="47" fill="none" stroke="${color}" stroke-width="2.2"/>
-            <circle cx="50" cy="50" r="41" fill="none" stroke="${color}" stroke-width="0.8" stroke-dasharray="2.5,2.5"/>
-            <circle cx="50" cy="50" r="23" fill="${color}" fill-opacity="0.12" stroke="${color}" stroke-width="1.2"/>
-            <text x="50" y="57" text-anchor="middle" fill="${color}" font-family="'${fuenteMono}', sans-serif" font-weight="900" font-size="16" letter-spacing="-0.04em">${ini}</text>
-            <text font-size="7.5" font-family="'${fuenteLogo}', sans-serif" font-weight="800" letter-spacing="0.12em" fill="${colorTexto}"><textPath href="#${idArco}" startOffset="50%" text-anchor="middle">${nombre.toUpperCase().slice(0, 20)}</textPath></text>
-            <text font-size="6.5" font-family="var(--font-label, sans-serif)" font-weight="700" letter-spacing="0.16em" fill="${color}"><textPath href="#${idArcoInf}" startOffset="50%" text-anchor="middle">★ ${rubro.slice(0, 16)} ★</textPath></text>
-          </svg>
-        `
         const d = el('div', { style: 'display:flex;align-items:center;justify-content:center;padding:4px' })
-        d.innerHTML = selloSvg
+        d.style.color = esOscuro ? acentoSobreOscuro(color) : color
+        d.style.fontFamily = `'${fuenteLogo}', sans-serif`
+        d.innerHTML = selloHTML({
+          nombre,
+          rubro: st.negocio.rubro || '',
+          px: 78,
+          // Los dos temas se dibujan en la misma página: con el mismo slug, el
+          // segundo sello referencia los arcos del primero y sale torcido.
+          slug: `previa-${tema}`,
+        })
         return d
       }
 

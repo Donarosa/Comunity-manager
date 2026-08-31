@@ -6,19 +6,27 @@
 // logo, los contadores de cuota y que los tres formatos rendericen.
 
 import { strict as assert } from 'assert'
-import { rmSync, existsSync } from 'fs'
+import { rmSync, existsSync, readFileSync, readdirSync } from 'fs'
+import { join, dirname } from 'path'
+import { fileURLToPath } from 'url'
 import { normalizeBrand, sanitizeLogoInner, deriveWordmark } from '../core/brand/schema.mjs'
 import { derivePalette } from '../core/brand/palette.mjs'
 import { contrast, hexToOklch, oklchToHex } from '../core/brand/color.mjs'
 import { resolveFonts, FONT_PRESETS, LOGO_FONTS, resolveLogoFont } from '../core/brand/fonts.mjs'
-import { renderSpec, htmlFor } from '../core/render/engine.mjs'
+import { renderSpec, htmlFor, esServerless } from '../core/render/engine.mjs'
 import { DISPOSICIONES, resolverDisposicion, cssDeDisposiciones } from '../core/render/disposiciones.mjs'
 import { TIPOS, resolverTipo, resolverEscudo, iniciales, tratamientosPara, monogramaHTML, monogramaCSS, descriptor, selloHTML } from '../core/brand/logotipo.mjs'
 import { verificar, consumir, estado, QuotaError } from '../core/quota/ledger.mjs'
-import { planToSpec } from '../core/content/plan.mjs'
+import { planToSpec, placaToSlide, soloCamposDe, CAMPOS_DE_PLANTILLA } from '../core/content/plan.mjs'
+import { CAMPOS_PRINCIPALES, camposSecundarios, plantillaSegunPosicion } from '../core/content/plantillas.mjs'
+import { temasLocales } from '../core/content/temas.mjs'
 import { valorGenerado, REFERENCIA } from '../core/valor.mjs'
 import { intercalar, estadoBanco, guardarDelBanco } from '../core/media/imagenes.mjs'
-import { altaCuenta, subirLogo } from '../core/service.mjs'
+import { altaCuenta, subirLogo, renderizarPieza } from '../core/service.mjs'
+import { MODULOS_WEB } from '../core/api/server.mjs'
+import { hayAlmacen as estaActivoElAlmacen } from '../core/store/firestore.mjs'
+
+const RAIZ = join(dirname(fileURLToPath(import.meta.url)), '..')
 
 let ok = 0
 const test = (nombre, fn) => {
@@ -469,6 +477,292 @@ test('dos sellos en una página no comparten los ids del arco', () => {
   const b = selloHTML({ nombre: 'Café Botánico', slug: 'cafe-botanico' })
   assert.ok(a.includes('arco-vivero-raices') && b.includes('arco-cafe-botanico'))
   assert.notEqual(/id="(arco-[^"]+)"/.exec(a)[1], /id="(arco-[^"]+)"/.exec(b)[1])
+})
+
+console.log('\nnada de relleno en la placa')
+test('una oferta a medio llenar no inventa una promoción', () => {
+  // Un "2 × 1" o un "BENEFICIO EXCLUSIVO" por defecto no son un placeholder
+  // que se note y se corrija: son una promesa comercial que el negocio nunca
+  // hizo y que igual se publica.
+  const { brand } = normalizeBrand({ nombre: 'Bicicletería El Rayo' })
+  const slide = placaToSlide(
+    { plantilla: 'oferta', titulo: 'Cambio de cubiertas', kicker: '', emoji: '', cuerpo: '' },
+    { nombre: 'x', formato: 'feed' })
+  const html = htmlFor(slide, brand)
+  for (const relleno of ['2 × 1', 'BENEFICIO EXCLUSIVO', 'FILOSOFÍA DE MARCA']) {
+    assert.ok(!html.includes(relleno), `la placa salió con "${relleno}" sin que nadie lo escribiera`)
+  }
+})
+test('los datos duros de una oferta llegan a la placa', () => {
+  const { brand } = normalizeBrand({ nombre: 'Bicicletería El Rayo' })
+  const slide = placaToSlide(
+    { plantilla: 'oferta', titulo: 'Service', chips: ['$28.000', 'En el día'] },
+    { nombre: 'x', formato: 'feed' })
+  assert.deepEqual(slide.chips, ['$28.000', 'En el día'])
+  const html = htmlFor(slide, brand)
+  assert.ok(html.includes('$28.000') && html.includes('En el día'), 'los chips no se dibujaron')
+})
+test('cambiar de plantilla no arrastra el texto de la anterior', () => {
+  // El estado de la placa es uno solo: sin saneo, el cuerpo de la oferta
+  // seguía saliendo en la frase, invisible en el formulario y visible en el PNG.
+  const conBasura = { plantilla: 'frase', titulo: 'La frase', cuerpo: 'La bajada', chips: ['$9.500'], emoji: '🚲', linea2: 'sobra' }
+  const limpia = soloCamposDe(conBasura)
+  assert.deepEqual(Object.keys(limpia).sort(), ['cuerpo', 'plantilla', 'titulo'])
+})
+test('la foto de fondo y su crédito sobreviven al cambio de plantilla', () => {
+  // La foto es de la placa, no de la plantilla: el editor la ofrece en
+  // cualquier historia. Y el crédito viaja con ella — perderlo por cambiar de
+  // plantilla dejaría una foto de banco publicada sin su licencia.
+  const p = { plantilla: 'texto', titulo: 'x', foto: 'f.jpg', credito: 'Foto: A / Unsplash' }
+  const limpia = soloCamposDe(p)
+  assert.equal(limpia.foto, 'f.jpg')
+  assert.equal(limpia.credito, 'Foto: A / Unsplash')
+})
+test('una historia con foto de fondo la dibuja, y con su crédito', () => {
+  const { brand } = normalizeBrand({ nombre: 'Bicicletería El Rayo' })
+  const slide = placaToSlide(
+    { plantilla: 'texto', kicker: 'Novedad', titulo: 'Con foto', cuerpo: 'x', credito: 'Foto: A / Unsplash' },
+    { nombre: 'x', formato: 'story', foto: 'data:image/png;base64,iVBOR' })
+  const html = htmlFor(slide, brand, 'story')
+  assert.ok(html.includes('class="bg-foto"'), 'la foto de fondo no llegó a la placa')
+  assert.ok(html.includes('Foto: A / Unsplash'), 'la foto salió sin su crédito')
+})
+test('sin foto, la placa flat queda exactamente como antes', () => {
+  // El CSS del fondo se inyecta siempre —igual que el de las disposiciones— y
+  // la clase del body elige. Lo que se comprueba es el markup, no la hoja.
+  const { brand } = normalizeBrand({ nombre: 'Bicicletería El Rayo' })
+  const html = htmlFor(placaToSlide(
+    { plantilla: 'texto', titulo: 'Sin foto', cuerpo: 'x' },
+    { nombre: 'x', formato: 'feed' }), brand)
+  const cuerpo = html.slice(html.indexOf('<body'))
+  assert.ok(!cuerpo.includes('<img class="bg-foto"'), 'dibujó una foto que nadie cargó')
+  assert.ok(!/<body class="[^"]*con-foto/.test(cuerpo), 'quedó en el tema de foto sin tener foto')
+})
+test('la placa con foto no repite la volanta ni el crédito', () => {
+  const slide = placaToSlide(
+    { plantilla: 'foto', kicker: 'Oficio', titulo: 'Tu bici', credito: 'Foto: X / Pexels', foto: 'f.jpg' },
+    { nombre: 'x', formato: 'feed', foto: 'f.jpg' })
+  assert.equal(slide.eyebrow, 'Oficio')
+  assert.ok(!slide.kick, 'la volanta salía dos veces: arriba a la derecha y sobre el título')
+  assert.equal(slide.src, 'Foto: X / Pexels')
+  assert.ok(!slide.cta, 'el crédito salía dos veces: en la pastilla y en el pie')
+})
+
+console.log('\nla firma es la misma en las tres plantillas')
+test('foto y vector respetan el tipo de firma que eligió el cliente', () => {
+  // La identidad va en el objeto brand. Un template que arma su propio lockup
+  // le pasa por encima a los cuatro tipos × cinco tratamientos del alta.
+  const { brand } = normalizeBrand({
+    nombre: 'Vivero Raíces', rubro: 'plantas', logotipoTipo: 'sello',
+  })
+  const foto = htmlFor({ style: 'foto', format: 'feed', line1: 'x', photoData: 'data:image/png;base64,iVBOR' }, brand)
+  const vector = htmlFor({ style: 'vector', format: 'feed', headline: 'x' }, brand)
+  for (const [nombre, html] of [['foto', foto], ['vector', vector]]) {
+    assert.ok(html.includes('class="sello"'), `${nombre}: no dibujó el sello que eligió la marca`)
+    assert.ok(html.includes('<textPath'), `${nombre}: el sello salió sin el nombre arqueado`)
+  }
+})
+test('el nombre largo entra en el arco del sello y no se corta', () => {
+  // Un semicírculo mide π·r y no más: sin ajuste, el navegador se comía las
+  // letras de las puntas — "BICICLETERÍA EL RAYO" salía "ICICLETERÍA EL RAY".
+  const largo = selloHTML({ nombre: 'Bicicletería El Rayo', rubro: 'bicicletería y taller', slug: 'l' })
+  assert.ok(largo.includes('BICICLETERÍA EL RAYO'), 'el nombre no está entero en el SVG')
+  assert.match(largo, /textLength=/, 'un nombre que no entra tiene que declarar textLength')
+  const corto = selloHTML({ nombre: 'Ana', slug: 'c' })
+  assert.ok(!/textLength=/.test(corto), 'un nombre corto no necesita comprimirse')
+})
+
+console.log('\nla web y el núcleo no se despegan')
+test('toda clase que usa el JS tiene una regla CSS', () => {
+  // Se encontraron dos por casualidad —el modal de ingreso salía sin fondo y
+  // la barra del carrusel como "010203" pegado— y el barrido devolvió 25 más.
+  const css = readFileSync(join(RAIZ, 'web/css/app.css'), 'utf8') +
+    [...readFileSync(join(RAIZ, 'web/index.html'), 'utf8').matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)]
+      .map(m => m[1]).join('\n')
+  const definidas = new Set([...css.matchAll(/\.([a-zA-Z][\w-]*)/g)].map(m => m[1]))
+
+  const huerfanas = new Map()
+  for (const archivo of readdirSync(join(RAIZ, 'web/js')).filter(f => f.endsWith('.js'))) {
+    const js = readFileSync(join(RAIZ, 'web/js', archivo), 'utf8')
+    const usadas = [
+      ...[...js.matchAll(/el\(\s*[`'"]([a-zA-Z][\w-]*(?:\.[\w-]+)+)[`'"]/g)]
+        .flatMap(m => m[1].split('.').slice(1)),
+      ...[...js.matchAll(/classList\.(?:add|toggle|remove)\(\s*['"]([\w-]+)['"]/g)].map(m => m[1]),
+    ]
+    for (const c of usadas) if (!definidas.has(c)) huerfanas.set(c, archivo)
+  }
+  assert.equal(huerfanas.size, 0,
+    `clases sin regla CSS: ${[...huerfanas].map(([c, f]) => `.${c} (${f})`).join(', ')}`)
+})
+test('los módulos que se sirven al navegador no importan nada de Node', () => {
+  const NODE = /from\s+['"](node:|fs|path|crypto|http|url|os|child_process|@google\/)/
+  for (const mod of MODULOS_WEB) {
+    const src = readFileSync(join(RAIZ, 'core', mod), 'utf8')
+    assert.ok(!NODE.test(src), `${mod} importa algo de Node y el navegador no lo puede cargar`)
+  }
+})
+test('el editor y el motor usan la misma lista de campos', () => {
+  const js = readFileSync(join(RAIZ, 'web/js/editor.js'), 'utf8')
+  assert.match(js, /from '\/nucleo\/content\/plantillas\.mjs'/,
+    'el editor volvió a declarar sus campos aparte del núcleo')
+  for (const id of Object.keys(CAMPOS_DE_PLANTILLA)) {
+    assert.ok(js.includes(`${id}: {`), `el editor no tiene rótulo para la plantilla "${id}"`)
+  }
+})
+test('cada plantilla tiene campos principales, y son suyos', () => {
+  for (const [id, campos] of Object.entries(CAMPOS_DE_PLANTILLA)) {
+    const abiertos = CAMPOS_PRINCIPALES[id]
+    assert.ok(abiertos?.length, `la plantilla "${id}" no declara campos principales`)
+    assert.ok(abiertos.includes('titulo'), `"${id}": el título es lo único obligatorio, tiene que ir abierto`)
+    for (const c of abiertos) {
+      assert.ok(campos.includes(c), `"${id}": el campo principal "${c}" no está entre los suyos`)
+    }
+  }
+})
+test('ningún campo del formulario se pide sin un ejemplo', () => {
+  // "La fuente del dato" era el único sin placeholder, y es el más abstracto de
+  // todos: sin ver qué se espera, lo que se escribe ahí no es una fuente.
+  const js = readFileSync(join(RAIZ, 'web/js/editor.js'), 'utf8')
+  const bloque = /const CAMPOS = \{([\s\S]*?)\n\}/.exec(js)[1]
+  for (const linea of bloque.split('\n')) {
+    const campo = /^\s{2}(\w+): \{/.exec(linea)
+    if (!campo || !linea.includes('ej:')) continue
+    assert.ok(!/ej: ''/.test(linea), `el campo "${campo[1]}" se pide sin ejemplo`)
+  }
+})
+test('el formulario abre dos campos, no cinco', () => {
+  // La razón de todo esto: con los cinco pintados igual, la placa más usada se
+  // leía como cinco cosas para completar antes de poder publicar.
+  assert.equal(CAMPOS_DE_PLANTILLA.texto.length, 4)
+  assert.equal(CAMPOS_PRINCIPALES.texto.length, 2)
+  assert.deepEqual(camposSecundarios('texto'), ['kicker', 'fuente'])
+})
+
+console.log('\nportada y cierre salen de la posición')
+test('la primera y la última de un carrusel se dibujan distinto', () => {
+  assert.equal(plantillaSegunPosicion('texto', 0, 3), 'portada')
+  assert.equal(plantillaSegunPosicion('texto', 1, 3), 'texto')
+  assert.equal(plantillaSegunPosicion('texto', 2, 3), 'cierre')
+})
+test('una placa suelta nunca es portada ni cierre', () => {
+  assert.equal(plantillaSegunPosicion('texto', 0, 1), 'texto')
+})
+test('lo que el usuario eligió a mano se respeta', () => {
+  // Si puso "pasos" en la primera placa, es una decisión suya.
+  assert.equal(plantillaSegunPosicion('pasos', 0, 3), 'pasos')
+  assert.equal(plantillaSegunPosicion('oferta', 2, 3), 'oferta')
+})
+test('el editor ya no ofrece portada ni cierre como plantilla', () => {
+  const js = readFileSync(join(RAIZ, 'web/js/editor.js'), 'utf8')
+  const rotulos = /const ROTULOS = \{([\s\S]*?)\n\}/.exec(js)[1]
+  for (const id of ['portada', 'cierre']) {
+    assert.ok(!rotulos.includes(`${id}:`), `"${id}" volvió al selector: es una posición, no una elección`)
+  }
+})
+
+await testAsync('sin marca, el error dice qué falta y no es una falla del servidor', async () => {
+  // Se llegaba al editor sin marca, se escribía la placa entera y recién al
+  // generar volvía un 500 con un mensaje de sistema.
+  const { cuenta } = altaCuenta({ nombre: 'Sin Marca' })
+  try {
+    await renderizarPieza(cuenta.id, { placas: [{ plantilla: 'texto', titulo: 'x' }] })
+    assert.fail('tendría que haber avisado que falta la marca')
+  } catch (e) {
+    assert.equal(e.codigo, 'sin_marca', 'sin código, el servidor lo trata como error interno')
+    assert.match(e.message, /marca/i)
+    assert.ok(!/cuenta todavía no tiene marca cargada/i.test(e.message), 'el mensaje sigue siendo de sistema')
+  } finally {
+    rmSync(join(RAIZ, 'data/cuentas', cuenta.id + '.json'), { force: true })
+  }
+})
+
+console.log('\nel render sobrevive fuera de esta máquina')
+test('en serverless no se buscan binarios de escritorio', () => {
+  // puppeteer-core no trae Chrome, y las rutas candidatas son todas de
+  // escritorio: en una función de Vercel ninguna existe y no salía ni una placa.
+  const js = readFileSync(join(RAIZ, 'core/render/engine.mjs'), 'utf8')
+  assert.match(js, /@sparticuz\/chromium/, 'no hay Chromium para el entorno serverless')
+  assert.match(js, /process\.env\.VERCEL/, 'no se detecta el entorno serverless')
+  assert.ok(!/executablePath: findChrome\(\)[\s\S]{0,80}renderSpec/.test(js),
+    'renderSpec volvió a llamar a findChrome() sin mirar el entorno')
+})
+test('la detección de serverless mira las variables del entorno', () => {
+  const previo = process.env.VERCEL
+  try {
+    delete process.env.VERCEL
+    assert.equal(esServerless(), false)
+    process.env.VERCEL = '1'
+    assert.equal(esServerless(), true)
+  } finally {
+    if (previo === undefined) delete process.env.VERCEL
+    else process.env.VERCEL = previo
+  }
+})
+test('sin bucket configurado, las placas siguen yendo al disco', () => {
+  // El almacén remoto es para producción: en una máquina no tiene que
+  // cambiar nada de lo que ya funcionaba.
+  assert.equal(estaActivoElAlmacen(), false)
+})
+
+console.log('\nde qué publicar')
+test('los temas locales no le inventan un verbo al negocio', () => {
+  // Una plantilla del tipo "Cómo hacemos X" le proponía a una bicicletería
+  // hablar de "cómo hacemos bicicletas urbanas", que es falso sobre su propio
+  // negocio. Una panadería hace su producto, un vivero lo cría y una
+  // bicicletería lo vende: sin saber el rubro no se puede conjugar.
+  const casos = [
+    { rubro: 'bicicletería y taller', queVende: 'bicicletas urbanas, service completo', diferencial: 'service en el día' },
+    { rubro: 'vivero y jardinería', queVende: 'plantas de interior, macetas', diferencial: 'criamos todo en el predio' },
+  ]
+  for (const negocio of casos) {
+    for (const t of temasLocales(negocio)) {
+      assert.ok(!/\b(hacemos|fabricamos|producimos|cultivamos|amasamos)\b/i.test(t),
+        `"${t}" le atribuye un proceso que el alta no dice`)
+    }
+  }
+})
+test('los temas locales salen de lo que el negocio escribió', () => {
+  const temas = temasLocales({
+    rubro: 'panadería', ciudad: 'Rosario',
+    queVende: 'pan de masa madre, facturas',
+    diferencial: 'masa madre propia',
+  })
+  assert.ok(temas.some(t => /masa madre propia/i.test(t)), 'no usó el diferencial')
+  assert.ok(temas.some(t => /facturas/i.test(t)), 'no usó lo que vende')
+  assert.ok(temas.some(t => /Rosario/.test(t)), 'no usó la ciudad')
+  assert.ok(temas.length <= 5)
+})
+test('no se repite un tema que ya se publicó', () => {
+  const negocio = { diferencial: 'masa madre propia', queVende: 'facturas', ciudad: 'Rosario' }
+  const todos = temasLocales(negocio)
+  const sinElPrimero = temasLocales(negocio, { evitar: [todos[0]] })
+  assert.ok(!sinElPrimero.includes(todos[0]), 'volvió a proponer algo ya publicado')
+})
+test('un negocio sin datos no se queda sin nada que ofrecer', () => {
+  const temas = temasLocales({})
+  assert.ok(temas.length >= 1, 'la pantalla quedaría vacía')
+  assert.ok(temas.every(t => t && t.length > 3))
+})
+test('las dos acciones viven en el dock, no sueltas en la página', () => {
+  const js = readFileSync(join(RAIZ, 'web/js/dashboard.js'), 'utf8')
+  assert.match(js, /dock-acciones/, 'el dashboard dejó de usar el dock flotante')
+  assert.ok(!js.includes('Plan semanal con IA'),
+    'quedó el botón viejo: el plan semanal es ahora una forma dentro del flujo de sugerencia')
+  const css = readFileSync(join(RAIZ, 'web/css/app.css'), 'utf8')
+  assert.match(css, /\.dock-acciones\s*\{[^}]*position:\s*fixed/, 'el dock dejó de ser fijo')
+})
+
+console.log('\nmanifiesto: el estilo vector ya tiene puerta')
+test('la plantilla manifiesto produce una placa vector', () => {
+  const { brand } = normalizeBrand({ nombre: 'Panadería Santa Rosa', color: '#8C1D2F' })
+  const slide = placaToSlide(
+    { plantilla: 'manifiesto', kicker: 'Desde 1998', titulo: 'El pan <em>se espera</em>.' },
+    { nombre: 'x', formato: 'feed' })
+  assert.equal(slide.style, 'vector')
+  assert.equal(slide.headline, 'El pan <em>se espera</em>.')
+  const html = htmlFor(slide, brand)
+  assert.ok(html.includes('class="slide"'), 'no salió por el template vector')
+  assert.ok(html.includes('<em>se espera</em>'), 'perdió el resalte en bastardilla')
 })
 
 // El resumen va último: si se agrega un bloque abajo, tiene que contarlo.

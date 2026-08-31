@@ -24,15 +24,37 @@ const PRECIOS = {
   'gemini-2.5-pro':      { in: 1.25,  out: 10.00 },
 }
 
+/**
+ * La IA no está configurada en este servidor.
+ *
+ * El mensaje va a la pantalla de un dueño de comercio, así que dice qué puede
+ * hacer él, no qué le falta al servidor: no tiene un archivo `.env` ni tiene
+ * por qué saber qué es una clave de API. La instrucción para quien opera la
+ * instalación se avisa una vez por consola.
+ */
+export class SinIAError extends Error {
+  constructor() {
+    super('El armado automático no está disponible por ahora. Podés escribir las placas a mano: el editor y la descarga funcionan igual.')
+    this.name = 'SinIAError'
+    this.codigo = 'sin_ia'
+  }
+}
+
+let avisado = false
+
 let _client = null
 export function client() {
   if (!_client) {
     const key = process.env.GEMINI_API_KEY
     if (!key) {
-      throw new Error(
-        'Falta GEMINI_API_KEY. Conseguila gratis en https://aistudio.google.com/app/apikey ' +
-        'y ponela en .env como: GEMINI_API_KEY=AIza...'
-      )
+      if (!avisado) {
+        avisado = true
+        console.warn(
+          '[IA] Falta GEMINI_API_KEY, así que el plan de contenido y la sugerencia de identidad quedan apagados.\n' +
+          '     Se consigue gratis en https://aistudio.google.com/app/apikey y va en .env como: GEMINI_API_KEY=AIza...'
+        )
+      }
+      throw new SinIAError()
     }
     _client = new GoogleGenAI({ apiKey: key })
   }

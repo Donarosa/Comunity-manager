@@ -8,6 +8,7 @@ import { resolve } from 'path'
 let adminApp = null
 let db = null
 let auth = null
+let bucket = null
 let inicializado = false
 
 /**
@@ -38,44 +39,107 @@ export async function inicializarFirebase() {
     const getAuth = admin.default?.auth || admin.auth
 
     if (credsPath && existsSync(resolve(credsPath))) {
-      const archivoCreds = JSON.parse(readFileSync(resolve(credsPath), 'utf8'))
-      credencial = cert(archivoCreds)
-    } else if (projectId && clientEmail && privateKey) {
-      credencial = cert({
-        projectId,
-        clientEmail,
-        privateKey,
-      })
-    } else if (projectId) {
       try {
-        credencial = applicationDefault()
-      } catch {
-        credencial = null
+        const archivoCreds = JSON.parse(readFileSync(resolve(credsPath), 'utf8'))
+        credencial = cert(archivoCreds)
+      } catch (err) {
+        console.warn('[Firebase] No se pudo leer GOOGLE_APPLICATION_CREDENTIALS:', err.message)
+      }
+    } else if (projectId && clientEmail && privateKey) {
+      try {
+        credencial = cert({
+          projectId,
+          clientEmail,
+          privateKey,
+        })
+      } catch (err) {
+        console.warn('[Firebase] Claves de servicio inválidas:', err.message)
       }
     }
 
     if (credencial) {
+      const storageBucket = process.env.FIREBASE_STORAGE_BUCKET
+        || (projectId ? `${projectId}.appspot.com` : undefined)
+
       adminApp = initializeApp({
         credential: credencial,
         projectId,
+        ...(storageBucket ? { storageBucket } : {}),
       })
       db = getFirestore()
       auth = getAuth()
+
+      if (storageBucket) {
+        try {
+          const getStorage = admin.default?.storage || admin.storage
+          bucket = getStorage().bucket()
+          console.log(`[Firebase] Almacenamiento de placas en: ${storageBucket}`)
+        } catch (err) {
+          console.warn('[Firebase] Storage no disponible:', err.message)
+        }
+      }
       console.log(`[Firebase] Conectado exitosamente al proyecto: ${projectId}`)
     } else {
-      console.log('[Firebase] Variables de Firebase no detectadas. Operando en modo de persistencia local.')
+      console.log('[Firebase] Backend operando con SDK Web / almacenamiento local.')
     }
   } catch (err) {
-    console.warn('[Firebase] No se pudo inicializar Firebase Admin:', err.message)
+    console.warn('[Firebase] Inicialización omitida:', err.message)
   }
 
   return { db, auth, activo: Boolean(db) }
 }
 
-// Intentamos inicializar al cargar el módulo
-inicializarFirebase()
+// Inicialización diferida segura
+inicializarFirebase().catch(() => {})
 
 export const estaActivo = () => Boolean(db)
+
+/* ── Placas ───────────────────────────────────────────────
+ *
+ * Los PNG no pueden quedarse en el disco cuando el servidor corre como función:
+ * el filesystem es de solo lectura salvo /tmp, y /tmp se borra entre
+ * invocaciones. Con el bucket configurado, la placa se sube apenas se
+ * renderiza y lo que se guarda en la cuenta es su ruta remota.
+ */
+
+export const hayAlmacen = () => Boolean(bucket)
+
+/** Sube un PNG y devuelve la ruta con la que después se lo pide. */
+export async function subirPieza(ruta, contenido) {
+  if (!bucket) return null
+  const archivo = bucket.file(`piezas/${ruta}`)
+  await archivo.save(contenido, {
+    contentType: 'image/png',
+    // Las placas son inmutables: el nombre lleva un id único por render.
+    metadata: { cacheControl: 'private, max-age=31536000' },
+    resumable: false,
+  })
+  return ruta
+}
+
+/**
+ * Un enlace temporal para servir la placa.
+ *
+ * Firmado y no público: las placas son de un cliente y no tienen por qué
+ * quedar accesibles para cualquiera que adivine la ruta.
+ */
+export async function urlDePieza(ruta, minutos = 60) {
+  if (!bucket) return null
+  const [url] = await bucket.file(`piezas/${ruta}`).getSignedUrl({
+    action: 'read',
+    expires: Date.now() + minutos * 60 * 1000,
+  })
+  return url
+}
+
+export async function leerPieza(ruta) {
+  if (!bucket) return null
+  const archivo = bucket.file(`piezas/${ruta}`)
+  const [existe] = await archivo.exists()
+  if (!existe) return null
+  const [buf] = await archivo.download()
+  return buf
+}
 
 /* ── Cuentas y Usuarios ───────────────────────────────────── */
 

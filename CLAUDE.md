@@ -26,13 +26,11 @@ core/
     logo.mjs           isotipos desde el repositorio curado
     logotipo.mjs       cómo firma la marca: 4 tipos × 5 tratamientos × 6 símbolos,
                        más la bajada y el sello circular en SVG
-  content/
-    plan.mjs           plan de contenido → spec renderizable
-  quota/      plan único, topes mensuales y diarios
-  store/      un JSON por cuenta, bajo data/
     identidad.mjs      sugerencia de identidad completa (logos + color + tipografía)
   content/
     plan.mjs           plan de contenido → spec renderizable
+    plantillas.mjs     qué campos pide cada plantilla — lo comparten editor y motor
+    temas.mjs          de qué publicar: con IA, y un respaldo local que no inventa
   media/imagenes.mjs   orquesta los bancos de fotos y la subida propia
     proveedores/       un archivo por banco; leé su README antes de tocarlos
   quota/      plan único, topes mensuales y diarios
@@ -58,10 +56,19 @@ pruebas/muestrario.mjs cinco negocios distintos con su firma aplicada del sitio
 ```
 
 **El navegador importa módulos del núcleo directamente.** `core/brand/color.mjs`,
-`palette.mjs`, `fonts.mjs` y `render/formats.mjs` no tocan Node y se sirven en
-`/nucleo/...`, así el cálculo de color de la web es el mismo código que usa el
-render y no dos implementaciones que se van separando. Si agregás un módulo a esa
-lista (`MODULOS_WEB` en `server.mjs`), no puede importar nada de Node.
+`palette.mjs`, `fonts.mjs`, `logotipo.mjs`, `render/formats.mjs` y
+`content/plantillas.mjs` no tocan Node y se sirven en `/nucleo/...`, así el
+cálculo de color de la web es el mismo código que usa el render y no dos
+implementaciones que se van separando. Si agregás un módulo a esa lista
+(`MODULOS_WEB` en `server.mjs`), no puede importar nada de Node — hay una
+prueba de humo que lo verifica.
+
+**Antes de dibujar algo de la marca en la web, fijate si el núcleo ya lo hace.**
+El sello circular estuvo dos veces —una en `logotipo.mjs` y otra a mano en
+`wizard.js`— y la copia tenía el arco de abajo al revés: la vista previa
+mostraba la leyenda cabeza abajo y no coincidía con el PNG. Lo mismo con los
+campos de cada plantilla, que ahora salen de `content/plantillas.mjs` en vez de
+estar declarados aparte en el editor.
 
 **`core/service.mjs` es la puerta de entrada.** La CLI y la API HTTP son
 cáscaras finitas encima. Si agregás una funcionalidad, va ahí y las dos
@@ -115,7 +122,16 @@ cáscaras la exponen — no la escribas dos veces.
   cada uno tiene requisitos propios de sus términos.
 - **Todo lo que venga del modelo o del usuario pasa por saneado antes de entrar
   a un render.** El logo por `sanitizeLogoInner()`; ninguna excepción.
-- **Nunca entregar placeholders** tipo "Lorem ipsum" o "TÍTULO ACÁ".
+- **Nunca entregar placeholders** tipo "Lorem ipsum" o "TÍTULO ACÁ". Y ojo con
+  los que no se ven como placeholders: un `p.emoji || '2 × 1'` en el mapeo a
+  spec le ponía a la placa una promoción que el negocio no estaba haciendo, y
+  eso se publica. Si el campo está vacío, el bloque no se dibuja.
+- **Un tema sugerido tiene que ser cierto sobre ese negocio.** El respaldo sin
+  IA de `content/temas.mjs` no conjuga verbos sobre lo que el negocio vende:
+  una panadería *hace* su producto, un vivero lo *cría* y una bicicletería lo
+  *vende*, y sin saber el rubro no hay forma de acertar. Proponerle a una
+  bicicletería "cómo hacemos bicicletas urbanas" es hacerle publicar algo falso
+  sobre sí misma.
 - **Un dato duro lleva su fuente** en el campo `fuente` de la placa.
 - Los datos de clientes (`data/`) y los PNG (`placas/`) no se versionan.
 
@@ -145,6 +161,34 @@ npm run muestrario                # 5 negocios distintos: ¿se distinguen entre 
 
 Las rutas con IA necesitan `GEMINI_API_KEY` en el entorno — se saca gratis en
 https://aistudio.google.com/app/apikey. Las demás no.
+
+## En producción (Vercel)
+
+El servidor corre como función serverless (`api/index.mjs` monta el mismo
+`manejador` que la CLI). Dos cosas no funcionan solas ahí y hay que tenerlas
+presentes al tocar el motor o el almacenamiento:
+
+- **Chrome no existe en el runtime.** `puppeteer-core` no trae navegador y las
+  rutas de `CHROME_CANDIDATES` son todas de escritorio. Cuando `esServerless()`
+  da verdadero, el motor abre `@sparticuz/chromium` en vez de buscar el binario.
+  Si agregás otra plataforma, esa función es el único lugar a tocar.
+- **El disco es efímero.** `DATA_DIR` cae en `/tmp` y se borra entre
+  invocaciones. Las cuentas van a Firestore, y los PNG a Firebase Storage
+  (`FIREBASE_STORAGE_BUCKET`): se suben apenas se renderizan y `/piezas/...` los
+  sirve desde ahí cuando ya no están en el disco. Sin bucket configurado todo
+  sigue yendo al disco, que es lo correcto en una máquina.
+
+`vercel.json` acota qué se despliega, y las dos cosas que acota importan:
+`outputDirectory: "web"` hace que solo `web/` sea público —antes se servía el
+repositorio entero y `core/`, `cm.mjs` y los `.md` se podían descargar del
+sitio— y `excludeFiles` saca de la función lo que no usa, que si no empaqueta
+todo y se acerca al techo de 250 MB. `.vercelignore` cubre el caso de un
+`vercel deploy` hecho a mano: el CLI no mira `.gitignore`, así que sin ese
+archivo subiría `data/` con las cuentas de los clientes.
+
+Las variables de entorno se cargan en el panel de Vercel, no en `.env`, y hay
+que redesplegar para que las tome. Se comprueba qué hay cargado con
+`vercel build`, que las baja a `.vercel/.env.preview.local`.
 
 Cambiar el modelo: `CM_MODEL=gemini-2.5-flash`. Si lo cambiás, actualizá también
 la tabla de precios en `core/ai/gemini.mjs` — el costo reportado es lo que

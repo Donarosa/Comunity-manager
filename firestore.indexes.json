@@ -1,19 +1,4 @@
 {
-  "indexes": [
-    {
-      "collectionGroup": "publicaciones",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "fecha", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "planes",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "fecha", "order": "DESCENDING" }
-      ]
-    }
-  ],
+  "indexes": [],
   "fieldOverrides": []
 }

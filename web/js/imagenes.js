@@ -116,7 +116,18 @@ export function selectorDeImagen({ cuentaId, orientacion = '', inicial = null, o
                 vaciar(estado).append(aviso(e.message, 'malo'))
               } finally { b.style.opacity = '' }
             },
-          }, el('img', { src: img.miniatura, loading: 'lazy', alt: img.titulo }))
+          }, el('img', {
+            src: img.miniatura,
+            loading: 'lazy',
+            // Sin alt: si la miniatura no carga —a Openverse se le caen
+            // bastantes— el navegador estampa el texto alternativo dentro del
+            // recuadro y desarma la grilla. La descripción ya está en el title
+            // del botón, que es lo que lee un lector de pantalla.
+            alt: '',
+            // Una foto que no se puede ni previsualizar tampoco va a servir
+            // para la placa: se saca de la grilla en vez de dejar el hueco.
+            onerror: () => b.remove(),
+          }))
           galeria.append(b)
         }
       } catch (e) {

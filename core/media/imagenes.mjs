@@ -88,7 +88,13 @@ export async function buscarImagenes({ q, pagina = 1, orientacion = '' }) {
   return {
     total: mezcladas.length,
     resultados: mezcladas,
-    bancos: activos.filter((_, i) => resultados[i].status === 'fulfilled').map(p => p.nombre),
+    // Solo los que efectivamente pusieron fotos en la grilla. Un banco puede
+    // responder 200 con la lista vacía —le pasaba a Unsplash con consultas en
+    // español— y nombrarlo igual le dice al usuario que miró un banco que no
+    // aportó nada.
+    bancos: activos
+      .filter((_, i) => resultados[i].status === 'fulfilled' && resultados[i].value.length > 0)
+      .map(p => p.nombre),
     fallas,
   }
 }

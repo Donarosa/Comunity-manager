@@ -6,6 +6,9 @@
 // cae en un lugar concreto de una placa.
 
 import { pedirJSON } from '../ai/gemini.mjs'
+import { soloCamposDe } from './plantillas.mjs'
+
+export { CAMPOS_DE_PLANTILLA, clavesDePlantilla, soloCamposDe } from './plantillas.mjs'
 
 /* ── reglas estables (se cachean; iguales para todas las cuentas) ── */
 
@@ -159,15 +162,26 @@ export function contextoDeMarca(brand) {
  * @param {string} [o.pedido]    pedido puntual del usuario ("promo del finde")
  * @param {string} [o.evitar]    temas ya usados, para no repetir
  */
-export async function generarPlan({ brand, posteos = 3, historias = 2, pedido = '', evitar = '' }) {
+export async function generarPlan({ brand, posteos = 3, historias = 2, pedido = '', evitar = '', forma = '' }) {
   const total = posteos + historias
   if (total < 1) throw new Error('pedí al menos una pieza')
   if (total > 14) throw new Error('máximo 14 piezas por plan; hacelo en dos tandas')
 
+  // Cuando se pide una publicación puntual —y no un plan de la semana— quien
+  // elige la forma es el usuario en la pantalla, no la IA.
+  const FORMAS = {
+    post: 'Una sola placa de feed, sin carrusel.',
+    carrusel: 'Un único carrusel de feed de 3 a 5 placas: portada, desarrollo y cierre.',
+    historia: 'Una sola historia, canal "historia".',
+    cuadrado: 'Una sola placa cuadrada, canal "cuadrado".',
+  }
+
   const instruccion = [
-    `Armá un plan de contenido con ${posteos} posteo(s) de feed y ${historias} historia(s).`,
-    posteos > 0 && `De los posteos de feed, al menos uno tiene que ser un carrusel de 3 a 5 placas (portada + desarrollo + cierre). Los demás pueden ser placa suelta.`,
-    historias > 0 && `Cada historia es una sola placa, canal "historia".`,
+    FORMAS[forma]
+      ? `Armá una sola publicación. ${FORMAS[forma]}`
+      : `Armá un plan de contenido con ${posteos} posteo(s) de feed y ${historias} historia(s).`,
+    !FORMAS[forma] && posteos > 0 && `De los posteos de feed, al menos uno tiene que ser un carrusel de 3 a 5 placas (portada + desarrollo + cierre). Los demás pueden ser placa suelta.`,
+    !FORMAS[forma] && historias > 0 && `Cada historia es una sola placa, canal "historia".`,
     pedido && `\nPedido puntual del negocio, tiene prioridad sobre todo lo demás:\n${pedido}`,
     evitar && `\nYa se publicó esto hace poco, no lo repitas:\n${evitar}`,
   ].filter(Boolean).join('\n')
@@ -188,9 +202,19 @@ export async function generarPlan({ brand, posteos = 3, historias = 2, pedido = 
 
 const PAD = n => String(n).padStart(2, '0')
 
-export function placaToSlide(p, { nombre, idx = '', formato = 'feed', foto = null }) {
+export function placaToSlide(placa, { nombre, idx = '', formato = 'feed', foto = null }) {
+  // Se sanea antes de mapear: lo que la plantilla no declara no llega al motor.
+  const p = soloCamposDe(placa)
   // `disposicion` va en el slide para que una placa pueda pisar la de la marca.
-  const base = { name: nombre, format: formato, disposicion: p.disposicion || undefined }
+  // La foto de fondo es opcional y transversal: cualquier plantilla puede
+  // llevarla —el editor la ofrece en las historias— y el template la dibuja
+  // solo si viene. Su crédito la acompaña siempre: es la licencia del banco.
+  const base = {
+    name: nombre, format: formato,
+    disposicion: p.disposicion || undefined,
+    photo: foto || undefined,
+    credito: (foto && p.credito) || undefined,
+  }
 
   switch (p.plantilla) {
     case 'portada':
@@ -203,13 +227,32 @@ export function placaToSlide(p, { nombre, idx = '', formato = 'feed', foto = nul
         steps: (p.pasos || []).map(s => ({ n: s.numero, k: s.etiqueta, t: s.titulo, d: s.detalle })),
       }
     case 'oferta':
-      return { ...base, style: 'flat', type: 'promo', badge: p.kicker || 'BENEFICIO EXCLUSIVO', title: p.titulo, cifra: p.emoji || '2 × 1', body: p.cuerpo, cta: p.fuente || undefined, idx }
+      // Nada de valores de relleno acá. Un "2 × 1" o un "BENEFICIO EXCLUSIVO"
+      // puestos por defecto no son un placeholder feo que se note: son una
+      // promesa comercial que el negocio nunca hizo y que igual se publica.
+      // Si el campo está vacío, el bloque no se dibuja.
+      return {
+        ...base, style: 'flat', type: 'promo', idx,
+        badge: p.kicker || undefined, title: p.titulo, cifra: p.emoji || undefined,
+        body: p.cuerpo, chips: p.chips || [],
+      }
     case 'cierre':
-      return { ...base, style: 'flat', type: 'trial', pill: p.kicker, title: p.titulo, body: p.cuerpo }
+      return { ...base, style: 'flat', type: 'trial', pill: p.kicker, title: p.titulo, body: p.cuerpo, idx }
     case 'frase':
       return { ...base, style: 'flat', type: 'quote', title: p.titulo, body: p.cuerpo, idx }
+    // El estilo "vector": titular serif sobre color pleno, con las palabras
+    // marcadas en itálica y en el acento de la marca.
+    case 'manifiesto':
+      return { ...base, style: 'vector', eyebrow: p.kicker || '', headline: p.titulo }
     case 'foto':
-      return { ...base, style: 'foto', kick: p.kicker, eyebrow: p.kicker || '', badge: p.emoji || undefined, line1: p.titulo, line2: p.linea2, body: p.cuerpo, cta: p.fuente || undefined, photo: foto || null, src: p.fuente || '' }
+      // La volanta va en una sola ranura —el eyebrow, arriba del título— y el
+      // crédito en una sola —el pie—. Mandar el mismo dato a dos lugares hacía
+      // que "OFICIO" y el crédito de la foto salieran duplicados en la placa.
+      return {
+        ...base, style: 'foto',
+        eyebrow: p.kicker || '', line1: p.titulo, line2: p.linea2,
+        photo: foto || null, src: p.credito || p.fuente || '',
+      }
     default:
       throw new Error(`plantilla desconocida: ${p.plantilla}`)
   }

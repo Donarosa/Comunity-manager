@@ -64,6 +64,9 @@ export const api = {
   renderizar: (id, datos) => pedir(`/cuentas/${id}/placa`, { metodo: 'POST', cuerpo: datos }),
   contenido: (id, datos) => pedir(`/cuentas/${id}/contenido`, { metodo: 'POST', cuerpo: datos }),
 
+  // De qué publicar. Vienen guardados de la cuenta salvo que se pidan otros.
+  temas: (id, refrescar = false) => pedir(`/cuentas/${id}/temas${refrescar ? '?refrescar=1' : ''}`),
+
   // Imágenes
   buscarImagenes: (q, pagina = 1, orientacion = '') =>
     pedir(`/imagenes/buscar?q=${encodeURIComponent(q)}&pagina=${pagina}&orientacion=${orientacion}`),

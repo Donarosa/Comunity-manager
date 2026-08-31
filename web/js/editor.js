@@ -6,32 +6,60 @@
 // desincroniza del render en la primera semana y el usuario descubre la
 // diferencia recién cuando ya publicó.
 //
-// Escribir no consume nada del plan. Solo se descuenta al bajar el PNG.
+// Escribir no consume nada del plan. Solo se descuenta al generar las placas.
 
 import { api } from './api.js'
 import { el, $$, vaciar, aviso, elegirEnGrupo, demorar } from './ui.js'
 import { selectorDeImagen } from './imagenes.js'
+// Qué campos tiene cada plantilla lo dice el núcleo, que es el mismo que
+// después arma el spec. Con la lista duplicada acá, las dos se despegaban y el
+// formulario terminaba mandando campos que el render no dibuja —o al revés.
+import { CAMPOS_DE_PLANTILLA, clavesDePlantilla, camposSecundarios,
+         CAMPOS_PRINCIPALES, plantillaSegunPosicion } from '/nucleo/content/plantillas.mjs'
 
 /* ── plantillas ──────────────────────────────────────────── */
 
-const PLANTILLAS = {
-  portada: { label: 'Portada', para: 'La primera del carrusel. Su único trabajo es que la persona deslice.', campos: ['kicker', 'titulo', 'cuerpo'] },
-  texto: { label: 'Texto', para: 'Volanta, título y párrafo. La que más se usa.', campos: ['kicker', 'titulo', 'cuerpo', 'fuente'] },
-  pasos: { label: 'Pasos', para: 'Un proceso en 3 o 4 pasos.', campos: ['kicker', 'titulo', 'pasos'] },
-  oferta: { label: 'Oferta', para: 'Un producto o servicio, con sus datos duros.', campos: ['emoji', 'kicker', 'titulo', 'cuerpo', 'chips'] },
-  cierre: { label: 'Cierre', para: 'La última del carrusel: la que pide la acción.', campos: ['kicker', 'titulo', 'cuerpo'] },
-  frase: { label: 'Frase', para: 'Una sola frase con peso, en serif sobre color pleno.', campos: ['kicker', 'titulo'] },
-  foto: { label: 'Sobre una foto', para: 'Dos líneas cortas encima de una imagen.', campos: ['kicker', 'titulo', 'linea2', 'imagen', 'fuente'] },
+// Acá va solo lo que es de pantalla: cómo se llama la plantilla y para qué
+// sirve. Los campos salen de CAMPOS_DE_PLANTILLA.
+//
+// Portada y cierre no están: son la primera y la última placa de un carrusel,
+// y eso lo decide la posición, no una pregunta al usuario. Siguen existiendo
+// como plantilla porque el motor las dibuja distinto.
+const ROTULOS = {
+  texto: { label: 'Texto', para: 'Un título con su explicación. La que más se usa.' },
+  pasos: { label: 'Pasos', para: 'Un proceso en 3 o 4 pasos.' },
+  oferta: { label: 'Oferta', para: 'Un producto o servicio, con su precio.' },
+  frase: { label: 'Frase', para: 'Una cita entre comillas, en bastardilla sobre color pleno.' },
+  manifiesto: { label: 'Manifiesto', para: 'Una declaración grande, con las palabras que importan en color.' },
+  foto: { label: 'Sobre una foto', para: 'Dos líneas cortas encima de una imagen.' },
 }
 
+// Las que el motor dibuja pero el usuario no elige: se asignan por posición.
+const ROTULOS_INTERNOS = {
+  portada: { label: 'Portada', para: 'La primera del carrusel. Su único trabajo es que la persona deslice.' },
+  cierre: { label: 'Cierre', para: 'La última del carrusel: la que pide la acción.' },
+}
+
+const PLANTILLAS = Object.fromEntries(
+  Object.entries({ ...ROTULOS, ...ROTULOS_INTERNOS })
+    .map(([id, r]) => [id, { ...r, campos: CAMPOS_DE_PLANTILLA[id] }])
+)
+
+// Los rótulos hablan el idioma de quien atiende el mostrador, no el del taller
+// de diseño. "Volanta" y "cuerpo" son palabras de oficio gráfico, y "fuente"
+// además choca con el otro sentido que tiene en la aplicación: la tipografía.
 const CAMPOS = {
-  kicker: { label: 'Volanta', ayuda: 'Una etiqueta de 1 a 3 palabras, va en mayúsculas chicas.', ej: 'Masa madre', max: 26 },
+  kicker: { label: 'Etiqueta', ayuda: 'Dos o tres palabras que van arriba del título, en chico.', ej: 'Masa madre', max: 26, agregar: 'Agregar una etiqueta arriba' },
   titulo: { label: 'Título', ayuda: 'Lo único que se lee seguro. Hasta 55 caracteres.', ej: 'Por qué tardamos tres días en hacer un pan', max: 55, largo: true, resalta: true },
-  cuerpo: { label: 'Cuerpo', ayuda: 'Entre 90 y 200 caracteres. Más largo no se lee y desborda.', ej: 'La masa madre no se apura. Te contamos qué pasa en cada uno de esos días.', max: 200, largo: true, negrita: true },
-  linea2: { label: 'Segunda línea', ayuda: 'Va en el color de tu marca, debajo de la primera.', ej: 'todos los días a las 7', max: 40, largo: true },
-  fuente: { label: 'Fuente del dato', ayuda: 'Si afirmás un dato duro, de dónde sale. En una placa con foto, acá va el crédito.', ej: '', max: 90 },
-  emoji: { label: 'Emoji', ayuda: 'Uno solo, va grande arriba del título.', ej: '🥖', max: 4 },
-  chips: { label: 'Datos', ayuda: 'De 2 a 3, cortitos. Uno por línea.', ej: 'Desde $4.500\nRetiro en el local' },
+  cuerpo: { label: 'El texto', ayuda: 'Entre 90 y 200 caracteres. Más largo no se lee y desborda.', ej: 'La masa madre no se apura. Te contamos qué pasa en cada uno de esos días.', max: 200, largo: true, negrita: true, agregar: 'Agregar un texto abajo' },
+  linea2: { label: 'Segunda frase', ayuda: 'Va en el color de tu marca, debajo de la primera.', ej: 'todos los días a las 7', max: 40, largo: true, agregar: 'Agregar una segunda frase' },
+  // Era el único campo del formulario sin ejemplo, y encima el más abstracto:
+  // sin ver qué se espera, lo que se escribe ahí no es una fuente. El rótulo
+  // usa la palabra "fuente" —dentro del editor no compite con la tipografía,
+  // que se elige en el alta— y la ayuda muestra cómo queda estampado.
+  fuente: { label: 'La fuente del dato', ayuda: 'Quién publicó el número que estás usando. Al pie de la placa sale como «Fuente — INDEC».', ej: 'INDEC, 2025', max: 90, agregar: 'Citar la fuente de un dato' },
+  emoji: { label: 'Un emoji, si querés', ayuda: 'Uno solo, va grande arriba del título.', ej: '🥖', max: 4, agregar: 'Agregar un emoji' },
+  chips: { label: 'Precios o condiciones', ayuda: 'De 2 a 3, cortitos. Uno por línea.', ej: 'Desde $4.500\nRetiro en el local' },
   pasos: { label: 'Los pasos', ayuda: 'Tres o cuatro. Con más, la placa se aprieta y deja de leerse.' },
   imagen: { label: 'La foto' },
 }
@@ -41,6 +69,16 @@ const vacia = plantilla => ({
   kicker: '', titulo: '', cuerpo: '', linea2: '', fuente: '', emoji: '',
   chips: [], pasos: [], foto: null, credito: '',
 })
+
+/** El papel que cumple una placa dentro de un carrusel, para el rótulo. */
+const PAPEL = { portada: ' · la portada', cierre: ' · la que cierra' }
+
+/** Lienzo de cada canal. Los números salen de core/render/formats.mjs. */
+const FORMATOS = {
+  feed: { w: 1080, h: 1350, rotulo: 'Post de feed (1080×1350)', maxAncho: 400 },
+  historia: { w: 1080, h: 1920, rotulo: 'Historia (1080×1920)', maxAncho: 330 },
+  cuadrado: { w: 1080, h: 1080, rotulo: 'Placa cuadrada (1080×1080)', maxAncho: 400 },
+}
 
 /* ── pantalla ────────────────────────────────────────────── */
 
@@ -59,10 +97,14 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
   function elegirFormato() {
     const cont = el('div', { style: 'padding:40px 0 80px;max-width:760px' })
 
+    // Todo en columna. Con el título y la descripción como dos spans en línea
+    // salía "FeedEl posteo que queda en tu perfil.", y con la medida al costado
+    // el texto quedaba en una columna de cuatro palabras de ancho.
     const opcion = (titulo, detalle, medidas, onClick) =>
-      el('button.opcion', { onclick: onClick, style: 'display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center' },
-        el('span', {}, el('b', {}, titulo), el('span', {}, detalle)),
-        el('span.rotulo', {}, medidas))
+      el('button.opcion', { onclick: onClick, style: 'display:flex;flex-direction:column;align-items:flex-start;gap:6px' },
+        el('b', {}, titulo),
+        el('span', { style: 'flex:1' }, detalle),
+        el('span.rotulo', { style: 'margin-top:4px' }, medidas))
 
     if (!st.canal) {
       cont.append(
@@ -73,7 +115,9 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
           opcion('Feed', 'El posteo que queda en tu perfil.', '1080×1350',
             () => { st.canal = 'feed'; pintar() }),
           opcion('Historia', 'Se ve 24 horas, a pantalla completa. También sirve de portada de reel.', '1080×1920',
-            () => { st.canal = 'historia'; st.placas = [vacia('texto')]; pintar() })
+            () => { st.canal = 'historia'; st.placas = [vacia('texto')]; pintar() }),
+          opcion('Cuadrada', 'La clásica. Entra bien en el perfil y sirve para reutilizar en otras redes.', '1080×1080',
+            () => { st.canal = 'cuadrado'; st.placas = [vacia('texto')]; pintar() })
         ),
         el('div.aviso', { style: 'margin-top:24px' },
           'Instagram te deja recortar el formato justo antes de publicar. Si bajás una placa de feed y la querés como historia, te la va a recortar por los costados y podés perder texto: conviene armarla en el formato en el que la vas a subir.')
@@ -90,7 +134,9 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
         opcion('Post', 'Una sola placa.', '1 imagen',
           () => { st.tipo = 'post'; st.placas = [vacia('texto')]; pintar() }),
         opcion('Carrusel', 'Empieza con una portada y termina pidiendo la acción.', 'hasta 6',
-          () => { st.tipo = 'carrusel'; st.placas = [vacia('portada'), vacia('texto'), vacia('cierre')]; pintar() })
+          // Las tres arrancan iguales: la primera se dibuja como portada y la
+          // última como cierre por estar donde están, no por elección.
+          () => { st.tipo = 'carrusel'; st.placas = [vacia('texto'), vacia('texto'), vacia('texto')]; pintar() })
       ),
       el('div.acciones-paso', {}, el('button.btn.texto', { onclick: () => { st.canal = null; pintar() } }, '← Volver'))
     )
@@ -103,20 +149,36 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
     const esCarrusel = st.tipo === 'carrusel'
     const esHistoria = st.canal === 'historia'
     const placa = () => st.placas[st.activa]
+    // La placa que se está editando. Se toma una sola vez porque cambiar de
+    // placa vuelve a pintar el editor entero.
+    const p = placa()
 
     const form = el('div.editor-form')
     const vista = el('div.editor-vista')
     contenedor.append(el('div.editor', {}, form, vista))
 
-    /* — vista previa — */
-    const lienzo = el('div.lienzo', { style: esHistoria ? 'width:360px;height:640px' : 'width:400px;height:500px' })
+    /* — vista previa —
+     *
+     * El iframe se dibuja al tamaño real de la placa y se achica con un
+     * transform. La escala no puede ser un número fijo: en un teléfono el
+     * lienzo mide bastante menos que en el escritorio, y una escala calculada
+     * para 400px deja la placa cortada. Se recalcula contra el ancho real. */
+    const F = FORMATOS[st.canal] || FORMATOS.feed
+    const lienzo = el('div.lienzo', { style: `aspect-ratio:${F.w}/${F.h};max-width:${F.maxAncho}px` })
     const marco = el('iframe', {
-      width: esHistoria ? 1080 : 1080,
-      height: esHistoria ? 1920 : 1350,
+      width: F.w,
+      height: F.h,
       scrolling: 'no',
-      style: `transform:scale(${esHistoria ? 360 / 1080 : 400 / 1080})`,
+      title: 'Vista previa de la placa',
     })
     lienzo.append(marco)
+
+    const ajustarEscala = () => {
+      const ancho = lienzo.clientWidth
+      if (ancho) marco.style.transform = `scale(${ancho / F.w})`
+    }
+    ajustarEscala()
+    new ResizeObserver(ajustarEscala).observe(lienzo)
 
     const errorVista = el('div', { style: 'margin-top:12px' })
     const medidor = el('div.medidor', { style: 'margin-top:10px' })
@@ -130,6 +192,7 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
           canal: st.canal,
           placa: {
             ...p,
+            plantilla: plantillaSegunPosicion(p.plantilla, st.activa, st.placas.length),
             fuente: p.credito && !p.fuente ? p.credito : p.fuente,
             idx: esCarrusel ? `${String(st.activa + 1).padStart(2, '0')}/${String(st.placas.length).padStart(2, '0')}` : '',
             foto: p.foto?.ruta || null,
@@ -144,20 +207,32 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
     }
     const refrescarDemorado = demorar(refrescar, 400)
 
-    /* — descarga — */
+    /* — generar y guardar —
+     *
+     * Son dos pasos y el botón lo dice: el primero genera las placas —eso es lo
+     * que consume cuota— y recién después aparecen las de guardar. Antes el
+     * botón decía "Bajar el PNG" y lo que hacía era generar; el usuario creía
+     * estar descargando algo y en realidad estaba gastando el plan. */
     const errorBajar = el('div', { style: 'margin-top:12px' })
     const salida = el('div', { style: 'margin-top:12px' })
-    const bajar = el('button.btn', {
+    const rotuloGenerar = () => st.placas.length > 1
+      ? `Generar las ${st.placas.length} placas`
+      : 'Generar la placa'
+
+    const generar = el('button.btn', {
       onclick: async () => {
         vaciar(errorBajar); vaciar(salida)
-        bajar.disabled = true
-        bajar.textContent = 'Renderizando…'
+        generar.disabled = true
+        generar.textContent = st.placas.length > 1 ? 'Generando las placas…' : 'Generando la placa…'
         try {
           const r = await api.renderizar(cuenta.id, {
             canal: st.canal,
             nombre: `${st.canal}-${Date.now().toString(36)}`,
-            placas: st.placas.map(p => ({
+            placas: st.placas.map((p, i) => ({
               ...p,
+              // La primera y la última de un carrusel se dibujan como portada y
+              // cierre. Es lo mismo que muestra la vista previa.
+              plantilla: plantillaSegunPosicion(p.plantilla, i, st.placas.length),
               fuente: p.credito && !p.fuente ? p.credito : p.fuente,
               foto: p.foto?.ruta || null,
             })),
@@ -166,33 +241,33 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
           const ref = r.estado?.valor?.referencia
           const n = r.archivos.length
           salida.append(
-            el('div.aviso.bien', {}, `Listo: ${n} placa${n > 1 ? 's' : ''} en 2160 píxeles de ancho.`),
+            el('div.aviso.bien', {}, n > 1
+              ? `Listas: ${n} placas en alta resolución, 2160 píxeles de ancho.`
+              : 'Lista: tu placa en alta resolución, 2160 píxeles de ancho.'),
             // El incremento, en el momento en que se produjo. Es cuando más
             // significa: recién vio el trabajo salir.
             ref ? el('p.medidor', { style: 'margin-top:8px' },
               `+${n} ${n > 1 ? 'placas' : 'placa'} · `,
               el('b', {}, ref.simbolo + Math.round(n * ref.precioPorPlaca).toLocaleString('es-AR')),
               ` ${ref.modo === 'ahorro' ? 'ahorrados' : 'a precio de diseñador'}`) : null,
-            el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:10px' },
-              r.archivos.map(a =>
-                el('a.btn.fantasma.chico', { href: a.url, download: `${a.name}.png`, target: '_blank' }, `Bajar ${a.name}.png`)))
+            bloqueDeGuardado(r.archivos)
           )
         } catch (e) {
           errorBajar.append(aviso(
-            e.codigo === 'cuota_excedida' ? e.message : `No se pudo generar: ${e.message}`, 'malo'))
+            e.codigo === 'cuota_excedida' ? e.message : `No se pudieron generar: ${e.message}`, 'malo'))
         } finally {
-          bajar.disabled = false
-          bajar.textContent = 'Bajar el PNG'
+          generar.disabled = false
+          generar.textContent = rotuloGenerar()
         }
       },
-    }, 'Bajar el PNG')
+    }, rotuloGenerar())
 
     vista.append(
       el('span.rotulo', { style: 'display:block;margin-bottom:10px' }, 'Vista previa'),
       lienzo, errorVista,
       el('p.apunte.chico', { style: 'margin-top:12px' },
-        'Es el render de verdad, achicado. Escribir no descuenta nada del plan: solo se descuenta al bajar.'),
-      el('div', { style: 'margin-top:16px' }, bajar),
+        'Así va a salir. Escribir y probar no descuenta nada del plan: solo se descuenta cuando generás.'),
+      el('div', { style: 'margin-top:16px' }, generar),
       errorBajar, salida, medidor
     )
 
@@ -240,7 +315,11 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
     form.append(
       el('div', { style: 'display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--color-rule);' },
         el('div', {},
-          el('span.rotulo', {}, esHistoria ? 'Historia (1080×1920)' : esCarrusel ? `Carrusel · placa ${st.activa + 1} de ${st.placas.length}` : 'Post de feed (1080×1350)'),
+          // En un carrusel se dice qué papel cumple la placa: la primera y la
+          // última se dibujan distinto y conviene que se sepa antes de escribir.
+          el('span.rotulo', {}, esCarrusel
+            ? `Carrusel · placa ${st.activa + 1} de ${st.placas.length}${PAPEL[plantillaSegunPosicion(p.plantilla, st.activa, st.placas.length)] || ''}`
+            : F.rotulo),
           el('h2', { style: 'margin:2px 0 0;' }, 'Escribí tu placa')
         ),
         el('div', { style: 'display:flex;gap:8px;align-items:center;' },
@@ -251,20 +330,15 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
     )
 
     /* — selector de plantilla visual con chips — */
-    const p = placa()
-    const disponibles = Object.entries(PLANTILLAS).filter(([id]) => {
-      if (!esCarrusel) return id !== 'portada' && id !== 'cierre'
-      if (st.activa === 0) return true
-      return true
-    })
+    // Portada y cierre no se ofrecen: son la primera y la última del carrusel.
+    const disponibles = Object.entries(ROTULOS)
 
     const ICONOS_PLANTILLA = {
-      portada: '🎯',
       texto: '📝',
       pasos: '🔢',
       oferta: '🏷️',
-      cierre: '🚀',
       frase: '💬',
+      manifiesto: '📣',
       foto: '📸',
     }
 
@@ -272,7 +346,12 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
     disponibles.forEach(([id, def]) => {
       const btn = el('button.pestana' + (id === p.plantilla ? '.activa' : ''), {
         onclick: () => {
-          const conservar = { kicker: p.kicker, titulo: p.titulo, cuerpo: p.cuerpo, foto: p.foto, credito: p.credito, disposicion: p.disposicion }
+          // Solo se arrastra lo que la plantilla nueva va a mostrar. Conservar
+          // todo dejaba texto colgado: el cuerpo de una oferta seguía saliendo
+          // en la frase, invisible en el formulario y visible en el PNG.
+          const usa = clavesDePlantilla(id)
+          const conservar = { disposicion: p.disposicion }
+          for (const k of usa) if (p[k] !== undefined) conservar[k] = p[k]
           st.placas[st.activa] = { ...vacia(id), ...conservar }
           editarDeNuevo()
         }
@@ -296,8 +375,8 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
           el('option', { value: d.id, selected: p.disposicion === d.id }, `${d.label} — ${d.descripcion}`))
       )
       form.append(el('div.campo', {},
-        el('label', {}, 'Disposición del texto'),
-        el('span.ayuda', {}, 'Cómo se distribuyen los bloques en esta placa puntual.'),
+        el('label', {}, 'Cómo se acomoda'),
+        el('span.ayuda', {}, 'Dónde se apoya el texto en esta placa. Por defecto usa el de tu marca.'),
         selDisp
       ))
     }
@@ -310,7 +389,37 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
       a.classList.add('aviso-sin-foto')
       form.append(a)
     }
-    for (const campo of PLANTILLAS[p.plantilla].campos) form.append(armarCampo(campo, p, refrescarDemorado, medidor))
+    /* — los campos —
+     *
+     * Abiertos van los principales; el resto queda detrás de un botón que dice
+     * qué agrega. Solo el título es obligatorio, pero con los cinco campos
+     * pintados igual el formulario se leía como cinco cosas para completar
+     * antes de poder publicar. Un campo que ya tiene algo escrito se muestra
+     * abierto: si no, al volver a editar la placa desaparecería del formulario
+     * un texto que sí está saliendo en el PNG. */
+    for (const campo of CAMPOS_PRINCIPALES[p.plantilla] || PLANTILLAS[p.plantilla].campos) {
+      form.append(armarCampo(campo, p, refrescarDemorado, medidor))
+    }
+
+    const opcionales = camposSecundarios(p.plantilla)
+    const tieneAlgo = c => c === 'imagen' ? Boolean(p.foto) : Boolean(p[c])
+    const abiertos = new Set(opcionales.filter(tieneAlgo))
+    if (opcionales.length) {
+      const zona = el('div', { style: 'display:flex;flex-direction:column;gap:18px' })
+      const botones = el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' })
+      const repintarOpcionales = () => {
+        vaciar(zona); vaciar(botones)
+        for (const campo of opcionales) {
+          if (abiertos.has(campo)) { zona.append(armarCampo(campo, p, refrescarDemorado, medidor)); continue }
+          botones.append(el('button.btn.fantasma.chico', {
+            type: 'button',
+            onclick: () => { abiertos.add(campo); repintarOpcionales() },
+          }, `＋ ${CAMPOS[campo].agregar || CAMPOS[campo].label}`))
+        }
+      }
+      repintarOpcionales()
+      form.append(zona, botones)
+    }
 
     // En historias, todas las plantillas pueden llevar foto de fondo (opcional).
     // La plantilla 'foto' ya la incluye arriba; el resto la recibe como extra.
@@ -430,7 +539,9 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
     // pedirle a un panadero que escriba HTML a mano.
     const herramientas = el('div', { style: 'display:flex;gap:10px;align-items:center;margin-top:6px' })
     if (def.resalta) {
-      const etiqueta = p.plantilla === 'frase' ? ['<em>', '</em>'] : ['<span class="acc">', '</span>']
+      // Frase y manifiesto marcan con bastardilla; el resto, con el acento.
+      const conEm = p.plantilla === 'frase' || p.plantilla === 'manifiesto'
+      const etiqueta = conEm ? ['<em>', '</em>'] : ['<span class="acc">', '</span>']
       herramientas.append(el('button.btn.texto.chico', {
         onclick: () => {
           const { selectionStart: a, selectionEnd: b, value: v } = entrada
@@ -463,4 +574,81 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
   }
 
   pintar()
+}
+
+/* ── guardar las placas ──────────────────────────────────── */
+
+/**
+ * Qué se le ofrece a la persona una vez que las placas ya existen.
+ *
+ * En el teléfono "descargar" no es lo que quiere: quiere la placa en su galería
+ * o directo en Instagram, y una página web no puede escribir en el carrete por
+ * su cuenta. La hoja de compartir del sistema sí — "Guardar en Fotos" y la
+ * lista de apps salen ahí — así que en pantallas táctiles ese es el camino, y
+ * la descarga clásica queda de respaldo.
+ *
+ * Los archivos se traen apenas termina el render y no al apretar el botón: iOS
+ * cancela el permiso de compartir si entre el toque y la llamada hay una espera
+ * de red. Cuando la persona toca, los datos ya están en memoria.
+ */
+function bloqueDeGuardado(archivos) {
+  const n = archivos.length
+  const caja = el('div', { style: 'display:flex;flex-direction:column;gap:10px;margin-top:14px' })
+
+  const listos = Promise.all(archivos.map(async a => {
+    const res = await fetch(a.url)
+    if (!res.ok) throw new Error(`no se pudo leer ${a.name}`)
+    const blob = await res.blob()
+    return new File([blob], `${a.name}.png`, { type: blob.type || 'image/png' })
+  })).catch(() => null)
+
+  // Un clic por archivo, espaciados: varios `download` simultáneos los bloquea
+  // el navegador y solo baja el primero.
+  const descargarTodo = () => archivos.forEach((a, i) => setTimeout(() => {
+    const link = el('a', { href: a.url, download: `${a.name}.png` })
+    document.body.append(link)
+    link.click()
+    link.remove()
+  }, i * 250))
+
+  const esTactil = window.matchMedia?.('(pointer: coarse)').matches
+  const puedeCompartir = esTactil && typeof navigator.canShare === 'function' && typeof navigator.share === 'function'
+
+  const principal = el('button.btn', {
+    onclick: async () => {
+      if (puedeCompartir) {
+        const files = await listos
+        if (files && navigator.canShare({ files })) {
+          try {
+            await navigator.share({ files, title: n > 1 ? 'Mis placas' : 'Mi placa' })
+            return
+          } catch (e) {
+            // Cerrar la hoja de compartir no es un error: no hay que insistir
+            // bajando el archivo por atrás.
+            if (e?.name === 'AbortError') return
+          }
+        }
+      }
+      descargarTodo()
+    },
+  }, puedeCompartir
+    ? (n > 1 ? 'Guardar las placas en el teléfono' : 'Guardar la placa en el teléfono')
+    : (n > 1 ? `Descargar las ${n} placas` : 'Descargar la placa'))
+
+  caja.append(principal)
+
+  if (puedeCompartir) {
+    caja.append(el('p.apunte.chico', { style: 'margin:0' },
+      'Se abre el menú de tu teléfono: desde ahí las guardás en la galería o las mandás directo a Instagram.'))
+  }
+
+  // Con un carrusel conviene poder bajar una sola, para rehacer nada más que esa.
+  if (n > 1) {
+    caja.append(el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' },
+      archivos.map((a, i) => el('a.btn.fantasma.chico', {
+        href: a.url, download: `${a.name}.png`,
+      }, `Placa ${i + 1}`))))
+  }
+
+  return caja
 }

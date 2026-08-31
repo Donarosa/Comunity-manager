@@ -30,6 +30,9 @@ function mostrarLanding() {
   landing.classList.remove('oculto')
   $$('[data-solo-landing]').forEach(n => n.classList.remove('oculto'))
   btnEntrar.textContent = usuarioActual ? 'Ir al Dashboard' : 'Empezar'
+  // Con la sesión abierta, "Iniciar sesión" al lado de "Ir al Dashboard" son
+  // dos respuestas distintas a la misma pregunta.
+  btnLoginNav?.classList.toggle('oculto', Boolean(usuarioActual))
 }
 
 function mostrarApp(pintar) {
@@ -79,7 +82,7 @@ function abrirDashboard() {
     catalogo,
     onAbrirEditor: abrirEditor,
     onAbrirWizard: abrirWizard,
-    onAbrirPlan: vistaPlan,
+    onAbrirPlan: vistaSugerir,
     alCerrarSesion: () => {
       cuenta = null
       localStorage.removeItem(LLAVE)
@@ -116,49 +119,180 @@ function abrirWizard() {
 
 /* ── plan de contenido ───────────────────────────────────── */
 
-function vistaPlan() {
+/* ── sugerir contenido ───────────────────────────────────────
+ *
+ * Tres preguntas y las placas hechas. Reemplaza al formulario de plan semanal,
+ * que arrancaba pidiendo "cuántos posteos y cuántas historias" —una cuenta que
+ * el negocio no tiene por qué haber pensado— antes de preguntar de qué quería
+ * hablar. Acá la primera pregunta es el tema, que es lo único que la persona sí
+ * tiene en la cabeza cuando abre la aplicación.
+ *
+ * "Toda la semana" quedó como una forma más: el plan semanal ya estaba
+ * construido y funcionaba, así que pasa a ser un tipo de pedido en vez de un
+ * botón aparte que compite con el de publicar.
+ */
+
+const FORMAS = [
+  { id: 'post', titulo: 'Un posteo', detalle: 'Una placa sola para el feed.', placas: '1 placa' },
+  { id: 'carrusel', titulo: 'Un carrusel', detalle: 'Se desliza: portada, desarrollo y cierre.', placas: 'hasta 5 placas' },
+  { id: 'historia', titulo: 'Una historia', detalle: 'Vertical, dura 24 horas.', placas: '1 placa' },
+  { id: 'cuadrado', titulo: 'Una cuadrada', detalle: 'Sirve para reusar en otras redes.', placas: '1 placa' },
+  { id: 'semana', titulo: 'Toda la semana', detalle: 'Varios posteos e historias de una vez.', placas: 'hasta 17 placas' },
+]
+
+function vistaSugerir() {
   if (!cuenta) return entrar()
+  const st = { tema: '', forma: 'carrusel', posteos: 3, historias: 2 }
+
   mostrarApp(cont => {
-    const panel = el('div', { style: 'padding:40px 0 80px;max-width:760px' })
+    const panel = el('div', { style: 'padding:0 0 100px;max-width:760px' })
     cont.append(panel)
+    paso1()
 
-    const posteos = el('select', {}, [1, 2, 3, 4].map(n => el('option', { value: n, selected: n === 3 }, `${n} posteo${n > 1 ? 's' : ''}`)))
-    const historias = el('select', {}, [0, 1, 2, 3].map(n => el('option', { value: n, selected: n === 2 }, `${n} historia${n === 1 ? '' : 's'}`)))
-    const pedido = el('textarea', { rows: 3, placeholder: 'Ej: quiero promocionar el combo del fin de semana y contar que ahora hacemos delivery.' })
+    /* — 1 · de qué hablamos — */
+    function paso1() {
+      vaciar(panel)
+      const texto = el('textarea', {
+        rows: 3,
+        placeholder: 'Ej: que ahora abrimos los domingos y las facturas salen a las 8',
+        value: st.tema,
+      })
+      texto.addEventListener('input', () => { st.tema = texto.value })
 
-    const salida = el('div', { style: 'margin-top:26px' })
-    const pedir = el('button.btn', {
-      onclick: async () => {
-        pedir.disabled = true
-        vaciar(salida).append(el('p.cargando-txt', {}, 'Escribiendo el contenido y renderizando las placas'))
-        try {
-          const r = await api.contenido(cuenta.id, {
-            posteos: Number(posteos.value),
-            historias: Number(historias.value),
-            pedido: pedido.value.trim(),
-          })
-          actualizarChip(r.estado)
-          mostrarPlan(salida, r)
-        } catch (e) {
-          vaciar(salida).append(aviso(e.message, 'malo'))
-        } finally {
-          pedir.disabled = false
+      const chips = el('div.chips-temas')
+      const nota = el('span.ayuda', {}, 'Buscando ideas con lo que contaste de tu negocio…')
+
+      const pintarChips = ({ temas, origen }) => {
+        vaciar(chips)
+        if (!temas.length) { nota.textContent = 'Escribí vos de qué querés hablar.'; return }
+        nota.textContent = origen === 'ia'
+          ? 'Salen de tu rubro, lo que vendés y lo que te diferencia.'
+          : 'Armadas con lo que cargaste en el alta.'
+        for (const t of temas) {
+          chips.append(el('button.chip-tema', {
+            type: 'button',
+            onclick: () => {
+              texto.value = t
+              st.tema = t
+              $$('.chip-tema', chips).forEach(c => c.classList.remove('elegido'))
+              chips.querySelector(`[data-t="${CSS.escape(t)}"]`)?.classList.add('elegido')
+            },
+            dataset: { t },
+          }, t))
         }
-      },
-    }, 'Armar el plan')
+      }
 
-    panel.append(
-      el('span.rotulo', {}, 'Plan de contenido semanal'),
-      el('h2', { style: 'margin:6px 0 8px' }, '¿Qué publicamos esta semana?'),
-      el('p.intro', {}, 'Proponemos los posteos, escribimos el texto de las placas y el del posteo, y renderizamos todo con tu marca.'),
-      el('div.campo', {}, el('label', {}, 'Cuánto'),
-        el('div', { style: 'display:flex;gap:10px' }, posteos, historias)),
-      el('div.campo', {}, el('label', {}, '¿Algo puntual?'),
-        el('span.ayuda', {}, 'Opcional. Si hay una promoción, una novedad o algo que querés contar, escribilo acá.'),
-        pedido),
-      el('div.acciones-paso', {}, pedir, el('button.btn.texto', { onclick: abrirDashboard }, '← Volver al Dashboard')),
-      salida
-    )
+      api.temas(cuenta.id)
+        .then(pintarChips)
+        .catch(() => { nota.textContent = 'Escribí vos de qué querés hablar.' })
+
+      panel.append(
+        el('span.rotulo', {}, 'Paso 1 de 3'),
+        el('h2', { style: 'margin:6px 0 8px' }, '¿De qué querés hablar?'),
+        el('p.intro', {}, 'Contame algo puntual, o elegí una de las ideas de abajo. Escribir no descuenta nada del plan.'),
+        el('div.campo', {}, el('label', {}, 'Algo puntual'), texto),
+        el('div.campo', {}, el('label', {}, 'O elegí una de estas'), nota, chips),
+        el('div.acciones-paso', {},
+          el('button.btn', { onclick: () => { st.tema = texto.value.trim(); paso2() } }, 'Seguir →'),
+          el('button.btn.texto', { onclick: abrirDashboard }, '← Volver al Dashboard'))
+      )
+    }
+
+    /* — 2 · qué tipo — */
+    function paso2() {
+      vaciar(panel)
+      const grilla = el('div.opciones')
+      const marcar = () => $$('.opcion', grilla).forEach(o =>
+        o.classList.toggle('elegida', o.dataset.forma === st.forma))
+
+      for (const f of FORMAS) {
+        grilla.append(el('button.opcion', {
+          dataset: { forma: f.id },
+          style: 'display:flex;flex-direction:column;align-items:flex-start;gap:5px',
+          onclick: () => { st.forma = f.id; marcar(); pintarExtra() },
+        }, el('b', {}, f.titulo), el('span', {}, f.detalle),
+           el('span.rotulo', { style: 'margin-top:4px' }, f.placas)))
+      }
+      marcar()
+
+      // "Toda la semana" es la única forma que necesita preguntar cuánto.
+      const extra = el('div')
+      const pintarExtra = () => {
+        vaciar(extra)
+        if (st.forma !== 'semana') return
+        const posteos = el('select', {},
+          [1, 2, 3, 4].map(n => el('option', { value: n, selected: n === st.posteos }, `${n} posteo${n > 1 ? 's' : ''}`)))
+        const historias = el('select', {},
+          [0, 1, 2, 3].map(n => el('option', { value: n, selected: n === st.historias }, `${n} historia${n === 1 ? '' : 's'}`)))
+        const cuenta_ = el('span.ayuda')
+        const recalcular = () => {
+          st.posteos = Number(posteos.value); st.historias = Number(historias.value)
+          const techo = st.posteos * 5 + st.historias
+          const hoy = estadoCuota?.restante?.piezas?.dia
+          const alcanza = hoy == null || techo <= hoy
+          cuenta_.textContent = `Son hasta ${techo} placas` +
+            (hoy == null ? '.' : alcanza ? ` y te quedan ${hoy} hoy.` : ` y hoy te quedan ${hoy}: elegí menos.`)
+          cuenta_.classList.toggle('malo', !alcanza)
+        }
+        posteos.addEventListener('change', recalcular)
+        historias.addEventListener('change', recalcular)
+        recalcular()
+        extra.append(el('div.campo', { style: 'margin-top:20px' },
+          el('label', {}, 'Cuánto'),
+          el('div', { style: 'display:flex;gap:10px' }, posteos, historias),
+          cuenta_))
+      }
+      pintarExtra()
+
+      panel.append(
+        el('span.rotulo', {}, 'Paso 2 de 3'),
+        el('h2', { style: 'margin:6px 0 8px' }, '¿Qué tipo de publicación?'),
+        el('p.intro', {}, st.tema
+          ? `Sobre «${st.tema}». Cada forma cuenta la misma idea de una manera distinta.`
+          : 'Cada forma cuenta la misma idea de una manera distinta.'),
+        grilla, extra,
+        el('div.acciones-paso', {},
+          el('button.btn', { onclick: generar }, 'Armar la publicación →'),
+          el('button.btn.texto', { onclick: paso1 }, '← Volver'))
+      )
+    }
+
+    /* — 3 · armando y resultado — */
+    async function generar() {
+      vaciar(panel)
+      panel.append(
+        el('span.rotulo', {}, 'Paso 3 de 3'),
+        el('h2', { style: 'margin:6px 0 8px' }, 'Armando tu publicación'),
+        el('p.cargando-txt', {}, 'Escribiendo el texto y renderizando las placas'),
+        el('p.apunte.chico', {}, 'Tarda unos veinte segundos. No cierres esta pantalla.')
+      )
+      try {
+        const esSemana = st.forma === 'semana'
+        const r = await api.contenido(cuenta.id, {
+          pedido: st.tema,
+          forma: esSemana ? '' : st.forma,
+          posteos: esSemana ? st.posteos : 1,
+          historias: esSemana ? st.historias : 0,
+        })
+        actualizarChip(r.estado)
+        vaciar(panel)
+        panel.append(
+          el('span.rotulo', {}, 'Listo'),
+          el('h2', { style: 'margin:6px 0 14px' }, esSemana ? 'Tu semana está lista' : 'Tu publicación está lista')
+        )
+        mostrarPlan(panel, r)
+      } catch (e) {
+        vaciar(panel)
+        panel.append(
+          el('span.rotulo', {}, 'Paso 3 de 3'),
+          el('h2', { style: 'margin:6px 0 8px' }, 'No se pudo armar'),
+          aviso(e.message, 'malo'),
+          el('div.acciones-paso', {},
+            el('button.btn', { onclick: paso2 }, '← Probar de nuevo'),
+            el('button.btn.texto', { onclick: abrirDashboard }, 'Volver al Dashboard'))
+        )
+      }
+    }
   })
 }
 

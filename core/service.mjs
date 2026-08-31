@@ -4,6 +4,7 @@
 // Regla que vale para todo el archivo: la cuota se VERIFICA antes de llamar a
 // la API de IA y se CONSUME después de que el trabajo salió bien.
 
+import { readFileSync } from 'fs'
 import {
   crearCuenta, leerCuenta, leerCuentaAsync, guardarCuenta, listarCuentas, carpetaPiezas,
   registrarPublicacion, listarPublicaciones, registrarPlan, listarPlanes,
@@ -19,6 +20,7 @@ import { generarLogo } from './brand/logo.mjs'
 import { buscarIsotipos } from './brand/repositorio.mjs'
 import { sugerirIdentidad } from './brand/identidad.mjs'
 import { generarPlan, planToSpec, placaToSlide } from './content/plan.mjs'
+import { generarTemas, temasLocales } from './content/temas.mjs'
 import { renderSpec, htmlFor } from './render/engine.mjs'
 import { buscarImagenes, guardarDelBanco, guardarSubida, estadoBanco } from './media/imagenes.mjs'
 import { FONT_PRESETS, LOGO_FONTS } from './brand/fonts.mjs'
@@ -61,7 +63,12 @@ const estadoCompleto = cuenta => ({
 
 function conMarca(cuenta) {
   if (!cuenta.marca) {
-    throw new Error('La cuenta todavía no tiene marca cargada. Configurala primero.')
+    // El mensaje va a la pantalla de un cliente, así que dice qué hacer. Y
+    // lleva código: sin él, el servidor lo trataba como una falla interna y
+    // devolvía un 500 en vez de decir que falta un paso.
+    const e = new Error('Todavía no armaste tu marca. Cargala una vez y las placas salen con tus colores y tu firma.')
+    e.codigo = 'sin_marca'
+    throw e
   }
   return cuenta.marca
 }
@@ -401,6 +408,73 @@ function lienzoVacio(color) {
 
 /* ── imágenes ────────────────────────────────────────────── */
 
+/**
+ * Manda las placas recién renderizadas al almacén remoto.
+ *
+ * En una función serverless el disco donde escribió el motor es /tmp, que se
+ * borra entre invocaciones: sin esto la placa desaparece antes de que el
+ * navegador la pida. Sin bucket configurado no hace nada y los archivos se
+ * quedan donde estaban, que es lo correcto cuando corre en una máquina.
+ */
+async function archivarPiezas(archivos, prefijo) {
+  if (!firestore.hayAlmacen()) return
+  await Promise.all(archivos.map(async a => {
+    const ruta = a.file || a
+    const nombre = String(ruta).split('/').pop()
+    try {
+      await firestore.subirPieza(`${prefijo}/${nombre}`, readFileSync(ruta))
+    } catch (e) {
+      console.warn(`[placas] no se pudo archivar ${nombre}:`, e.message)
+    }
+  }))
+}
+
+/* ── de qué publicar ─────────────────────────────────────── */
+
+/**
+ * Los temas que la pantalla ofrece como atajo.
+ *
+ * Se guardan en la cuenta y se reusan: pedirlos a la IA cada vez que alguien
+ * abre la pantalla sería gastar una llamada por curiosear. Se vuelven a pedir
+ * cuando cambia la marca —el negocio cambió lo que cuenta de sí mismo—, cuando
+ * pasaron los días de `VIGENCIA_TEMAS`, o cuando quien mira pide otros.
+ *
+ * Si la IA no está disponible, se responde igual con los temas locales: la
+ * pantalla nunca se queda vacía, y el que llama sabe de dónde salieron.
+ */
+const VIGENCIA_TEMAS = 14 * 24 * 60 * 60 * 1000
+
+export async function temasParaPublicar(cuentaId, { refrescar = false } = {}) {
+  const cuenta = leerCuenta(cuentaId)
+  const marca = conMarca(cuenta)
+  const evitar = (cuenta.historial || []).slice(-8).map(h => h.tema).filter(Boolean)
+
+  const guardados = cuenta.temas
+  const vigente = guardados
+    && guardados.marca === marca.meta?.slug
+    && Date.now() - new Date(guardados.fecha).getTime() < VIGENCIA_TEMAS
+    && guardados.temas?.length
+
+  if (vigente && !refrescar) {
+    return { temas: guardados.temas, origen: guardados.origen, guardado: true }
+  }
+
+  try {
+    const { temas, costo } = await generarTemas({ brand: marca, evitar })
+    if (temas.length) {
+      registrarCosto(cuenta, costo)
+      cuenta.temas = { temas, origen: 'ia', fecha: new Date().toISOString(), marca: marca.meta?.slug }
+      guardarCuenta(cuenta)
+      return { temas, origen: 'ia', guardado: false }
+    }
+  } catch (e) {
+    // La IA apagada o caída no puede dejar la pantalla sin nada que ofrecer.
+    if (e.codigo !== 'sin_ia') console.warn('[temas] la IA falló, van los locales:', e.message)
+  }
+
+  return { temas: temasLocales(marca.negocio, { evitar }), origen: 'local', guardado: false }
+}
+
 export async function buscarEnBanco(params) {
   return buscarImagenes(params)
 }
@@ -418,17 +492,20 @@ export function subirImagen(cuentaId, datos) {
 /* ── contenido ───────────────────────────────────────────── */
 
 export async function generarContenido(cuentaId, {
-  posteos = 3, historias = 2, pedido = '', fotos = {}, etiqueta = '',
+  posteos = 3, historias = 2, pedido = '', fotos = {}, etiqueta = '', forma = '',
 } = {}) {
   const cuenta = leerCuenta(cuentaId)
   const marca = conMarca(cuenta)
 
-  const techo = posteos * 5 + historias
+  // Con una forma pedida es una sola publicación, así que el techo de cuota es
+  // el de esa publicación y no el de una semana entera.
+  const TECHO_DE_FORMA = { post: 1, carrusel: 5, historia: 1, cuadrado: 1 }
+  const techo = TECHO_DE_FORMA[forma] ?? (posteos * 5 + historias)
   verificar(cuenta, 'planes', 1)
   verificar(cuenta, 'piezas', techo)
 
   const evitar = (cuenta.historial || []).slice(-8).map(h => `- ${h.tema}`).join('\n')
-  const { plan, costo } = await generarPlan({ brand: marca, posteos, historias, pedido, evitar })
+  const { plan, costo } = await generarPlan({ brand: marca, posteos, historias, pedido, evitar, forma })
   registrarCosto(cuenta, costo)
 
   const { dia } = periodo()
@@ -510,6 +587,7 @@ export async function renderizarPieza(cuentaId, { canal = 'feed', placas = [], n
   }))
 
   const archivos = await renderSpec({ spec: { slides }, brand: marca, outDir })
+  await archivarPiezas(archivos, `${cuentaId}/${dia}`)
   consumir(cuenta, 'piezas', placas.length)
   guardarCuenta(cuenta)
 
