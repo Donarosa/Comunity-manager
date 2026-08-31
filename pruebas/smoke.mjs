@@ -23,7 +23,7 @@ import { temasLocales } from '../core/content/temas.mjs'
 import { valorGenerado, REFERENCIA } from '../core/valor.mjs'
 import { intercalar, estadoBanco, guardarDelBanco } from '../core/media/imagenes.mjs'
 import { altaCuenta, subirLogo, renderizarPieza } from '../core/service.mjs'
-import { MODULOS_WEB } from '../core/api/server.mjs'
+import { MODULOS_WEB, obtenerUsuarioAutenticado } from '../core/api/server.mjs'
 import { hayAlmacen as estaActivoElAlmacen } from '../core/store/firestore.mjs'
 
 const RAIZ = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -763,6 +763,79 @@ test('la plantilla manifiesto produce una placa vector', () => {
   const html = htmlFor(slide, brand)
   assert.ok(html.includes('class="slide"'), 'no salió por el template vector')
   assert.ok(html.includes('<em>se espera</em>'), 'perdió el resalte en bastardilla')
+})
+
+console.log('\nquién puede entrar')
+
+const pedidoCon = token => ({ headers: token ? { authorization: `Bearer ${token}` } : {} })
+
+// Sin Firebase configurado, la rama de desarrollo aceptaba cualquier cadena
+// como sesión. En una máquina eso es comodidad; en el servidor era la API
+// abierta con un paso extra, porque `Bearer loquesea` entraba como el usuario
+// "loquesea" y desde ahí le leía la cuenta.
+await testAsync('en el servidor una cadena cualquiera no es una sesión', async () => {
+  const previo = process.env.VERCEL
+  try {
+    process.env.VERCEL = '1'
+    assert.equal(await obtenerUsuarioAutenticado(pedidoCon('loquesea')), null)
+  } finally {
+    if (previo === undefined) delete process.env.VERCEL
+    else process.env.VERCEL = previo
+  }
+})
+
+await testAsync('en una máquina esa misma cadena sigue sirviendo para trabajar', async () => {
+  const previo = process.env.VERCEL
+  try {
+    delete process.env.VERCEL
+    const u = await obtenerUsuarioAutenticado(pedidoCon('loquesea'))
+    assert.equal(u?.tipo, 'local')
+  } finally {
+    if (previo === undefined) delete process.env.VERCEL
+    else process.env.VERCEL = previo
+  }
+})
+
+// El invitado entra igual en el servidor: es el que sostiene el "probar sin
+// registrarse", y las rutas que gastan plata las tiene cerradas aparte.
+await testAsync('el invitado entra también como función', async () => {
+  const previo = process.env.VERCEL
+  try {
+    process.env.VERCEL = '1'
+    const u = await obtenerUsuarioAutenticado(pedidoCon('inv_a1b2c3'))
+    assert.equal(u?.tipo, 'invitado')
+  } finally {
+    if (previo === undefined) delete process.env.VERCEL
+    else process.env.VERCEL = previo
+  }
+})
+
+await testAsync('sin cabecera no hay sesión', async () => {
+  assert.equal(await obtenerUsuarioAutenticado(pedidoCon(null)), null)
+})
+
+// Un id que se parece al de un invitado pero no lo es no puede colarse: si
+// alcanzara con empezar con "inv_", el filtro no filtraría nada.
+await testAsync('no cualquier cosa que empiece con inv_ es un invitado', async () => {
+  const previo = process.env.VERCEL
+  try {
+    process.env.VERCEL = '1'
+    assert.equal(await obtenerUsuarioAutenticado(pedidoCon('inv_')), null)
+    assert.equal(await obtenerUsuarioAutenticado(pedidoCon('inv_AB')), null)
+  } finally {
+    if (previo === undefined) delete process.env.VERCEL
+    else process.env.VERCEL = previo
+  }
+})
+
+// altaCuenta con un id que ya existe actualiza nombre, correo y foto. La ruta
+// tiene que comparar contra quién pide, y mirar las dos llaves, porque
+// altaCuenta resuelve `id || userId`: chequear solo `id` deja pasar `userId`.
+test('el alta compara el dueño por las dos llaves', () => {
+  const fuente = readFileSync(join(RAIZ, 'core/api/server.mjs'), 'utf8')
+  const bloqueAlta = fuente.slice(fuente.indexOf("url.pathname === '/cuentas'"))
+  assert.ok(/cuerpo\.id \|\| cuerpo\.userId/.test(bloqueAlta),
+    'el alta mira solo una de las dos llaves: con la otra se pisa la cuenta de otro')
 })
 
 // El resumen va último: si se agrega un bloque abajo, tiene que contarlo.

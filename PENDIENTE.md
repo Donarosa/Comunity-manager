@@ -1,21 +1,46 @@
 # Lo que falta para que producción funcione
 
-Estado al 31/08/2026. La app está desplegada y renderiza placas en ~4s, pero
-corre sin base de datos, sin IA y **con la API abierta**. Son cuatro cosas, en
-este orden. El orden importa: el punto 1 es el que no puede quedar para después.
+Actualizado 31/08/2026.
 
-Verificación rápida de en qué estado está todo, en cualquier momento:
+**Hechos:** punto 1 (API cerrada) y punto 4 (`vercel.json`).
+**Faltan, y son manuales:** punto 2 (variables) y punto 3 (Storage).
 
-```bash
-curl https://TU-URL.vercel.app/salud
+## El orden cambió: Firebase va antes que Gemini
+
+En la primera versión de este archivo decía que `GEMINI_API_KEY` se podía cargar
+apenas estuviera desplegado el punto 1. **Eso era incorrecto** y el motivo es
+esta rama de `obtenerUsuarioAutenticado()`:
+
+```js
+if (!TOKEN && !firestore.estaActivo()) return { tipo: 'local', uid: token }
 ```
 
-Hoy responde `firebase: false · almacen: false · ia: false`. Cuando los tres
-digan `true` y el punto 1 esté hecho, está terminado.
+Sin `CM_TOKEN` y sin Firebase —que es exactamente el estado de producción hoy—
+cualquier cadena valía como sesión: `Bearer loquesea` entraba como el usuario
+"loquesea". La barrera devolvía 401 solo si el pedido no traía ninguna cabecera,
+que es justo lo que un atacante no hace. La puerta seguía abierta con un paso
+más.
+
+Ya está arreglado —la rama quedó atada a no estar corriendo como función— pero
+la conclusión importa igual:
+
+**Cargar `GEMINI_API_KEY` recién cuando `/salud` diga `firebase: true`.** Antes
+de eso no hay ninguna sesión verificable, porque verificar un token de Google
+requiere el Admin SDK, que es justamente lo que instala el punto 2.
+
+## Consecuencia mientras tanto
+
+Hasta que el punto 2 esté hecho, en producción **solo funciona el modo
+invitado**. Quien entre con Google va a comer 401.
+
+No es una regresión: el login con Google tampoco estaba verificado antes —el
+servidor aceptaba cualquier cosa sin mirarla—, así que lo que cambió es que
+ahora falla visible en vez de fallar en silencio. El invitado alcanza para
+mostrar el producto y no puede gastar un peso de API.
 
 ---
 
-## 1. Cerrar la API — bloqueante
+## 1. Cerrar la API — HECHO
 
 `core/api/server.mjs` define `obtenerUsuarioAutenticado()` (línea 62) y
 `autorizado()` (línea 93). **Ninguna de las dos se llama nunca.** Comprobado
@@ -148,9 +173,9 @@ seis y `GET /cuentas` devuelve una sola. No es un bug del código, es `/tmp`.
 
 ---
 
-## 4. Dos líneas en `vercel.json`
+## 4. Dos líneas en `vercel.json` — HECHO
 
-Nunca estuvieron —no las borró nadie, faltan— y las dos son de despliegue:
+Nunca estuvieron —no las borró nadie, faltaban— y las dos son de despliegue:
 
 ```json
 "functions": {

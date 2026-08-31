@@ -3,7 +3,9 @@
   "functions": {
     "api/index.js": {
       "maxDuration": 60,
-      "includeFiles": "core/**"
+      "memory": 2048,
+      "includeFiles": "core/**",
+      "excludeFiles": "{data,placas,pruebas,content,capturas,.playwright-mcp,.claude,.vercel}/**"
     }
   },
   "rewrites": [
