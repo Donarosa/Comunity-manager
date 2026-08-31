@@ -76,8 +76,19 @@ export async function loginConGoogle() {
     return usuario
   }
 
-  // Fallback demo interactivo (si Firebase no tiene keys en .env todavía)
-  // Permite simular el inicio con cuenta de Google con un nombre/email
+  // Sin Firebase configurado no hay forma de entrar con Google, y fingir que
+  // sí la hay es peor que no tener el botón: la sesión falsa que se armaba acá
+  // abajo cerraba el modal como si hubiera funcionado y recién fallaba en el
+  // clic siguiente, con un 401 que no explica nada. El servidor no puede
+  // validar un token que nadie emitió.
+  //
+  // En una máquina el atajo sigue siendo útil para trabajar sin credenciales,
+  // así que se conserva ahí y solo ahí.
+  const enMaquina = ['localhost', '127.0.0.1', ''].includes(location.hostname)
+  if (!enMaquina) {
+    throw new Error('El ingreso con Google no está disponible todavía. Probá el producto como invitado.')
+  }
+
   const nombrePrompt = 'Demo Usuario Google'
   const emailPrompt = 'usuario.google@ejemplo.com'
   const demoUid = 'goog_' + Math.random().toString(36).slice(2, 11)
