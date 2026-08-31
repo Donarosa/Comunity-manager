@@ -180,16 +180,20 @@ export async function manejador(req, res) {
   const m = req.method
 
   try {
+    await firestore.asegurarInicializado()
+
     // Además de "está vivo", dice con qué está corriendo. Diagnosticar por qué
     // el render fallaba en producción llevó varios despliegues a ciegas: la
     // arquitectura y el runtime son justo lo que hay que mirar cuando el
     // navegador no arranca, y desde afuera no se ven.
     if (m === 'GET' && url.pathname === '/salud') {
+      const fbActivo = firestore.estaActivo()
       return json(res, 200, {
         ok: true,
-        firebase: firestore.estaActivo(),
+        firebase: fbActivo,
         almacen: firestore.hayAlmacen(),
         ia: Boolean(process.env.GEMINI_API_KEY),
+        ...(!fbActivo && firestore.detalleError() ? { detalleFirebase: firestore.detalleError() } : {}),
         entorno: {
           node: process.version,
           arch: process.arch,

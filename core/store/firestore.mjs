@@ -10,12 +10,14 @@ let db = null
 let auth = null
 let bucket = null
 let inicializado = false
+let errorInicializacion = null
+let promesaInit = null
 
 /**
  * Inicializa Firebase Admin SDK si las credenciales existen en el entorno.
  */
 export async function inicializarFirebase() {
-  if (inicializado) return { db, auth, activo: Boolean(db) }
+  if (inicializado) return { db, auth, activo: Boolean(db), error: errorInicializacion }
   inicializado = true
 
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL
@@ -23,9 +25,13 @@ export async function inicializarFirebase() {
   let privateKey = process.env.FIREBASE_PRIVATE_KEY
   const credsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS
 
-  // Limpieza de saltos de línea en la clave privada si viene con \n escapado
-  if (privateKey && privateKey.includes('\\n')) {
-    privateKey = privateKey.replace(/\\n/g, '\n')
+  if (privateKey) {
+    // Quitar comillas envolventes si las tiene
+    privateKey = privateKey.trim().replace(/^["']|["']$/g, '')
+    // Reemplazar saltos de línea literales escapados
+    if (privateKey.includes('\\n')) {
+      privateKey = privateKey.replace(/\\n/g, '\n')
+    }
   }
 
   let credencial = null
@@ -33,7 +39,6 @@ export async function inicializarFirebase() {
   try {
     const admin = await import('firebase-admin')
     const cert = admin.default?.credential?.cert || admin.credential?.cert
-    const applicationDefault = admin.default?.credential?.applicationDefault || admin.credential?.applicationDefault
     const initializeApp = admin.default?.initializeApp || admin.initializeApp
     const getFirestore = admin.default?.firestore || admin.firestore
     const getAuth = admin.default?.auth || admin.auth
@@ -43,6 +48,7 @@ export async function inicializarFirebase() {
         const archivoCreds = JSON.parse(readFileSync(resolve(credsPath), 'utf8'))
         credencial = cert(archivoCreds)
       } catch (err) {
+        errorInicializacion = `Error archivo creds: ${err.message}`
         console.warn('[Firebase] No se pudo leer GOOGLE_APPLICATION_CREDENTIALS:', err.message)
       }
     } else if (projectId && clientEmail && privateKey) {
@@ -53,7 +59,16 @@ export async function inicializarFirebase() {
           privateKey,
         })
       } catch (err) {
+        errorInicializacion = `Error certificado: ${err.message}`
         console.warn('[Firebase] Claves de servicio inválidas:', err.message)
+      }
+    } else {
+      const faltantes = []
+      if (!projectId) faltantes.push('projectId')
+      if (!clientEmail) faltantes.push('FIREBASE_CLIENT_EMAIL')
+      if (!privateKey) faltantes.push('FIREBASE_PRIVATE_KEY')
+      if (faltantes.length) {
+        errorInicializacion = `Faltan variables: ${faltantes.join(', ')}`
       }
     }
 
@@ -83,16 +98,25 @@ export async function inicializarFirebase() {
       console.log('[Firebase] Backend operando con SDK Web / almacenamiento local.')
     }
   } catch (err) {
+    errorInicializacion = `Error general: ${err.message}`
     console.warn('[Firebase] Inicialización omitida:', err.message)
   }
 
-  return { db, auth, activo: Boolean(db) }
+  return { db, auth, activo: Boolean(db), error: errorInicializacion }
+}
+
+export async function asegurarInicializado() {
+  if (!promesaInit) {
+    promesaInit = inicializarFirebase()
+  }
+  return await promesaInit
 }
 
 // Inicialización diferida segura
-inicializarFirebase().catch(() => {})
+promesaInit = inicializarFirebase().catch(() => {})
 
 export const estaActivo = () => Boolean(db)
+export const detalleError = () => errorInicializacion
 
 /* ── Placas ───────────────────────────────────────────────
  *
