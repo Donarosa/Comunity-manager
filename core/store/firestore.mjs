@@ -18,8 +18,8 @@ export async function inicializarFirebase() {
   if (inicializado) return { db, auth, activo: Boolean(db) }
   inicializado = true
 
-  const projectId = process.env.FIREBASE_PROJECT_ID || process.env.GCLOUD_PROJECT
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL
+  const projectId = process.env.FIREBASE_PROJECT_ID || process.env.GCLOUD_PROJECT || (clientEmail ? clientEmail.split('@')[1]?.split('.')[0] : null)
   let privateKey = process.env.FIREBASE_PRIVATE_KEY
   const credsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS
 
