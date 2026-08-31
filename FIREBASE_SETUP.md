@@ -46,15 +46,42 @@ FIREBASE_APP_ID=1:123456789012:web:abcdef123456
 
 ---
 
-## 5. (Opcional) Credenciales de Servicio para Backend Admin
-Para habilitar la verificación de tokens y control total desde el servidor backend:
+## 5. Credenciales de Servicio — NO es opcional
+
+Las seis variables del paso 4 son del **SDK Web**: las usa el navegador para el
+login y nada más. El servidor necesita otras dos, las de la **cuenta de
+servicio**, y sin ellas Firestore queda inactivo: `/salud` responde
+`"firebase": false` y todo se guarda en el disco de la función, que se borra
+entre invocaciones. En la práctica, un cliente que vuelve al día siguiente no
+encuentra su marca y las placas que generó ya no se pueden descargar.
+
 1. En **Configuración del proyecto > Cuentas de servicio**, hacé clic en **"Generar nueva clave privada"**.
-2. Podés extraer el `client_email` y la `private_key` y pegarlos en el `.env`:
+2. Del JSON que baja, sacá `client_email` y `private_key`:
 
 ```env
 FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@tu-proyecto.iam.gserviceaccount.com
 FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvgIBA...-----END PRIVATE KEY-----\n"
 ```
+
+La clave privada va **tal cual sale del JSON**, con los `\n` escritos como dos
+caracteres y no como saltos de línea reales. El código los desescapa solo.
+
+## 5b. Y una más para guardar las placas
+
+```env
+FIREBASE_STORAGE_BUCKET=tu-proyecto.appspot.com
+```
+
+Hay que activar **Storage** en la consola de Firebase (Compilación > Storage >
+Comenzar). Sin esto los PNG se renderizan bien pero viven en el disco temporal
+de la función y desaparecen: `/salud` lo muestra como `"almacen": false`.
+
+## 5c. En producción no van al `.env`
+
+En Vercel las variables se cargan en **Settings > Environment Variables** del
+proyecto, marcando los tres entornos (Production, Preview, Development), y hay
+que **volver a desplegar** para que las tome. El `.env` local no viaja: está en
+`.gitignore` y el `.vercelignore` lo excluye del despliegue.
 
 ---
 
