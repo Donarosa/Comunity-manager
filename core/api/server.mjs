@@ -205,6 +205,11 @@ export async function manejador(req, res) {
           plataforma: process.platform,
           serverless: esServerless(),
           region: process.env.VERCEL_REGION || null,
+          // Qué está corriendo realmente. Sin esto, después de cada push hay
+          // que adivinar si lo que se está probando es el código nuevo o el
+          // viejo, y un arreglo que no llegó se confunde con un arreglo que no
+          // funciona.
+          commit: (process.env.VERCEL_GIT_COMMIT_SHA || '').slice(0, 7) || null,
         },
       })
     }
