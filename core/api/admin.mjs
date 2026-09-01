@@ -180,6 +180,8 @@ export async function handleAnalitica(svc, firestore, json) {
   let usuariosActivos = 0
   let usuariosPausados = 0
   let usuariosConMarca = 0
+  let totalCostoMesUSD = 0
+  let totalCostoHistoricoUSD = 0
   const actividadReciente = []
 
   for (const u of usuarios) {
@@ -188,6 +190,8 @@ export async function handleAnalitica(svc, firestore, json) {
     if (u.tieneMarca) usuariosConMarca++
     totalPlacasMes += u.placasMes || 0
     totalPlacasHistorico += u.totalPlacas || 0
+    totalCostoMesUSD += u.costoMesUSD || 0
+    totalCostoHistoricoUSD += u.costoTotalUSD || 0
     if (u.ultimaActividad) {
       actividadReciente.push({ id: u.id, nombre: u.nombre, email: u.email, fecha: u.ultimaActividad })
     }
@@ -203,6 +207,9 @@ export async function handleAnalitica(svc, firestore, json) {
       usuariosConMarca,
       totalPlacasMes,
       totalPlacasHistorico,
+      totalCostoMesUSD: Number(totalCostoMesUSD.toFixed(4)),
+      totalCostoHistoricoUSD: Number(totalCostoHistoricoUSD.toFixed(4)),
+      iaActiva: Boolean(process.env.GEMINI_API_KEY),
       mes: mesActual,
     },
     actividadReciente: actividadReciente.slice(0, 10),
@@ -229,6 +236,7 @@ async function listarTodosLosUsuarios(svc, firestore) {
     try {
       // hidratarCuenta trae la cuenta completa desde Firestore (con consumo real)
       await svc.hidratarCuenta(c.id)
+      const rawCuenta = svc.leerCuenta(c.id)
       const estadoRes = svc.estadoCuenta(c.id)
       const cuenta = estadoRes.cuenta
       const estadoQuota = estadoRes.estado
@@ -236,6 +244,9 @@ async function listarTodosLosUsuarios(svc, firestore) {
       // estadoQuota.usado.mes contiene { piezas, planes, logos, costoUSD }
       // estadoQuota.valor contiene { placasMes, placasTotal, ... }
       const usadoMes = estadoQuota?.usado?.mes || {}
+      const consumoHist = rawCuenta?.consumo || {}
+      const costoTotalUSD = Number(Object.values(consumoHist).reduce((acc, m) => acc + (m.costoUSD || 0), 0).toFixed(4))
+      const costoMesUSD = Number((usadoMes.costoUSD || estadoQuota?.costoMesUSD || 0).toFixed(4))
 
       usuarios.push({
         id: c.id,
@@ -250,6 +261,8 @@ async function listarTodosLosUsuarios(svc, firestore) {
         placasMes: usadoMes.piezas || estadoQuota?.valor?.placasMes || 0,
         planesMes: usadoMes.planes || 0,
         totalPlacas: estadoQuota?.valor?.placasTotal || 0,
+        costoMesUSD,
+        costoTotalUSD,
         ultimaActividad: c.actualizada || c.creada || null,
       })
     } catch {
@@ -265,6 +278,8 @@ async function listarTodosLosUsuarios(svc, firestore) {
         placasMes: 0,
         planesMes: 0,
         totalPlacas: 0,
+        costoMesUSD: 0,
+        costoTotalUSD: 0,
         ultimaActividad: null,
       })
     }

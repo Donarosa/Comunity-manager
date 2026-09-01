@@ -184,8 +184,10 @@
           <div class="stat-card green"><div class="stat-label">Activos</div><div class="stat-value" id="s1">—</div></div>
           <div class="stat-card yellow"><div class="stat-label">Pausados</div><div class="stat-value" id="s2">—</div></div>
           <div class="stat-card accent"><div class="stat-label">Placas Este Mes</div><div class="stat-value" id="s3">—</div><div class="stat-sub" id="s3-sub">—</div></div>
-          <div class="stat-card"><div class="stat-label">Con Marca Config.</div><div class="stat-value" id="s4">—</div></div>
           <div class="stat-card"><div class="stat-label">Total Placas</div><div class="stat-value" id="s5">—</div></div>
+          <div class="stat-card"><div class="stat-label">Con Marca Config.</div><div class="stat-value" id="s4">—</div></div>
+          <div class="stat-card green"><div class="stat-label">Costo IA Mes (USD)</div><div class="stat-value" id="s6">—</div><div class="stat-sub" id="s6-sub">Gemini API</div></div>
+          <div class="stat-card"><div class="stat-label">Costo IA Total</div><div class="stat-value" id="s7">—</div><div class="stat-sub">Histórico acumulado</div></div>
         </div>
         <div class="section-header"><div class="section-title">Actividad Reciente</div></div>
         <div class="table-wrap" id="activity-list"><div class="loading"><span class="spinner"></span> Cargando…</div></div>
@@ -201,8 +203,8 @@
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Usuario</th><th>Comercio</th><th>Plan</th><th>Estado</th><th>Placas/Mes</th><th>Alta</th><th></th></tr></thead>
-            <tbody id="users-tbody"><tr><td colspan="7" class="loading"><span class="spinner"></span> Cargando…</td></tr></tbody>
+            <thead><tr><th>Usuario</th><th>Comercio</th><th>Plan</th><th>Estado</th><th>Placas/Mes</th><th>Costo IA</th><th>Alta</th><th></th></tr></thead>
+            <tbody id="users-tbody"><tr><td colspan="8" class="loading"><span class="spinner"></span> Cargando…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -325,6 +327,9 @@ async function loadAnalytics() {
     document.getElementById('s3').textContent = r.totalPlacasMes
     document.getElementById('s4').textContent = r.usuariosConMarca
     document.getElementById('s5').textContent = r.totalPlacasHistorico
+    document.getElementById('s6').textContent = `$${Number(r.totalCostoMesUSD || 0).toFixed(4)}`
+    document.getElementById('s6-sub').textContent = `${r.iaActiva ? '● Conectada' : '○ Sin clave'} · Gemini`
+    document.getElementById('s7').textContent = `$${Number(r.totalCostoHistoricoUSD || 0).toFixed(4)}`
     const [yr, mo] = (r.mes || '').split('-')
     const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
     document.getElementById('s3-sub').textContent = yr && mo ? `${meses[parseInt(mo)-1]} ${yr}` : '—'
@@ -356,14 +361,14 @@ async function loadUsers() {
     renderTable(allUsers)
   } catch (e) {
     if (e.status === 401) { logout(); return }
-    document.getElementById('users-tbody').innerHTML = `<tr><td colspan="7" class="empty-state">Error: ${esc(e.message)}</td></tr>`
+    document.getElementById('users-tbody').innerHTML = `<tr><td colspan="8" class="empty-state">Error: ${esc(e.message)}</td></tr>`
   }
 }
 
 function renderTable(users) {
   document.getElementById('users-count').textContent = `Usuarios (${users.length})`
   const tbody = document.getElementById('users-tbody')
-  if (!users.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Sin resultados</td></tr>'; return }
+  if (!users.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Sin resultados</td></tr>'; return }
   tbody.innerHTML = users.map(u => `
     <tr class="user-row" data-id="${esc(u.id)}">
       <td><div class="cell-name">${esc(u.nombre)}</div><div class="cell-email">${esc(u.email)}</div></td>
@@ -371,6 +376,7 @@ function renderTable(users) {
       <td><span class="pill">${esc(u.plan)}</span></td>
       <td><span class="badge ${u.estado}"><span class="badge-dot"></span>${u.estado === 'activa' ? 'Activa' : 'Pausada'}</span></td>
       <td>${u.placasMes || 0}</td>
+      <td>$${Number(u.costoMesUSD || 0).toFixed(4)}</td>
       <td>${formatDate(u.creada)}</td>
       <td><button class="action-btn ${u.estado === 'activa' ? 'pause' : 'resume'}" data-id="${esc(u.id)}" data-estado="${esc(u.estado)}" onclick="event.stopPropagation();toggleEstado(this)">${u.estado === 'activa' ? 'Pausar' : 'Reactivar'}</button></td>
     </tr>`).join('')
@@ -435,10 +441,12 @@ async function openPanel(id) {
         </div>
       </div>` : '<div class="panel-section"><div class="panel-section-title">Comercio</div><p style="color:var(--muted);font-size:.85rem">Sin marca configurada aún</p></div>'}
       <div class="panel-section">
-        <div class="panel-section-title">Métricas de Uso</div>
+        <div class="panel-section-title">Métricas de Uso & Costo IA</div>
         <div class="kv-grid">
           <div class="kv-item"><div class="kv-label">Placas este mes</div><div class="kv-value">${consumoMes.piezas || rm.placasEsteMes || 0}</div></div>
+          <div class="kv-item"><div class="kv-label">Costo IA este mes</div><div class="kv-value" style="color:var(--green)">$${Number(consumoMes.costoUSD || rm.costoMesUSD || 0).toFixed(4)} USD</div></div>
           <div class="kv-item"><div class="kv-label">Publicaciones totales</div><div class="kv-value">${rm.totalPublicaciones || 0}</div></div>
+          <div class="kv-item"><div class="kv-label">Costo IA total</div><div class="kv-value">$${Number(rm.costoTotalUSD || 0).toFixed(4)} USD</div></div>
           <div class="kv-item"><div class="kv-label">Planes generados</div><div class="kv-value">${rm.totalPlanes || 0}</div></div>
           <div class="kv-item"><div class="kv-label">Descargas totales</div><div class="kv-value">${rm.totalDescargas || 0}</div></div>
         </div>

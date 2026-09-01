@@ -123,6 +123,8 @@ export function dashboardUsuario(id) {
       totalDescargas: publicaciones.reduce((acc, p) => acc + (p.interacciones?.descargas || 1), 0),
       ahorroTotal: est.valor?.equivalenteTotal || 0,
       placasEsteMes: est.valor?.placasMes || 0,
+      costoMesUSD: Number((est.costoMesUSD || est.usado?.mes?.costoUSD || 0).toFixed(4)),
+      costoTotalUSD: Number(Object.values(cuenta.consumo || {}).reduce((acc, m) => acc + (m.costoUSD || 0), 0).toFixed(4)),
     },
   }
 }

@@ -70,3 +70,26 @@ instale uno.
   separadas** en vez de una sola con los tres entornos. Funcionan igual; el
   costo aparece al rotarlas, porque hay que editar tres filas y actualizar una
   sola deja las otras con la clave vieja sin avisar.
+
+---
+
+## Anotado, sin hacer: corregir el texto de una placa
+
+El caption ya se edita en pantalla y se guarda. El texto que va **dentro** de la
+placa no: está horneado en el PNG, y las placas no se guardan como datos —solo
+queda el archivo, el caption y los hashtags—, así que los campos de cada una
+(volanta, título, cuerpo) se pierden apenas se renderiza. `iniciarEditor()`
+además arranca siempre vacío y no sabe abrir una publicación existente.
+
+Consecuencia: si el modelo escribe mal algo que quedó impreso en la placa, hay
+que rehacerla desde cero retipeando todo. En un producto donde el texto lo
+escribe un modelo, eso es la diferencia entre corregir en diez segundos y
+publicar con el error.
+
+Serían dos partes: guardar `placas` en `registrarPublicacion`, y que
+`iniciarEditor` acepte un estado inicial.
+
+Y una decisión de producto antes de escribir nada: rehacer una placa corregida
+vuelve a consumir cuota de `piezas`. Puede quedar así —es un render real— o
+puede no cobrarse la primera corrección de una placa recién hecha, que evita que
+alguien publique con un error para no gastar una pieza.
