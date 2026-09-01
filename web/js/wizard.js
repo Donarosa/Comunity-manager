@@ -651,7 +651,12 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, marca = null, mo
 
   /* ── SECCIÓN TIPOGRAFÍA ── */
   function seccionTipografia(cont) {
-    if (!catalogo.tipografias?.length) return
+    // Un return pelado acá borra la sección y no deja rastro: el paso queda con
+    // el color solo y parece que la tipografía no existe en el producto.
+    if (!catalogo.tipografias?.length) {
+      return bloque(cont, 'Tipografía', 'Determina cómo se ven los titulares en cada placa.',
+        el('div.aviso.malo', {}, 'No pudimos cargar las tipografías. Recargá la página: si sigue igual, avisanos.'))
+    }
     cargarFuentesDeMuestra(catalogo)
 
     const grupo = el('div.opciones', {})
@@ -675,7 +680,10 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, marca = null, mo
 
   function seccionIdentidadYFirma(cont) {
     const cat = catalogo.logotipos
-    if (!cat) return
+    if (!cat) {
+      return bloque(cont, 'Tu logo y tu firma', 'Cómo firma la marca cada placa.',
+        el('div.aviso.malo', {}, 'No pudimos cargar las opciones de firma. Recargá la página: si sigue igual, avisanos.'))
+    }
 
     const contPrincipal = el('div')
 

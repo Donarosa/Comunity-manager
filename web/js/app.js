@@ -72,6 +72,18 @@ function actualizarNavUsuario(u) {
   }
 }
 
+/**
+ * El catálogo se pide al arrancar, y ese pedido puede fallar —red, o el
+ * servidor todavía despertando—. Si volvió incompleto no alcanza con seguir:
+ * el wizard descarta las secciones que no tienen datos y el paso de identidad
+ * queda con el color solo, sin ningún error a la vista. Se reintenta antes de
+ * abrir las pantallas que lo necesitan.
+ */
+async function asegurarCatalogo() {
+  if (catalogo?.tipografias?.length && catalogo?.logotipos) return
+  try { catalogo = await api.catalogo() } catch { /* lo avisa la pantalla */ }
+}
+
 /* ── pantallas ───────────────────────────────────────────── */
 
 function abrirDashboard() {
@@ -91,8 +103,9 @@ function abrirDashboard() {
   }))
 }
 
-function abrirEditor() {
+async function abrirEditor() {
   if (!cuenta) return entrar()
+  await asegurarCatalogo()
   mostrarApp(cont => iniciarEditor({
     contenedor: cont,
     cuenta,
@@ -102,8 +115,9 @@ function abrirEditor() {
   }))
 }
 
-function abrirWizard() {
+async function abrirWizard() {
   if (!cuenta) return entrar()
+  await asegurarCatalogo()
   mostrarApp(cont => iniciarWizard({
     contenedor: cont,
     catalogo,
@@ -412,6 +426,7 @@ async function entrar() {
 
 async function arrancar() {
   catalogo = await api.catalogo().catch(() => ({ tipografias: [], formatos: [], planes: [] }))
+  // Si vino incompleto, asegurarCatalogo() lo reintenta antes de cada pantalla.
 
   // Suscribirse a cambios en la sesión de Auth
   enCambioDeAuth(u => {

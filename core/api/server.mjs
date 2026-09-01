@@ -355,6 +355,18 @@ async function despachar(req, res) {
       return json(res, 200, resVerif)
     }
 
+    /* — catálogo —
+     *
+     * Público a propósito. Es una lista fija —tipografías, formatos, planes,
+     * disposiciones, tipos de logotipo—: no tiene datos de nadie y no cuesta
+     * nada servirla. Estuvo detrás de la barrera y rompió el alta: la web lo
+     * pide al arrancar, antes de que haya sesión, se comía un 401 y caía a un
+     * catálogo vacío que no se volvía a pedir nunca. El wizard entonces
+     * descartaba las secciones de tipografía y de firma sin decir nada, y el
+     * paso de identidad quedaba con el color solo.
+     */
+    if (m === 'GET' && url.pathname === '/catalogo') return json(res, 200, svc.catalogo())
+
     /* — de acá para abajo hay que identificarse — */
     const usuario = await obtenerUsuarioAutenticado(req)
     if (!usuario) return json(res, 401, { error: 'hace falta iniciar sesión', codigo: 'sin_sesion' })
@@ -383,9 +395,6 @@ async function despachar(req, res) {
         foto: body.foto || null,
       }))
     }
-
-    /* — catálogo — */
-    if (m === 'GET' && url.pathname === '/catalogo') return json(res, 200, svc.catalogo())
 
     /* — banco de imágenes — */
     if (m === 'GET' && url.pathname === '/imagenes/buscar') {
