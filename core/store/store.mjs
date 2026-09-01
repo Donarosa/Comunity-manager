@@ -68,12 +68,33 @@ export function crearCuenta({ id, nombre, email, plan = 'unico', foto = null, us
   escribir(archivoCuenta(cuenta.id), cuenta)
 
   if (firestore.estaActivo()) {
-    firestore.crearCuentaEnFirestore(cuenta).catch(err =>
+    enSegundoPlano(firestore.crearCuentaEnFirestore(cuenta).catch(err =>
       console.warn('[Firestore] Error guardando cuenta:', err.message)
-    )
+    ))
   }
 
   return cuenta
+}
+
+/* ── escrituras en vuelo ──────────────────────────────────
+ *
+ * Las copias a Firestore no bloquean la respuesta: el usuario no tiene por qué
+ * esperar a que sincronice para ver su placa. Pero como función, largarlas y
+ * olvidarlas es perderlas: el runtime congela la instancia cuando el handler
+ * termina, y una promesa sin dueño se corta a la mitad. Se anotan acá y el
+ * servidor las espera antes de devolver el control.
+ */
+const enVuelo = new Set()
+
+function enSegundoPlano(promesa) {
+  const p = promesa.finally(() => enVuelo.delete(p))
+  enVuelo.add(p)
+  return p
+}
+
+/** Esperar lo que quedó sincronizando. La llama el handler, al final. */
+export async function esperarEscrituras() {
+  while (enVuelo.size) await Promise.allSettled([...enVuelo])
 }
 
 export function leerCuenta(id) {
@@ -114,9 +135,9 @@ export function guardarCuenta(cuenta) {
   escribir(archivoCuenta(cuenta.id), cuenta)
 
   if (firestore.estaActivo()) {
-    firestore.guardarCuentaEnFirestore(cuenta).catch(err =>
+    enSegundoPlano(firestore.guardarCuentaEnFirestore(cuenta).catch(err =>
       console.warn('[Firestore] Error sincronizando cuenta en Firestore:', err.message)
-    )
+    ))
   }
 
   return cuenta
@@ -169,9 +190,9 @@ export function registrarPublicacion(cuentaId, datos) {
   escribir(ruta, lista.slice(0, 100)) // guarda las últimas 100
 
   if (firestore.estaActivo()) {
-    firestore.guardarPublicacionEnFirestore(cuentaId, item).catch(err =>
+    enSegundoPlano(firestore.guardarPublicacionEnFirestore(cuentaId, item).catch(err =>
       console.warn('[Firestore] Error guardando publicación:', err.message)
-    )
+    ))
   }
 
   return item
@@ -205,9 +226,9 @@ export function registrarPlan(cuentaId, plan) {
   escribir(ruta, lista.slice(0, 50))
 
   if (firestore.estaActivo()) {
-    firestore.guardarPlanEnFirestore(cuentaId, item).catch(err =>
+    enSegundoPlano(firestore.guardarPlanEnFirestore(cuentaId, item).catch(err =>
       console.warn('[Firestore] Error guardando plan en Firestore:', err.message)
-    )
+    ))
   }
 
   return item
@@ -238,7 +259,7 @@ export function registrarEventoEstadistica(cuentaId, evento, metadata = {}) {
   escribir(ruta, lista.slice(0, 200))
 
   if (firestore.estaActivo()) {
-    firestore.registrarEstadisticaEnFirestore(cuentaId, evento, metadata).catch(() => {})
+    enSegundoPlano(firestore.registrarEstadisticaEnFirestore(cuentaId, evento, metadata).catch(() => {}))
   }
 
   return item

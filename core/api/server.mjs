@@ -10,7 +10,7 @@ import { timingSafeEqual } from 'crypto'
 import * as svc from '../service.mjs'
 import * as firestore from '../store/firestore.mjs'
 import { QuotaError } from '../quota/ledger.mjs'
-import { DATA_DIR } from '../store/store.mjs'
+import { DATA_DIR, esperarEscrituras } from '../store/store.mjs'
 import { esServerless } from '../render/engine.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
@@ -159,7 +159,22 @@ const urlDePieza = ruta => '/piezas/' + relative(PIEZAS, ruta).split(sep).join('
 
 /* ── ruteo ───────────────────────────────────────────────── */
 
+/**
+ * Las copias a Firestore salen sin bloquear la respuesta, pero el runtime
+ * congela la instancia apenas este handler devuelve: sin esperarlas acá, una
+ * escritura larga se corta a la mitad y el dato se pierde sin ruido. Es lo que
+ * pasaba con las cuentas —se escribían y no llegaban— y por eso al día
+ * siguiente la marca del cliente no estaba.
+ */
 export async function manejador(req, res) {
+  try {
+    return await despachar(req, res)
+  } finally {
+    try { await esperarEscrituras() } catch { /* ya se reportó adentro */ }
+  }
+}
+
+async function despachar(req, res) {
   // Manejo de CORS Preflight
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {
