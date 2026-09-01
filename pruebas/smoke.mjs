@@ -796,32 +796,18 @@ await testAsync('en una máquina esa misma cadena sigue sirviendo para trabajar'
   }
 })
 
-// El invitado entra igual en el servidor: es el que sostiene el "probar sin
-// registrarse", y las rutas que gastan plata las tiene cerradas aparte.
-await testAsync('el invitado entra también como función', async () => {
-  const previo = process.env.VERCEL
-  try {
-    process.env.VERCEL = '1'
-    const u = await obtenerUsuarioAutenticado(pedidoCon('inv_a1b2c3'))
-    assert.equal(u?.tipo, 'invitado')
-  } finally {
-    if (previo === undefined) delete process.env.VERCEL
-    else process.env.VERCEL = previo
-  }
-})
-
 await testAsync('sin cabecera no hay sesión', async () => {
   assert.equal(await obtenerUsuarioAutenticado(pedidoCon(null)), null)
 })
 
-// Un id que se parece al de un invitado pero no lo es no puede colarse: si
-// alcanzara con empezar con "inv_", el filtro no filtraría nada.
-await testAsync('no cualquier cosa que empiece con inv_ es un invitado', async () => {
+// El modo invitado se sacó: dejaba entrar con un id inventado en el navegador,
+// y del lado del servidor obligaba a aceptar un token que cualquiera se
+// fabrica. Nadie que no venga de Firebase entra.
+await testAsync('un token de invitado ya no abre nada', async () => {
   const previo = process.env.VERCEL
   try {
     process.env.VERCEL = '1'
-    assert.equal(await obtenerUsuarioAutenticado(pedidoCon('inv_')), null)
-    assert.equal(await obtenerUsuarioAutenticado(pedidoCon('inv_AB')), null)
+    assert.equal(await obtenerUsuarioAutenticado(pedidoCon('inv_a1b2c3')), null)
   } finally {
     if (previo === undefined) delete process.env.VERCEL
     else process.env.VERCEL = previo

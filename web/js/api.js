@@ -29,6 +29,16 @@ async function pedir(ruta, { metodo = 'GET', cuerpo, texto = false } = {}) {
   try { datos = await res.json() } catch { /* respuesta sin cuerpo */ }
 
   if (!res.ok) {
+    // La sesión guardada ya no sirve: una cuenta de invitado de una versión
+    // anterior, o un token vencido. Dejarla puesta hace que todo falle con
+    // mensajes que no dicen lo único que hay que hacer, que es volver a entrar.
+    // Se limpia y se recarga: la app arranca sin sesión y muestra el ingreso.
+    if (res.status === 401 && obtenerToken()) {
+      localStorage.removeItem('cm.auth.usuario')
+      localStorage.removeItem('cm.auth.token')
+      localStorage.removeItem('cm.invitado.id')
+      location.reload()
+    }
     const e = new Error(datos?.error || `El servidor respondió ${res.status}`)
     e.codigo = datos?.codigo
     e.detalle = datos?.detalle

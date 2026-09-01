@@ -82,15 +82,12 @@ export async function obtenerUsuarioAutenticado(req) {
     }
   }
 
-  // 3. Token de invitado: puede navegar pero no gastar API
-  if (/^inv_[a-z0-9]{4,}$/.test(token)) return { tipo: 'invitado', uid: token }
-
-  // 4. Sin token estático y sin Firebase, cualquier cadena vale como sesión.
+  // 3. Sin token estático y sin Firebase, cualquier cadena vale como sesión.
   //    Es cómodo para trabajar en una máquina y es una puerta abierta en
   //    producción: `Bearer loquesea` entraba como el usuario "loquesea" y le
   //    leía la cuenta. Queda atado a no estar corriendo como función, así que
-  //    en el server las únicas sesiones posibles son Firebase, el token de
-  //    admin y el invitado —que no puede gastar API—.
+  //    en el server las únicas sesiones posibles son Firebase y el token de
+  //    admin.
   if (!TOKEN && !firestore.estaActivo() && !esServerless()) {
     return { tipo: 'local', uid: token }
   }
@@ -328,15 +325,6 @@ async function despachar(req, res) {
     /* — de acá para abajo hay que identificarse — */
     const usuario = await obtenerUsuarioAutenticado(req)
     if (!usuario) return json(res, 401, { error: 'hace falta iniciar sesión', codigo: 'sin_sesion' })
-
-    /* — rutas caras: solo para usuarios registrados — */
-    if (usuario.tipo === 'invitado') {
-      const subRuta = partes[0] === 'cuentas' && partes[1] ? partes.slice(2).join('/') : ''
-      const CARAS = new Set(['temas', 'contenido', 'identidad/sugerir', 'logo', 'imagenes/banco'])
-      if (CARAS.has(subRuta) || url.pathname === '/imagenes/buscar') {
-        return json(res, 402, { error: 'Creá tu cuenta gratis para usar esta función', codigo: 'solo_registrados' })
-      }
-    }
 
     /* — catálogo — */
     if (m === 'GET' && url.pathname === '/catalogo') return json(res, 200, svc.catalogo())

@@ -86,7 +86,7 @@ export async function loginConGoogle() {
   // así que se conserva ahí y solo ahí.
   const enMaquina = ['localhost', '127.0.0.1', ''].includes(location.hostname)
   if (!enMaquina) {
-    throw new Error('El ingreso con Google no está disponible todavía. Probá el producto como invitado.')
+    throw new Error('El ingreso no está disponible en este momento. Volvé a intentar en unos minutos.')
   }
 
   const nombrePrompt = 'Demo Usuario Google'
@@ -144,24 +144,6 @@ export async function validarCodigoOtp(email, codigo, nombre = null) {
 }
 
 /* ── Cierre de sesión y Modo Invitado ────────────────────── */
-
-export function iniciarComoInvitado(nombre = 'Mi Negocio') {
-  const idGuardado = localStorage.getItem('cm.invitado.id') || ('inv_' + Math.random().toString(36).slice(2, 8))
-  localStorage.setItem('cm.invitado.id', idGuardado)
-
-  const usuario = {
-    id: idGuardado,
-    email: 'demo@invitado.local',
-    nombre,
-    foto: null,
-    proveedor: 'invitado',
-    metodo: 'invitado',
-    esInvitado: true,
-  }
-
-  guardarSesion(usuario, idGuardado)
-  return usuario
-}
 
 export async function cerrarSesion() {
   try {
