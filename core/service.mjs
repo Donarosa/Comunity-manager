@@ -429,6 +429,26 @@ async function archivarPiezas(archivos, prefijo) {
   }))
 }
 
+/**
+ * Traer la cuenta de Firestore al disco de la función.
+ *
+ * Todo el resto del service lee con leerCuenta(), que es sincrónica y solo
+ * mira el disco. Como función, ese disco arranca vacío en cada instancia, así
+ * que sin este paso Firestore es un pozo: se escribe y no se lee nunca.
+ *
+ * No falla si la cuenta no está en ningún lado: de eso se encarga la ruta, que
+ * ya sabe devolver 404. Acá lo único que se hace es no dejarla afuera por
+ * haberla buscado en el lugar equivocado.
+ */
+export async function hidratarCuenta(id) {
+  if (!firestore.estaActivo()) return null
+  try {
+    return await leerCuentaAsync(id)
+  } catch {
+    return null
+  }
+}
+
 /* ── de qué publicar ─────────────────────────────────────── */
 
 /**

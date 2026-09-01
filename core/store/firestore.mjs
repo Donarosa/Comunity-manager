@@ -164,6 +164,36 @@ export async function leerPieza(ruta) {
   return buf
 }
 
+/**
+ * ¿El bucket existe de verdad?
+ *
+ * hayAlmacen() solo dice que la variable está cargada. Con un nombre que no
+ * existe —pasa fácil: los proyectos nuevos de Firebase usan
+ * `.firebasestorage.app` y no `.appspot.com`— la subida tira, el error se
+ * traga con un console.warn para no voltear el render, y la placa desaparece
+ * sin que nada lo diga. Esto lo dice.
+ */
+export async function comprobarAlmacen() {
+  if (!bucket) return { ok: false, motivo: 'sin bucket configurado' }
+  try {
+    const [existe] = await bucket.exists()
+    return existe ? { ok: true } : { ok: false, motivo: `el bucket ${bucket.name} no existe` }
+  } catch (e) {
+    return { ok: false, motivo: e.message }
+  }
+}
+
+/** Lo mismo para la base: que el objeto exista no prueba que se pueda leer. */
+export async function comprobarBase() {
+  if (!db) return { ok: false, motivo: 'sin credenciales de servicio' }
+  try {
+    await db.collection('cuentas').limit(1).get()
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, motivo: e.message }
+  }
+}
+
 /* ── Cuentas y Usuarios ───────────────────────────────────── */
 
 export async function crearCuentaEnFirestore(cuenta) {

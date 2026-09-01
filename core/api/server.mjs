@@ -187,13 +187,18 @@ export async function manejador(req, res) {
     // arquitectura y el runtime son justo lo que hay que mirar cuando el
     // navegador no arranca, y desde afuera no se ven.
     if (m === 'GET' && url.pathname === '/salud') {
-      const fbActivo = firestore.estaActivo()
+      // Se comprueban de verdad, no se reporta que la variable esté cargada: un
+      // bucket mal nombrado —los proyectos nuevos de Firebase usan
+      // `.firebasestorage.app`, no `.appspot.com`— daba `almacen: true` y
+      // perdía todas las placas en silencio.
+      const [base, almacen] = await Promise.all([firestore.comprobarBase(), firestore.comprobarAlmacen()])
+      const problemas = [base.motivo, almacen.motivo, firestore.detalleError()].filter(Boolean)
       return json(res, 200, {
         ok: true,
-        firebase: fbActivo,
-        almacen: firestore.hayAlmacen(),
+        firebase: base.ok,
+        almacen: almacen.ok,
         ia: Boolean(process.env.GEMINI_API_KEY),
-        ...(!fbActivo && firestore.detalleError() ? { detalleFirebase: firestore.detalleError() } : {}),
+        ...(problemas.length ? { problemas } : {}),
         entorno: {
           node: process.version,
           arch: process.arch,
@@ -345,6 +350,10 @@ export async function manejador(req, res) {
       // como se secuestra una. Se miran las dos llaves porque altaCuenta
       // resuelve `id || userId`.
       const pedido = cuerpo.id || cuerpo.userId
+      // Sin traerla primero, altaCuenta no la encuentra en el disco vacío y
+      // crea una nueva encima: el cliente vuelve al día siguiente y su marca
+      // no está, porque la pisó su propio ingreso.
+      if (pedido) await svc.hidratarCuenta(pedido)
       if (usuario.tipo !== 'admin' && pedido && pedido !== usuario.uid) {
         return json(res, 403, { error: 'esa cuenta no es tuya', codigo: 'ajena' })
       }
@@ -358,6 +367,13 @@ export async function manejador(req, res) {
       if (usuario.tipo !== 'admin' && usuario.uid !== id) {
         return json(res, 403, { error: 'esa cuenta no es tuya', codigo: 'ajena' })
       }
+
+      // El disco de la función se vacía entre invocaciones y leerCuenta() —que
+      // es la que usa todo el service— solo mira el disco. Sin este paso la
+      // cuenta que se creó en otra invocación "no existe": se escribía a
+      // Firestore y no se leía nunca de ahí. Se trae una vez y queda en /tmp
+      // para las lecturas sincrónicas de abajo.
+      await svc.hidratarCuenta(id)
 
       if (m === 'GET' && !sub) return json(res, 200, svc.estadoCuenta(id))
       if (m === 'GET' && sub === 'dashboard') return json(res, 200, svc.dashboardUsuario(id))
