@@ -955,5 +955,22 @@ test('una llamada real no reporta costo cero', () => {
   assert.ok(costoUSD(usoDe(respuesta)) > 0)
 })
 
+// El render manual archivaba y el generador de plan no. Las placas del plan
+// quedaban en el /tmp de la instancia que las hizo: el navegador pide las tres
+// miniaturas del carrusel a la vez, cada pedido puede caer en otra instancia, y
+// las que no tocaron la que las generó daban 404. Cargaba una sola.
+test('toda placa renderizada se archiva', () => {
+  const fuente = readFileSync(join(RAIZ, 'core/service.mjs'), 'utf8')
+  const sinArchivar = []
+  for (const m of fuente.matchAll(/renderSpec\(/g)) {
+    const despues = fuente.slice(m.index, m.index + 500)
+    if (!despues.includes('archivarPiezas')) {
+      sinArchivar.push(fuente.slice(0, m.index).split('\n').length)
+    }
+  }
+  assert.deepEqual(sinArchivar, [],
+    `hay renders que no se archivan, en la línea ${sinArchivar}: esas placas desaparecen al reciclarse la instancia`)
+})
+
 // El resumen va último: si se agrega un bloque abajo, tiene que contarlo.
 console.log(`\n${ok} pruebas OK${process.exitCode ? ' — con fallas' : ''}\n`)

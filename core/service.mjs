@@ -417,16 +417,26 @@ function lienzoVacio(color) {
  * quedan donde estaban, que es lo correcto cuando corre en una máquina.
  */
 async function archivarPiezas(archivos, prefijo) {
-  if (!firestore.hayAlmacen()) return
+  if (!firestore.hayAlmacen()) return []
+  const fallidas = []
   await Promise.all(archivos.map(async a => {
     const ruta = a.file || a
     const nombre = String(ruta).split('/').pop()
     try {
       await firestore.subirPieza(`${prefijo}/${nombre}`, readFileSync(ruta))
     } catch (e) {
-      console.warn(`[placas] no se pudo archivar ${nombre}:`, e.message)
+      // No voltea el render —la placa ya existe y el usuario la está viendo—
+      // pero queda anotado con la ruta completa: una placa que no se archiva
+      // desaparece recién cuando se recicla la instancia, y para entonces
+      // nadie relaciona el 404 con este momento.
+      fallidas.push(nombre)
+      console.warn(`[placas] no se pudo archivar ${prefijo}/${nombre}:`, e.message)
     }
   }))
+  if (fallidas.length) {
+    console.warn(`[placas] ${fallidas.length} de ${archivos.length} no llegaron al almacén: van a dar 404 cuando se recicle la instancia`)
+  }
+  return fallidas
 }
 
 /**
@@ -566,7 +576,13 @@ export async function generarContenido(cuentaId, {
       guardarCuenta(cuenta)
       throw e
     }
-    await renderSpec({ spec, brand: marca })
+    // Sin archivar, las placas del plan viven solo en el /tmp de la instancia
+    // que las renderizó. El navegador pide las tres miniaturas a la vez, cada
+    // pedido puede caer en otra instancia, y las que no tocaron la que las
+    // generó dan 404: en un carrusel cargaba una sola. El render manual sí
+    // archivaba; este camino quedó sin hacerlo.
+    const archivos = await renderSpec({ spec, brand: marca })
+    await archivarPiezas(archivos, `${cuentaId}/${sub}`)
   }
 
   consumir(cuenta, 'planes', 1)
