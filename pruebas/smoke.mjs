@@ -20,7 +20,7 @@ import { verificar, consumir, estado, QuotaError } from '../core/quota/ledger.mj
 import { planToSpec, placaToSlide, soloCamposDe, CAMPOS_DE_PLANTILLA } from '../core/content/plan.mjs'
 import { CAMPOS_PRINCIPALES, camposSecundarios, plantillaSegunPosicion } from '../core/content/plantillas.mjs'
 import { temasLocales } from '../core/content/temas.mjs'
-import { esquemaParaGemini, costoUSD, MODEL } from '../core/ai/gemini.mjs'
+import { esquemaParaGemini, costoUSD, MODEL, textoDe, usoDe } from '../core/ai/gemini.mjs'
 import { valorGenerado, REFERENCIA } from '../core/valor.mjs'
 import { intercalar, estadoBanco, guardarDelBanco } from '../core/media/imagenes.mjs'
 import { altaCuenta, subirLogo, renderizarPieza } from '../core/service.mjs'
@@ -927,6 +927,32 @@ test('un modelo sin precio conocido se estima de más, no de menos', () => {
 
 test('el modelo por defecto no es uno que Google haya retirado', () => {
   assert.notEqual(MODEL, 'gemini-2.0-flash', 'gemini-2.0-flash está retirado: devuelve 404')
+})
+
+// En el SDK `text` es una propiedad, no un método. Llamarla como función tiraba
+// "response.text is not a function" y se caía la generación entera.
+test('el texto se saca venga como venga', () => {
+  assert.equal(textoDe({ text: 'hola' }), 'hola')
+  assert.equal(textoDe({ text: () => 'hola' }), 'hola')
+  assert.equal(textoDe({ candidates: [{ content: { parts: [{ text: 'ho' }, { text: 'la' }] } }] }), 'hola')
+  assert.equal(textoDe({}), '')
+})
+
+// El SDK los llama promptTokenCount y candidatesTokenCount. costoUSD buscaba
+// inputTokenCount y outputTokenCount, que no existen: no fallaba, leía cero, y
+// el costo daba siempre $0. Un contador que reporta cero es peor que no
+// tenerlo, porque se lee como "sale gratis" y sobre eso se fija un precio.
+test('los tokens del SDK llegan al contador de costo', () => {
+  const uso = usoDe({ usageMetadata: { promptTokenCount: 800, candidatesTokenCount: 900 } })
+  assert.equal(uso.inputTokenCount, 800)
+  assert.equal(uso.outputTokenCount, 900)
+  assert.ok(costoUSD(uso) > 0, 'con tokens contados el costo no puede dar cero')
+})
+
+test('una llamada real no reporta costo cero', () => {
+  // La forma exacta que devuelve el SDK, sin normalizar a mano.
+  const respuesta = { usageMetadata: { promptTokenCount: 1200, candidatesTokenCount: 900, totalTokenCount: 2100 } }
+  assert.ok(costoUSD(usoDe(respuesta)) > 0)
 })
 
 // El resumen va último: si se agrega un bloque abajo, tiene que contarlo.

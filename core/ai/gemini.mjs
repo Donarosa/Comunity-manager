@@ -110,6 +110,38 @@ export function client() {
   return _client
 }
 
+/**
+ * Sacar el texto de la respuesta.
+ *
+ * En el SDK `text` es una propiedad de solo lectura, no un método. Llamarla
+ * como función tira "response.text is not a function" y la generación entera se
+ * cae con un mensaje que no dice nada de lo que pasó. Se aceptan las dos formas
+ * porque el SDK ya cambió de una a otra y puede volver a hacerlo.
+ */
+export function textoDe(response) {
+  const t = typeof response?.text === 'function' ? response.text() : response?.text
+  if (t) return t
+  // Último recurso: armarlo desde las partes del candidato.
+  return response?.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || ''
+}
+
+/**
+ * Normalizar el conteo de tokens.
+ *
+ * El SDK los llama `promptTokenCount` y `candidatesTokenCount`. costoUSD()
+ * buscaba `inputTokenCount` y `outputTokenCount`, que no existen: no fallaba,
+ * leía cero y el costo daba siempre $0. Un contador que reporta cero es peor
+ * que no tenerlo, porque parece que la respuesta es "sale gratis".
+ */
+export function usoDe(response) {
+  const u = response?.usageMetadata || response?.usage_metadata || {}
+  return {
+    inputTokenCount:  u.promptTokenCount     ?? u.prompt_token_count     ?? u.inputTokenCount  ?? 0,
+    outputTokenCount: u.candidatesTokenCount ?? u.candidates_token_count ?? u.outputTokenCount ?? 0,
+    totalTokenCount:  u.totalTokenCount      ?? u.total_token_count      ?? 0,
+  }
+}
+
 export function costoUSD(usage, model = MODEL) {
   // Antes caía al precio de gemini-2.0-flash, que es el más barato de la tabla:
   // un modelo desconocido reportaba menos de lo que costaba y nadie se enteraba.
@@ -173,7 +205,7 @@ export async function pedirJSON({
     },
   })
 
-  const texto = response.text()
+  const texto = textoDe(response)
   if (!texto) {
     throw new Error('El modelo devolvió una respuesta vacía. Reintentá.')
   }
@@ -185,7 +217,7 @@ export async function pedirJSON({
     throw new Error('El modelo no devolvió JSON válido pese al schema. Reintentá.')
   }
 
-  const usage = response.usageMetadata || {}
+  const usage = usoDe(response)
   return {
     data,
     usage,
