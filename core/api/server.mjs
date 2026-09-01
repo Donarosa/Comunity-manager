@@ -306,25 +306,34 @@ async function despachar(req, res) {
       return json(res, 200, resVerif)
     }
 
-    /* — autenticación y sincronización con cuenta Firebase — */
-    if (m === 'POST' && url.pathname === '/auth/firebase-login') {
-      const body = await leerBody(req)
-      const { uid, email, nombre, foto } = body
-      if (!uid) return json(res, 400, { error: 'Falta UID de Firebase' })
-
-      const alta = svc.altaCuenta({
-        id: uid,
-        userId: uid,
-        email: email || null,
-        nombre: nombre || email?.split('@')[0] || 'Mi Negocio',
-        foto: foto || null,
-      })
-      return json(res, 200, alta)
-    }
-
     /* — de acá para abajo hay que identificarse — */
     const usuario = await obtenerUsuarioAutenticado(req)
     if (!usuario) return json(res, 401, { error: 'hace falta iniciar sesión', codigo: 'sin_sesion' })
+
+    /* — entrar con la cuenta de Firebase —
+     *
+     * El uid sale del token verificado, no del cuerpo del pedido. Antes venía
+     * en el JSON y la ruta estaba abierta: cualquiera mandaba el uid de otro y
+     * le pisaba el nombre y el correo, porque altaCuenta actualiza la cuenta si
+     * ya existe.
+     */
+    if (m === 'POST' && url.pathname === '/auth/firebase-login') {
+      const body = await leerBody(req)
+      const id = usuario.uid
+
+      // Sin esto altaCuenta busca en el disco de la función, que arranca vacío,
+      // no la encuentra y crea una nueva encima: cada vez que el cliente
+      // entraba, su marca desaparecía.
+      await svc.hidratarCuenta(id)
+
+      return json(res, 200, svc.altaCuenta({
+        id,
+        userId: id,
+        email: usuario.email || body.email || null,
+        nombre: body.nombre || usuario.nombre || usuario.email?.split('@')[0] || 'Mi Negocio',
+        foto: body.foto || null,
+      }))
+    }
 
     /* — catálogo — */
     if (m === 'GET' && url.pathname === '/catalogo') return json(res, 200, svc.catalogo())

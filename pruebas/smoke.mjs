@@ -840,5 +840,24 @@ test('no se ofrece una puerta de ingreso que el servidor no pueda abrir', () => 
   }
 })
 
+// altaCuenta con un id que ya existe no falla: actualiza la cuenta. Pero busca
+// con leerCuenta(), que solo mira el disco, y el disco de la función arranca
+// vacío: sin traerla antes de Firestore no la encuentra y crea una nueva
+// encima. El cliente entraba y su marca desaparecía. Se arregló en /cuentas y
+// en /cuentas/:id, y quedó sin arreglar en /auth/firebase-login, que es
+// justamente por donde entra todo el mundo.
+test('toda ruta que da de alta una cuenta la trae primero de Firestore', () => {
+  const fuente = readFileSync(join(RAIZ, 'core/api/server.mjs'), 'utf8')
+  const sinHidratar = []
+  for (const m of fuente.matchAll(/svc\.altaCuenta\(/g)) {
+    const antes = fuente.slice(Math.max(0, m.index - 700), m.index)
+    if (!antes.includes('hidratarCuenta')) {
+      sinHidratar.push(fuente.slice(0, m.index).split('\n').length)
+    }
+  }
+  assert.deepEqual(sinHidratar, [],
+    `hay altas sin hidratar antes, en la línea ${sinHidratar}: van a pisar la marca del cliente`)
+})
+
 // El resumen va último: si se agrega un bloque abajo, tiene que contarlo.
 console.log(`\n${ok} pruebas OK${process.exitCode ? ' — con fallas' : ''}\n`)
