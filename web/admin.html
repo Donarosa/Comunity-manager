@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Panel de Control</title>
+<style>
+  :root {
+    --bg:#0f172a;--surface:#1e293b;--surface2:#273548;--border:#334155;
+    --accent:#6366f1;--accent-h:#818cf8;--green:#22c55e;--red:#ef4444;
+    --yellow:#f59e0b;--text:#f1f5f9;--muted:#94a3b8;--radius:10px;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+  #login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:radial-gradient(ellipse at 60% 40%,#1e1b4b 0%,var(--bg) 70%)}
+  .login-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2.5rem;width:360px;box-shadow:0 25px 60px rgba(0,0,0,.5)}
+  .login-logo{display:flex;align-items:center;gap:.6rem;margin-bottom:2rem}
+  .login-logo svg{width:32px;height:32px}
+  .login-logo span{font-size:1.1rem;font-weight:700;letter-spacing:-.02em}
+  .login-title{font-size:1.5rem;font-weight:700;margin-bottom:.35rem}
+  .login-sub{color:var(--muted);margin-bottom:1.8rem;font-size:.9rem}
+  .field{margin-bottom:1rem}
+  .field label{display:block;font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.05em}
+  .field input{width:100%;padding:.65rem .9rem;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:.95rem;outline:none;transition:border-color .2s}
+  .field input:focus{border-color:var(--accent)}
+  .btn-primary{width:100%;padding:.75rem;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);font-size:.95rem;font-weight:600;cursor:pointer;transition:background .2s,transform .1s;margin-top:.5rem}
+  .btn-primary:hover{background:var(--accent-h)}
+  .btn-primary:active{transform:scale(.98)}
+  .btn-primary:disabled{opacity:.5;cursor:not-allowed}
+  .error-msg{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--red);padding:.6rem .9rem;border-radius:var(--radius);font-size:.85rem;margin-bottom:1rem;display:none}
+  .error-msg.show{display:block}
+  #app{display:none;height:100vh;overflow:hidden}
+  #app.visible{display:flex}
+  .sidebar{width:220px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:1.25rem 0}
+  .sidebar-brand{padding:0 1.25rem 1.5rem;display:flex;align-items:center;gap:.6rem}
+  .sidebar-brand svg{width:28px;height:28px}
+  .sidebar-brand span{font-size:1rem;font-weight:700}
+  .nav-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:.5rem 1.25rem}
+  .nav-item{display:flex;align-items:center;gap:.65rem;padding:.55rem 1.25rem;cursor:pointer;color:var(--muted);font-weight:500;border-left:3px solid transparent;transition:all .15s}
+  .nav-item:hover{color:var(--text);background:var(--surface2)}
+  .nav-item.active{color:var(--accent-h);border-left-color:var(--accent);background:rgba(99,102,241,.08)}
+  .nav-item svg{width:16px;height:16px;flex-shrink:0}
+  .sidebar-footer{margin-top:auto;padding:1rem 1.25rem;border-top:1px solid var(--border)}
+  .sidebar-user{font-size:.8rem;color:var(--muted)}
+  .sidebar-user strong{display:block;color:var(--text);font-size:.85rem;margin-bottom:.15rem}
+  .btn-logout{font-size:.8rem;color:var(--red);background:none;border:none;cursor:pointer;padding:0;margin-top:.4rem}
+  .btn-logout:hover{text-decoration:underline}
+  .main{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+  .topbar{padding:1.25rem 2rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+  .topbar h1{font-size:1.2rem;font-weight:700}
+  .topbar-meta{font-size:.8rem;color:var(--muted)}
+  .content{padding:1.75rem 2rem;flex:1}
+  .page{display:none}
+  .page.active{display:block}
+  .stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;margin-bottom:2rem}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem 1.5rem}
+  .stat-label{font-size:.75rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem}
+  .stat-value{font-size:2rem;font-weight:800;line-height:1}
+  .stat-sub{font-size:.78rem;color:var(--muted);margin-top:.3rem}
+  .stat-card.accent .stat-value{color:var(--accent-h)}
+  .stat-card.green .stat-value{color:var(--green)}
+  .stat-card.yellow .stat-value{color:var(--yellow)}
+  .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+  .section-title{font-size:1rem;font-weight:700}
+  .search-box{display:flex;align-items:center;gap:.5rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:.5rem .9rem;width:260px}
+  .search-box svg{width:14px;height:14px;color:var(--muted);flex-shrink:0}
+  .search-box input{background:none;border:none;outline:none;color:var(--text);font-size:.9rem;width:100%}
+  .search-box input::placeholder{color:var(--muted)}
+  .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+  table{width:100%;border-collapse:collapse}
+  thead th{background:var(--surface2);padding:.75rem 1rem;text-align:left;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap}
+  tbody tr{border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s}
+  tbody tr:last-child{border-bottom:none}
+  tbody tr:hover{background:var(--surface2)}
+  tbody td{padding:.8rem 1rem;vertical-align:middle}
+  .cell-name{font-weight:600}
+  .cell-email{color:var(--muted);font-size:.85rem}
+  .cell-commerce{font-size:.85rem}
+  .badge{display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .55rem;border-radius:99px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+  .badge.activa{background:rgba(34,197,94,.1);color:var(--green)}
+  .badge.pausada{background:rgba(239,68,68,.1);color:var(--red)}
+  .badge-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+  .pill{display:inline-block;padding:.15rem .5rem;border-radius:99px;font-size:.72rem;font-weight:600;background:rgba(99,102,241,.15);color:var(--accent-h)}
+  .action-btn{padding:.3rem .75rem;border-radius:var(--radius);font-size:.78rem;font-weight:600;cursor:pointer;border:1px solid;transition:all .15s;white-space:nowrap}
+  .action-btn.pause{border-color:rgba(239,68,68,.4);color:var(--red);background:rgba(239,68,68,.08)}
+  .action-btn.resume{border-color:rgba(34,197,94,.4);color:var(--green);background:rgba(34,197,94,.08)}
+  .action-btn:hover{opacity:.8}
+  .empty-state{padding:3rem;text-align:center;color:var(--muted)}
+  .loading{padding:3rem;text-align:center;color:var(--muted)}
+  .spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin-right:.5rem;vertical-align:middle}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .activity-item{display:flex;align-items:center;gap:1rem;padding:.75rem 1rem;border-bottom:1px solid var(--border)}
+  .activity-item:last-child{border-bottom:none}
+  .activity-avatar{width:34px;height:34px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;flex-shrink:0;color:#fff}
+  .activity-info{flex:1;min-width:0}
+  .activity-name{font-weight:600;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .activity-email{font-size:.78rem;color:var(--muted)}
+  .activity-time{font-size:.75rem;color:var(--muted);white-space:nowrap}
+  .panel-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:none;align-items:stretch;justify-content:flex-end}
+  .panel-overlay.open{display:flex}
+  .detail-panel{width:480px;max-width:95vw;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;animation:slideIn .2s ease-out}
+  @keyframes slideIn{from{transform:translateX(100%);opacity:0}}
+  .panel-header{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:1rem}
+  .panel-avatar{width:48px;height:48px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem;color:#fff;flex-shrink:0}
+  .panel-name{font-size:1.1rem;font-weight:700}
+  .panel-email{font-size:.83rem;color:var(--muted)}
+  .panel-close{margin-left:auto;background:none;border:none;cursor:pointer;color:var(--muted);padding:.25rem}
+  .panel-close:hover{color:var(--text)}
+  .panel-close svg{width:20px;height:20px}
+  .panel-body{padding:1.5rem;flex:1}
+  .panel-section{margin-bottom:1.75rem}
+  .panel-section-title{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.9rem}
+  .kv-grid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+  .kv-item{background:var(--surface2);border-radius:8px;padding:.7rem .9rem}
+  .kv-label{font-size:.7rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.25rem}
+  .kv-value{font-size:.95rem;font-weight:600}
+  .kv-full{grid-column:1/-1}
+  .panel-actions{padding:1.25rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:.75rem}
+  .panel-btn{flex:1;padding:.65rem;border-radius:var(--radius);font-size:.88rem;font-weight:600;cursor:pointer;border:1px solid;transition:all .15s;text-align:center}
+  .panel-btn.pause-btn{border-color:rgba(239,68,68,.4);color:var(--red);background:rgba(239,68,68,.08)}
+  .panel-btn.resume-btn{border-color:rgba(34,197,94,.4);color:var(--green);background:rgba(34,197,94,.08)}
+  .panel-btn:hover{opacity:.8}
+  .panel-btn:disabled{opacity:.4;cursor:not-allowed}
+  .pubs-list{display:flex;flex-direction:column;gap:.5rem}
+  .pub-item{background:var(--surface2);border-radius:8px;padding:.65rem .9rem;font-size:.83rem;display:flex;gap:.5rem}
+  .pub-date{color:var(--muted);white-space:nowrap;font-size:.78rem}
+  .pub-title{flex:1}
+  .toast{position:fixed;bottom:1.5rem;right:1.5rem;z-index:999;padding:.75rem 1.25rem;border-radius:var(--radius);font-size:.88rem;font-weight:600;transform:translateY(100px);opacity:0;transition:all .3s;pointer-events:none}
+  .toast.show{transform:translateY(0);opacity:1}
+  .toast.ok{background:var(--green);color:#fff}
+  .toast.err{background:var(--red);color:#fff}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#6366f1"/><path d="M8 20L12 12L16 18L20 10L24 20" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Panel Admin</span>
+    </div>
+    <h2 class="login-title">Bienvenido</h2>
+    <p class="login-sub">Ingresá con tu cuenta de administrador</p>
+    <div class="error-msg" id="login-error">Credenciales incorrectas</div>
+    <form id="login-form">
+      <div class="field"><label>Email</label><input type="email" id="login-email" placeholder="admin@tudominio.com" required autocomplete="email"></div>
+      <div class="field"><label>Contraseña</label><input type="password" id="login-password" placeholder="••••••••" required autocomplete="current-password"></div>
+      <button type="submit" class="btn-primary" id="login-btn">Ingresar</button>
+    </form>
+  </div>
+</div>
+
+<div id="app">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#6366f1"/><path d="M8 20L12 12L16 18L20 10L24 20" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Admin</span>
+    </div>
+    <div class="nav-label">Menú</div>
+    <div class="nav-item active" data-page="overview">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      <span>Resumen</span>
+    </div>
+    <div class="nav-item" data-page="users">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>Usuarios</span>
+    </div>
+    <div class="sidebar-footer">
+      <div class="sidebar-user"><strong id="sidebar-email">—</strong>Administrador</div>
+      <button class="btn-logout" id="btn-logout">Cerrar sesión</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <h1 id="page-title">Resumen</h1>
+      <div class="topbar-meta" id="topbar-meta">Cargando…</div>
+    </div>
+    <div class="content">
+
+      <div class="page active" id="page-overview">
+        <div class="stats-grid" id="stats-grid">
+          <div class="stat-card"><div class="stat-label">Total Usuarios</div><div class="stat-value" id="s0"><span class="spinner"></span></div></div>
+          <div class="stat-card green"><div class="stat-label">Activos</div><div class="stat-value" id="s1">—</div></div>
+          <div class="stat-card yellow"><div class="stat-label">Pausados</div><div class="stat-value" id="s2">—</div></div>
+          <div class="stat-card accent"><div class="stat-label">Placas Este Mes</div><div class="stat-value" id="s3">—</div><div class="stat-sub" id="s3-sub">—</div></div>
+          <div class="stat-card"><div class="stat-label">Con Marca Config.</div><div class="stat-value" id="s4">—</div></div>
+          <div class="stat-card"><div class="stat-label">Total Placas</div><div class="stat-value" id="s5">—</div></div>
+        </div>
+        <div class="section-header"><div class="section-title">Actividad Reciente</div></div>
+        <div class="table-wrap" id="activity-list"><div class="loading"><span class="spinner"></span> Cargando…</div></div>
+      </div>
+
+      <div class="page" id="page-users">
+        <div class="section-header">
+          <div class="section-title" id="users-count">Usuarios</div>
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="search-input" placeholder="Buscar por nombre, email, comercio…">
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Usuario</th><th>Comercio</th><th>Plan</th><th>Estado</th><th>Placas/Mes</th><th>Alta</th><th></th></tr></thead>
+            <tbody id="users-tbody"><tr><td colspan="7" class="loading"><span class="spinner"></span> Cargando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div class="panel-overlay" id="panel-overlay">
+  <div style="flex:1" id="panel-backdrop"></div>
+  <div class="detail-panel">
+    <div class="panel-header">
+      <div class="panel-avatar" id="panel-avatar">?</div>
+      <div><div class="panel-name" id="panel-name">—</div><div class="panel-email" id="panel-email">—</div></div>
+      <button class="panel-close" id="panel-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="panel-body" id="panel-body"><div class="loading"><span class="spinner"></span> Cargando…</div></div>
+    <div class="panel-actions" id="panel-actions"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let TOKEN = localStorage.getItem('admin_token') || ''
+let ADMIN_EMAIL_STORED = localStorage.getItem('admin_email') || ''
+let allUsers = []
+let currentUser = null
+
+function toast(msg, type = 'ok') {
+  const t = document.getElementById('toast')
+  t.textContent = msg; t.className = `toast ${type} show`
+  setTimeout(() => { t.className = 'toast' }, 3200)
+}
+
+function formatDate(iso) {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+function formatRelative(iso) {
+  if (!iso) return '—'
+  const diff = Date.now() - new Date(iso)
+  const m = Math.floor(diff / 60000)
+  if (m < 1) return 'hace un momento'
+  if (m < 60) return `hace ${m} min`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `hace ${h}h`
+  const d = Math.floor(h / 24)
+  return d < 7 ? `hace ${d}d` : formatDate(iso)
+}
+
+function initials(name) {
+  if (!name) return '?'
+  return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+}
+
+function esc(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+}
+
+const COLORS = ['#6366f1','#8b5cf6','#ec4899','#f59e0b','#10b981','#3b82f6','#ef4444','#14b8a6']
+function avatarColor(name) {
+  if (!name) return COLORS[0]
+  let h = 0; for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffff
+  return COLORS[h % COLORS.length]
+}
+
+async function api(path, opts = {}) {
+  const r = await fetch(path, {
+    headers: { 'Content-Type': 'application/json', ...(TOKEN && path !== '/admin/login' ? { 'Authorization': `Bearer ${TOKEN}` } : {}), ...(opts.headers || {}) },
+    ...opts,
+  })
+  const data = await r.json().catch(() => ({}))
+  if (!r.ok) throw Object.assign(new Error(data.error || `Error ${r.status}`), { status: r.status })
+  return data
+}
+
+async function doLogin(email, password) {
+  const data = await fetch('/admin/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  }).then(r => r.json())
+  if (!data.token) throw new Error(data.error || 'Error de autenticación')
+  TOKEN = data.token; ADMIN_EMAIL_STORED = email
+  localStorage.setItem('admin_token', TOKEN)
+  localStorage.setItem('admin_email', email)
+}
+
+function logout() {
+  TOKEN = ''; ADMIN_EMAIL_STORED = ''
+  localStorage.removeItem('admin_token'); localStorage.removeItem('admin_email')
+  document.getElementById('login-screen').style.display = 'flex'
+  document.getElementById('app').classList.remove('visible')
+}
+
+function showApp() {
+  document.getElementById('login-screen').style.display = 'none'
+  document.getElementById('app').classList.add('visible')
+  document.getElementById('sidebar-email').textContent = ADMIN_EMAIL_STORED
+  navigateTo('overview')
+  loadAnalytics()
+  loadUsers()
+}
+
+function navigateTo(page) {
+  document.querySelectorAll('.nav-item[data-page]').forEach(el => el.classList.toggle('active', el.dataset.page === page))
+  document.querySelectorAll('.page').forEach(el => el.classList.toggle('active', el.id === `page-${page}`))
+  document.getElementById('page-title').textContent = { overview: 'Resumen', users: 'Usuarios' }[page] || page
+}
+
+async function loadAnalytics() {
+  try {
+    const data = await api('/admin/analitica')
+    const r = data.resumen
+    document.getElementById('s0').textContent = r.totalUsuarios
+    document.getElementById('s1').textContent = r.usuariosActivos
+    document.getElementById('s2').textContent = r.usuariosPausados
+    document.getElementById('s3').textContent = r.totalPlacasMes
+    document.getElementById('s4').textContent = r.usuariosConMarca
+    document.getElementById('s5').textContent = r.totalPlacasHistorico
+    const [yr, mo] = (r.mes || '').split('-')
+    const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
+    document.getElementById('s3-sub').textContent = yr && mo ? `${meses[parseInt(mo)-1]} ${yr}` : '—'
+    const actEl = document.getElementById('activity-list')
+    if (!data.actividadReciente?.length) {
+      actEl.innerHTML = '<div class="empty-state">Sin actividad reciente registrada</div>'
+    } else {
+      actEl.innerHTML = data.actividadReciente.map(u => `
+        <div class="activity-item">
+          <div class="activity-avatar" style="background:${avatarColor(u.nombre)}">${initials(u.nombre)}</div>
+          <div class="activity-info">
+            <div class="activity-name">${esc(u.nombre)}</div>
+            <div class="activity-email">${esc(u.email)}</div>
+          </div>
+          <div class="activity-time">${formatRelative(u.fecha)}</div>
+        </div>`).join('')
+    }
+    document.getElementById('topbar-meta').textContent = `Actualizado ${formatRelative(new Date().toISOString())}`
+  } catch (e) {
+    if (e.status === 401) { logout(); return }
+    document.getElementById('activity-list').innerHTML = `<div class="empty-state">Error: ${esc(e.message)}</div>`
+  }
+}
+
+async function loadUsers() {
+  try {
+    const data = await api('/admin/usuarios')
+    allUsers = data.usuarios || []
+    renderTable(allUsers)
+  } catch (e) {
+    if (e.status === 401) { logout(); return }
+    document.getElementById('users-tbody').innerHTML = `<tr><td colspan="7" class="empty-state">Error: ${esc(e.message)}</td></tr>`
+  }
+}
+
+function renderTable(users) {
+  document.getElementById('users-count').textContent = `Usuarios (${users.length})`
+  const tbody = document.getElementById('users-tbody')
+  if (!users.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Sin resultados</td></tr>'; return }
+  tbody.innerHTML = users.map(u => `
+    <tr class="user-row" data-id="${esc(u.id)}">
+      <td><div class="cell-name">${esc(u.nombre)}</div><div class="cell-email">${esc(u.email)}</div></td>
+      <td class="cell-commerce">${esc(u.nombreComercio || '—')}</td>
+      <td><span class="pill">${esc(u.plan)}</span></td>
+      <td><span class="badge ${u.estado}"><span class="badge-dot"></span>${u.estado === 'activa' ? 'Activa' : 'Pausada'}</span></td>
+      <td>${u.placasMes || 0}</td>
+      <td>${formatDate(u.creada)}</td>
+      <td><button class="action-btn ${u.estado === 'activa' ? 'pause' : 'resume'}" data-id="${esc(u.id)}" data-estado="${esc(u.estado)}" onclick="event.stopPropagation();toggleEstado(this)">${u.estado === 'activa' ? 'Pausar' : 'Reactivar'}</button></td>
+    </tr>`).join('')
+}
+
+function currentSearch() {
+  const q = document.getElementById('search-input').value.toLowerCase().trim()
+  if (!q) return allUsers
+  return allUsers.filter(u => (u.nombre || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q) || (u.nombreComercio || '').toLowerCase().includes(q))
+}
+
+async function toggleEstado(btn) {
+  const id = btn.dataset.id, est = btn.dataset.estado, nuevo = est === 'activa' ? 'pausada' : 'activa'
+  btn.disabled = true; btn.textContent = '…'
+  try {
+    await api(`/admin/usuarios/${id}/estado`, { method: 'POST', body: JSON.stringify({ estado: nuevo }) })
+    const u = allUsers.find(x => x.id === id)
+    if (u) u.estado = nuevo
+    if (currentUser?.cuenta?.id === id) { currentUser.cuenta.estado = nuevo; renderPanelActions(id, nuevo) }
+    renderTable(currentSearch())
+    toast(`Cuenta ${nuevo === 'pausada' ? 'pausada' : 'reactivada'}`)
+  } catch (e) {
+    toast(e.message, 'err'); btn.disabled = false; btn.textContent = est === 'activa' ? 'Pausar' : 'Reactivar'
+  }
+}
+
+async function openPanel(id) {
+  document.getElementById('panel-overlay').classList.add('open')
+  document.getElementById('panel-body').innerHTML = '<div class="loading"><span class="spinner"></span> Cargando…</div>'
+  document.getElementById('panel-actions').innerHTML = ''
+  document.getElementById('panel-name').textContent = '—'
+  document.getElementById('panel-email').textContent = '—'
+  document.getElementById('panel-avatar').textContent = '?'
+  try {
+    const data = await api(`/admin/usuarios/${id}`)
+    currentUser = data
+    const c = data.cuenta || {}, m = data.marca || null, rm = data.resumenMetricas || {}, est = data.estado || {}
+    const mesActual = (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}` })()
+    const consumoMes = est.consumo?.[mesActual] || {}
+    document.getElementById('panel-avatar').textContent = initials(c.nombre)
+    document.getElementById('panel-avatar').style.background = avatarColor(c.nombre)
+    document.getElementById('panel-name').textContent = c.nombre || '—'
+    document.getElementById('panel-email').textContent = c.email || '—'
+    document.getElementById('panel-body').innerHTML = `
+      <div class="panel-section">
+        <div class="panel-section-title">Datos del usuario</div>
+        <div class="kv-grid">
+          <div class="kv-item"><div class="kv-label">Estado</div><div class="kv-value"><span class="badge ${c.estado || 'activa'}"><span class="badge-dot"></span>${c.estado === 'pausada' ? 'Pausada' : 'Activa'}</span></div></div>
+          <div class="kv-item"><div class="kv-label">Plan</div><div class="kv-value"><span class="pill">${esc(c.plan || '—')}</span></div></div>
+          <div class="kv-item kv-full"><div class="kv-label">Alta</div><div class="kv-value">${formatDate(c.creada)}</div></div>
+        </div>
+      </div>
+      ${m ? `
+      <div class="panel-section">
+        <div class="panel-section-title">Datos del Comercio</div>
+        <div class="kv-grid">
+          <div class="kv-item kv-full"><div class="kv-label">Nombre</div><div class="kv-value">${esc(m.nombre || '—')}</div></div>
+          ${m.handle ? `<div class="kv-item"><div class="kv-label">Handle</div><div class="kv-value">@${esc(m.handle)}</div></div>` : ''}
+          ${m.negocio?.rubro ? `<div class="kv-item"><div class="kv-label">Rubro</div><div class="kv-value">${esc(m.negocio.rubro)}</div></div>` : ''}
+          ${m.fonts?.preset ? `<div class="kv-item"><div class="kv-label">Tipografía</div><div class="kv-value">${esc(m.fonts.preset)}</div></div>` : ''}
+          ${m.negocio?.descripcion ? `<div class="kv-item kv-full"><div class="kv-label">Descripción</div><div class="kv-value" style="font-size:.85rem;font-weight:400">${esc(m.negocio.descripcion)}</div></div>` : ''}
+        </div>
+      </div>` : '<div class="panel-section"><div class="panel-section-title">Comercio</div><p style="color:var(--muted);font-size:.85rem">Sin marca configurada aún</p></div>'}
+      <div class="panel-section">
+        <div class="panel-section-title">Métricas de Uso</div>
+        <div class="kv-grid">
+          <div class="kv-item"><div class="kv-label">Placas este mes</div><div class="kv-value">${consumoMes.piezas || rm.placasEsteMes || 0}</div></div>
+          <div class="kv-item"><div class="kv-label">Publicaciones totales</div><div class="kv-value">${rm.totalPublicaciones || 0}</div></div>
+          <div class="kv-item"><div class="kv-label">Planes generados</div><div class="kv-value">${rm.totalPlanes || 0}</div></div>
+          <div class="kv-item"><div class="kv-label">Descargas totales</div><div class="kv-value">${rm.totalDescargas || 0}</div></div>
+        </div>
+      </div>
+      ${(data.publicaciones || []).length ? `
+      <div class="panel-section">
+        <div class="panel-section-title">Últimas Publicaciones</div>
+        <div class="pubs-list">${data.publicaciones.slice(0,8).map(p => `<div class="pub-item"><span class="pub-title">${esc(p.titulo || p.tema || p.tipo || 'Publicación')}</span><span class="pub-date">${formatDate(p.fecha)}</span></div>`).join('')}</div>
+      </div>` : ''}`
+    renderPanelActions(id, c.estado || 'activa')
+  } catch (e) {
+    document.getElementById('panel-body').innerHTML = `<div class="empty-state">Error: ${esc(e.message)}</div>`
+  }
+}
+
+function renderPanelActions(id, estado) {
+  document.getElementById('panel-actions').innerHTML = estado === 'activa'
+    ? `<button class="panel-btn pause-btn" onclick="panelToggle('${id}','activa')">⏸ Pausar cuenta</button>`
+    : `<button class="panel-btn resume-btn" onclick="panelToggle('${id}','pausada')">▶ Reactivar cuenta</button>`
+}
+
+async function panelToggle(id, estadoActual) {
+  const nuevo = estadoActual === 'activa' ? 'pausada' : 'activa'
+  document.querySelectorAll('.panel-actions .panel-btn').forEach(b => { b.disabled = true; b.textContent = '…' })
+  try {
+    await api(`/admin/usuarios/${id}/estado`, { method: 'POST', body: JSON.stringify({ estado: nuevo }) })
+    const u = allUsers.find(x => x.id === id); if (u) u.estado = nuevo
+    if (currentUser?.cuenta) currentUser.cuenta.estado = nuevo
+    renderPanelActions(id, nuevo)
+    renderTable(currentSearch())
+    const badge = document.querySelector('#panel-body .badge')
+    if (badge) { badge.className = `badge ${nuevo}`; badge.innerHTML = `<span class="badge-dot"></span>${nuevo === 'pausada' ? 'Pausada' : 'Activa'}` }
+    toast(`Cuenta ${nuevo === 'pausada' ? 'pausada' : 'reactivada'}`)
+  } catch (e) { toast(e.message, 'err'); renderPanelActions(id, estadoActual) }
+}
+
+function closePanel() { document.getElementById('panel-overlay').classList.remove('open'); currentUser = null }
+
+// Events
+document.getElementById('login-form').addEventListener('submit', async e => {
+  e.preventDefault()
+  const btn = document.getElementById('login-btn'), errEl = document.getElementById('login-error')
+  btn.disabled = true; btn.textContent = 'Ingresando…'; errEl.classList.remove('show')
+  try {
+    await doLogin(document.getElementById('login-email').value, document.getElementById('login-password').value)
+    showApp()
+  } catch (err) {
+    errEl.textContent = err.message || 'Credenciales incorrectas'; errEl.classList.add('show')
+  } finally { btn.disabled = false; btn.textContent = 'Ingresar' }
+})
+
+document.getElementById('btn-logout').addEventListener('click', logout)
+document.querySelectorAll('.nav-item[data-page]').forEach(el => el.addEventListener('click', () => navigateTo(el.dataset.page)))
+document.getElementById('search-input').addEventListener('input', e => renderTable(currentSearch()))
+document.getElementById('users-tbody').addEventListener('click', e => {
+  const row = e.target.closest('.user-row')
+  if (row && !e.target.closest('.action-btn')) openPanel(row.dataset.id)
+})
+document.getElementById('panel-close').addEventListener('click', closePanel)
+document.getElementById('panel-backdrop').addEventListener('click', closePanel)
+
+// Init
+if (TOKEN) {
+  api('/admin/analitica').then(() => showApp()).catch(() => { TOKEN = ''; showApp() })
+} else {
+  document.getElementById('login-screen').style.display = 'flex'
+}
+</script>
+</body>
+</html>

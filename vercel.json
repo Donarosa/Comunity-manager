@@ -10,6 +10,22 @@
   },
   "rewrites": [
     {
+      "source": "/admin/login",
+      "destination": "/api"
+    },
+    {
+      "source": "/admin/usuarios(.*)",
+      "destination": "/api"
+    },
+    {
+      "source": "/admin/analitica",
+      "destination": "/api"
+    },
+    {
+      "source": "/admin",
+      "destination": "/admin.html"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api"
     },

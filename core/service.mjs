@@ -449,6 +449,31 @@ export async function hidratarCuenta(id) {
   }
 }
 
+/* ── administración ──────────────────────────────────────── */
+
+/**
+ * Cambia el estado de una cuenta de usuario (para uso del admin).
+ * @param {string} id - ID de la cuenta
+ * @param {'activa'|'pausada'} nuevoEstado
+ */
+export function cambiarEstadoUsuario(id, nuevoEstado) {
+  const cuenta = leerCuenta(id)
+  const estadoAnterior = cuenta.estado
+  cuenta.estado = nuevoEstado
+  guardarCuenta(cuenta)
+  registrarEventoEstadistica(id, 'estado_cambiado_admin', {
+    anterior: estadoAnterior,
+    nuevo: nuevoEstado,
+  })
+  return {
+    ok: true,
+    id,
+    estado: nuevoEstado,
+    nombre: cuenta.nombre,
+    email: cuenta.email,
+  }
+}
+
 /* ── de qué publicar ─────────────────────────────────────── */
 
 /**

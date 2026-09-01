@@ -9,6 +9,7 @@ import { timingSafeEqual } from 'crypto'
 
 import * as svc from '../service.mjs'
 import * as firestore from '../store/firestore.mjs'
+import * as admin from './admin.mjs'
 import { QuotaError } from '../quota/ledger.mjs'
 import { DATA_DIR, esperarEscrituras } from '../store/store.mjs'
 import { esServerless } from '../render/engine.mjs'
@@ -291,6 +292,54 @@ async function despachar(req, res) {
         appId: process.env.FIREBASE_APP_ID || '',
         activo: Boolean(process.env.FIREBASE_API_KEY && (process.env.FIREBASE_PROJECT_ID || process.env.GCLOUD_PROJECT)),
       })
+    }
+
+    /* — panel de administración — */
+    if (url.pathname.startsWith('/admin')) {
+      const subPath = url.pathname.replace(/^\/admin/, '') || '/'
+
+      // Login del admin (no requiere token)
+      if (m === 'POST' && subPath === '/login') {
+        const resultado = await admin.handleLogin(req, leerBody, (code, body) => ({ _code: code, _body: body }))
+        return json(res, resultado._code, resultado._body)
+      }
+
+      // Servir la página del panel
+      if (m === 'GET' && (subPath === '' || subPath === '/' || subPath === '/index.html')) {
+        return servirArchivo(res, WEB, 'admin.html')
+      }
+
+      // Todas las demás rutas /admin/* requieren JWT de admin
+      const adminPayload = admin.autenticarAdmin(req)
+      if (!adminPayload) {
+        return json(res, 401, { error: 'Acceso restringido. Iniciá sesión como administrador.', codigo: 'admin_no_autenticado' })
+      }
+
+      if (m === 'GET' && subPath === '/usuarios') {
+        const resultado = await admin.handleListarUsuarios(svc, firestore, (code, body) => ({ _code: code, _body: body }))
+        return json(res, resultado._code, resultado._body)
+      }
+
+      if (m === 'GET' && subPath === '/analitica') {
+        const resultado = await admin.handleAnalitica(svc, firestore, (code, body) => ({ _code: code, _body: body }))
+        return json(res, resultado._code, resultado._body)
+      }
+
+      // /admin/usuarios/:id
+      const matchDetalle = subPath.match(/^\/usuarios\/([^/]+)$/)
+      if (m === 'GET' && matchDetalle) {
+        const resultado = await admin.handleDetalleUsuario(matchDetalle[1], svc, (code, body) => ({ _code: code, _body: body }))
+        return json(res, resultado._code, resultado._body)
+      }
+
+      // /admin/usuarios/:id/estado
+      const matchEstado = subPath.match(/^\/usuarios\/([^/]+)\/estado$/)
+      if (m === 'POST' && matchEstado) {
+        const resultado = await admin.handleCambiarEstado(matchEstado[1], req, leerBody, svc, (code, body) => ({ _code: code, _body: body }))
+        return json(res, resultado._code, resultado._body)
+      }
+
+      return json(res, 404, { error: `Ruta admin no encontrada: ${m} ${url.pathname}` })
     }
 
     /* — autenticación OTP por email — */
