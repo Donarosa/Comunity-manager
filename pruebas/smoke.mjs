@@ -972,5 +972,26 @@ test('toda placa renderizada se archiva', () => {
     `hay renders que no se archivan, en la línea ${sinArchivar}: esas placas desaparecen al reciclarse la instancia`)
 })
 
+// Tercera vez que aparece el mismo patrón: existe la lectura que consulta
+// Firestore, está exportada, y la ruta usa la sincrónica que solo mira el
+// disco. Pasó con las cuentas, con el alta de Firebase y con las
+// publicaciones: el historial se vaciaba solo al reciclarse la instancia.
+test('las publicaciones se leen de Firestore, no solo del disco', () => {
+  const fuente = readFileSync(join(RAIZ, 'core/api/server.mjs'), 'utf8')
+  const linea = fuente.split('\n').find(l => l.includes("sub === 'publicaciones'"))
+  assert.ok(linea, 'no está la ruta de publicaciones')
+  assert.ok(/await svc\.publicacionesDe\(/.test(linea),
+    'la ruta lista desde el disco: el historial desaparece al reciclarse la instancia')
+})
+
+// El texto que devuelve el modelo es un borrador y hay que poder corregirlo
+// antes de publicarlo. Si el bloque vuelve a ser un párrafo, deja de editarse
+// sin que nada falle.
+test('el texto del posteo se puede editar', () => {
+  const app = readFileSync(join(RAIZ, 'web/js/app.js'), 'utf8')
+  assert.ok(/textarea\.posteo-texto/.test(app), 'el texto del posteo volvió a ser de solo lectura')
+  assert.ok(/api\.editarPublicacion\(/.test(app), 'se edita pero no se guarda')
+})
+
 // El resumen va último: si se agrega un bloque abajo, tiene que contarlo.
 console.log(`\n${ok} pruebas OK${process.exitCode ? ' — con fallas' : ''}\n`)

@@ -3610,3 +3610,66 @@ body { overflow-x: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .cuota-relleno { transition: none; }
 }
+
+/* ── El texto del posteo, editable ──────────────────────────
+ *
+ * Lo que devuelve el modelo es un borrador. Se mostraba como un párrafo, que se
+ * lee como resultado terminado: nadie intenta corregir un párrafo. Va como
+ * campo de texto de verdad, con borde y foco visibles, para que se note antes
+ * de tocarlo. Y con el botón de copiar al lado, porque el paso siguiente
+ * siempre es pegarlo en Instagram.
+ */
+.posteo {
+  background: #fff;
+  border: 1px solid var(--linea);
+  border-radius: var(--r);
+  padding: 14px;
+}
+.posteo-texto,
+.posteo-tags {
+  width: 100%;
+  display: block;
+  font-family: inherit;
+  color: var(--color-ink);
+  background: var(--papel, #fdfcf9);
+  border: 1px solid var(--linea-fuerte);
+  border-radius: var(--r-input);
+  padding: 12px 13px;
+  resize: vertical;
+  transition: border-color 0.15s var(--ease-out), background 0.15s var(--ease-out);
+}
+.posteo-texto {
+  font-size: 0.94rem;
+  line-height: 1.55;
+  min-height: 150px;
+}
+.posteo-tags {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  margin-top: 8px;
+}
+.posteo-texto:hover,
+.posteo-tags:hover {
+  border-color: var(--color-accent, var(--color-ink));
+}
+.posteo-texto:focus,
+.posteo-tags:focus {
+  outline: none;
+  background: #fff;
+  border-color: var(--color-accent, var(--color-ink));
+  box-shadow: 0 0 0 3px var(--color-focus, rgba(0, 0, 0, 0.08));
+}
+.posteo-pie {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.posteo-estado {
+  font-size: 0.82rem;
+  color: var(--color-muted);
+  margin-left: auto;
+}
+.posteo-estado.guardado { color: var(--color-bien); }
+.posteo-estado.falla    { color: var(--color-malo); }

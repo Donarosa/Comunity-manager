@@ -309,6 +309,95 @@ function vistaSugerir() {
   })
 }
 
+/**
+ * El texto del posteo, para corregirlo acá mismo.
+ *
+ * El modelo devuelve un borrador: se le escapa una palabra repetida, no sabe el
+ * horario del local, propone algo que ese negocio no hace. Mostrarlo como
+ * párrafo lo hace parecer terminado y nadie intenta tocar un párrafo, así que
+ * el dueño lo copiaba a otro lado para arreglarlo y lo que quedaba guardado
+ * dejaba de ser lo que publicó.
+ *
+ * Se guarda solo al dejar de escribir. Sin botón de guardar: uno más para
+ * olvidarse, y el estado a la derecha ya dice si quedó.
+ */
+function editorDeTexto(pub) {
+  const caja = el('div.posteo')
+
+  const estado = el('span.posteo-estado')
+  const texto = el('textarea.posteo-texto', {
+    value: pub.caption || '',
+    spellcheck: true,
+    'aria-label': 'Texto del posteo',
+  })
+  const tags = el('input.posteo-tags', {
+    type: 'text',
+    value: (pub.hashtags || []).join(' '),
+    placeholder: '#hashtags separados por espacio',
+    'aria-label': 'Hashtags',
+  })
+
+  function crecer() {
+    texto.style.height = 'auto'
+    texto.style.height = `${texto.scrollHeight + 2}px`
+  }
+
+  let guardando = null
+  async function guardar() {
+    estado.className = 'posteo-estado'
+    estado.textContent = 'Guardando…'
+    try {
+      await api.editarPublicacion(cuenta.id, pub.id, {
+        caption: texto.value,
+        hashtags: tags.value.split(/\s+/).filter(Boolean),
+      })
+      pub.caption = texto.value
+      estado.className = 'posteo-estado guardado'
+      estado.textContent = 'Guardado'
+    } catch (e) {
+      estado.className = 'posteo-estado falla'
+      estado.textContent = e.message || 'No se pudo guardar'
+    }
+  }
+
+  for (const campo of [texto, tags]) {
+    campo.addEventListener('input', () => {
+      if (campo === texto) crecer()
+      estado.className = 'posteo-estado'
+      estado.textContent = 'Sin guardar'
+      clearTimeout(guardando)
+      guardando = setTimeout(guardar, 900)
+    })
+  }
+
+  const copiar = el('button.btn.btn--chico', {
+    onclick: async () => {
+      const todo = [texto.value, tags.value].filter(Boolean).join('\n\n')
+      try {
+        await navigator.clipboard.writeText(todo)
+        copiar.textContent = 'Copiado'
+      } catch {
+        // Sin permiso de portapapeles queda seleccionado, que es el otro camino
+        // para copiarlo: seleccionar a mano y perder el texto es lo que no.
+        texto.select()
+        copiar.textContent = 'Copialo con Ctrl+C'
+      }
+      setTimeout(() => { copiar.textContent = 'Copiar texto' }, 2500)
+    },
+  }, 'Copiar texto')
+
+  caja.append(
+    el('div.rotulo', { style: 'margin-bottom:6px' }, 'Texto del posteo'),
+    el('p.apunte', {}, 'Es un borrador: corregilo acá antes de publicarlo. Se guarda solo.'),
+    texto, tags,
+    el('div.posteo-pie', {}, copiar, estado)
+  )
+
+  // La altura se ajusta al contenido recién cuando el nodo está en la página.
+  setTimeout(crecer, 0)
+  return caja
+}
+
 function mostrarPlan(cont, r) {
   vaciar(cont)
   cont.append(
@@ -333,13 +422,7 @@ function mostrarPlan(cont, r) {
             el('img', { src: url, style: 'width:88px;border:1px solid var(--linea-fuerte);border-radius:2px;display:block' }))
         })))
     }
-    bloque.append(
-      el('div', { style: 'background:#fff;border:1px solid var(--linea);border-radius:var(--r);padding:14px' },
-        el('div.rotulo', { style: 'margin-bottom:6px' }, 'Texto del posteo'),
-        el('p', { style: 'white-space:pre-wrap;font-size:0.94rem' }, pub.caption),
-        el('p.credito', { style: 'margin-top:8px' }, pub.hashtags.join(' '))
-      )
-    )
+    bloque.append(editorDeTexto(pub))
     cont.append(bloque)
   }
 

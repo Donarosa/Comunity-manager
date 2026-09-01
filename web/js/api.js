@@ -76,6 +76,8 @@ export const api = {
 
   // De qué publicar. Vienen guardados de la cuenta salvo que se pidan otros.
   temas: (id, refrescar = false) => pedir(`/cuentas/${id}/temas${refrescar ? '?refrescar=1' : ''}`),
+  editarPublicacion: (id, pubId, cambios) =>
+    pedir(`/cuentas/${id}/publicaciones/editar`, { metodo: 'POST', cuerpo: { id: pubId, ...cambios } }),
 
   // Imágenes
   buscarImagenes: (q, pagina = 1, orientacion = '') =>

@@ -7,6 +7,7 @@
 import { readFileSync } from 'fs'
 import {
   crearCuenta, leerCuenta, leerCuentaAsync, guardarCuenta, listarCuentas, carpetaPiezas,
+  listarPublicacionesAsync, actualizarPublicacion,
   registrarPublicacion, listarPublicaciones, registrarPlan, listarPlanes,
   registrarEventoEstadistica, obtenerEstadisticas,
   guardarCodigoOtpLocal, verificarCodigoOtpLocal,
@@ -482,6 +483,27 @@ export function cambiarEstadoUsuario(id, nuevoEstado) {
     nombre: cuenta.nombre,
     email: cuenta.email,
   }
+}
+
+/**
+ * Corregir el texto de una publicación.
+ *
+ * Lo que devuelve el modelo es un borrador, no una pieza terminada: se le
+ * escapa una palabra repetida, no sabe el horario del local, propone algo que
+ * ese negocio no hace. Sin poder editarlo acá, el dueño lo copia a otro lado
+ * para arreglarlo y lo que queda guardado deja de ser lo que publicó.
+ */
+export async function editarPublicacion(cuentaId, pubId, { caption, hashtags } = {}) {
+  leerCuenta(cuentaId)   // valida que la cuenta exista antes de tocar nada
+  const limpios = Array.isArray(hashtags)
+    ? hashtags.map(h => String(h).trim()).filter(Boolean).map(h => h.startsWith('#') ? h : `#${h}`)
+    : undefined
+  return actualizarPublicacion(cuentaId, pubId, { caption, hashtags: limpios })
+}
+
+/** Las publicaciones guardadas, traídas de Firestore si hace falta. */
+export async function publicacionesDe(cuentaId) {
+  return listarPublicacionesAsync(cuentaId)
 }
 
 /* ── de qué publicar ─────────────────────────────────────── */

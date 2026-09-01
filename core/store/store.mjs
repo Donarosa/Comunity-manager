@@ -204,6 +204,56 @@ export function listarPublicaciones(cuentaId) {
   return leerJsonSeguro(archivoPubs(cuentaId), [])
 }
 
+/**
+ * Traer las publicaciones de Firestore al disco de la función.
+ *
+ * Mismo caso que las cuentas: se escribían y no se leían nunca de ahí, así que
+ * el historial se vaciaba solo cuando la instancia se reciclaba. Lo que el
+ * cliente escribió y guardó no puede depender de qué máquina le toque.
+ */
+export async function listarPublicacionesAsync(cuentaId) {
+  if (!idValido(cuentaId)) throw new Error('id de cuenta inválido')
+  asegurarDirs()
+  if (!firestore.estaActivo()) return listarPublicaciones(cuentaId)
+
+  try {
+    const remotas = await firestore.listarPublicacionesDeFirestore(cuentaId)
+    if (remotas?.length) {
+      escribir(archivoPubs(cuentaId), remotas.slice(0, 100))
+      return remotas
+    }
+  } catch (err) {
+    console.warn('[Firestore] Error leyendo publicaciones:', err.message)
+  }
+  return listarPublicaciones(cuentaId)
+}
+
+/**
+ * Cambiar el texto de una publicación ya guardada.
+ *
+ * El texto que arma el modelo es un borrador: le sobra una palabra, le falta el
+ * horario, dice algo que ese negocio no hace. Publicarlo sin poder tocarlo
+ * obliga a copiarlo a otro lado para corregirlo, y ahí se pierde.
+ */
+export async function actualizarPublicacion(cuentaId, pubId, cambios) {
+  if (!idValido(cuentaId)) throw new Error('id de cuenta inválido')
+  const lista = await listarPublicacionesAsync(cuentaId)
+  const item = lista.find(p => p.id === pubId)
+  if (!item) throw new Error('no encontrado: esa publicación no existe')
+
+  if (typeof cambios.caption === 'string') item.caption = cambios.caption
+  if (Array.isArray(cambios.hashtags)) item.hashtags = cambios.hashtags
+  item.editada = new Date().toISOString()
+
+  escribir(archivoPubs(cuentaId), lista)
+  if (firestore.estaActivo()) {
+    enSegundoPlano(firestore.guardarPublicacionEnFirestore(cuentaId, item).catch(err =>
+      console.warn('[Firestore] Error guardando la edición:', err.message)
+    ))
+  }
+  return item
+}
+
 /* ── Planes de Contenido ─────────────────────────────────── */
 
 export function registrarPlan(cuentaId, plan) {

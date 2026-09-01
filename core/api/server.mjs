@@ -452,7 +452,7 @@ async function despachar(req, res) {
 
       if (m === 'GET' && !sub) return json(res, 200, svc.estadoCuenta(id))
       if (m === 'GET' && sub === 'dashboard') return json(res, 200, svc.dashboardUsuario(id))
-      if (m === 'GET' && sub === 'publicaciones') return json(res, 200, { publicaciones: svc.listarPublicaciones(id) })
+      if (m === 'GET' && sub === 'publicaciones') return json(res, 200, { publicaciones: await svc.publicacionesDe(id) })
       if (m === 'GET' && sub === 'planes') return json(res, 200, { planes: svc.listarPlanes(id) })
       if (m === 'GET' && sub === 'estadisticas') return json(res, 200, { estadisticas: svc.obtenerEstadisticas(id) })
       // ?refrescar=1 pide temas nuevos aunque los guardados sigan vigentes.
@@ -506,6 +506,17 @@ async function despachar(req, res) {
           case 'imagenes/subir': {
             const r = svc.subirImagen(id, await leerBody(req, LIMITE_IMAGEN))
             return json(res, 200, { ...r, url: urlDePieza(r.ruta) })
+          }
+
+          case 'publicaciones/editar': {
+            const body = await leerBody(req)
+            if (!body.id) return json(res, 400, { error: 'falta el id de la publicación' })
+            return json(res, 200, {
+              publicacion: await svc.editarPublicacion(id, body.id, {
+                caption: body.caption,
+                hashtags: body.hashtags,
+              }),
+            })
           }
 
           case 'estadisticas/evento': {
