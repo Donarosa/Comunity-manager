@@ -51,6 +51,30 @@ function guardarSesion(usuario, token = null) {
 
 /* ── Login con Google ────────────────────────────────────── */
 
+/**
+ * Los errores de Firebase vienen como "Firebase: Error (auth/algo)". Eso no le
+ * dice nada a alguien que solo quiere entrar a hacer una placa, y lo peor es
+ * que la mitad de las veces no hay ninguna falla: cerró la ventanita, o el
+ * navegador la bloqueó. Un mensaje que nombra lo que pasó y qué hacer evita el
+ * "no anda" que en realidad era "hacé clic de nuevo".
+ */
+const MENSAJES_AUTH = {
+  'auth/popup-closed-by-user': 'Cerraste la ventana de Google antes de terminar. Probá de nuevo.',
+  'auth/cancelled-popup-request': 'Quedó una ventana de ingreso abierta. Cerrala y probá de nuevo.',
+  'auth/popup-blocked': 'El navegador bloqueó la ventana de Google. Permití las ventanas emergentes para este sitio y probá de nuevo.',
+  'auth/network-request-failed': 'No pudimos conectarnos. Revisá tu conexión y probá de nuevo.',
+  'auth/too-many-requests': 'Demasiados intentos seguidos. Esperá un minuto y volvé a probar.',
+  'auth/user-disabled': 'Esa cuenta está deshabilitada. Escribinos si creés que es un error.',
+  // Este no lo puede resolver quien lo ve: es el sitio el que falta autorizar
+  // en Firebase. Se dice sin pedirle nada, porque no hay nada que pueda hacer.
+  'auth/unauthorized-domain': 'El ingreso todavía no está habilitado para este sitio. Ya estamos viéndolo — probá en un rato.',
+  'auth/operation-not-allowed': 'El ingreso con Google no está habilitado. Ya estamos viéndolo.',
+}
+
+function mensajeDeAuth(e) {
+  return MENSAJES_AUTH[e?.code] || 'No pudimos completar el ingreso. Probá de nuevo en un momento.'
+}
+
 export async function loginConGoogle() {
   const fb = await inicializarFirebaseClient()
 
@@ -59,7 +83,17 @@ export async function loginConGoogle() {
     const provider = new GoogleAuthProvider()
     provider.setCustomParameters({ prompt: 'select_account' })
 
-    const resultado = await signInWithPopup(fb.auth, provider)
+    let resultado
+    try {
+      resultado = await signInWithPopup(fb.auth, provider)
+    } catch (e) {
+      // El código original queda en consola para poder diagnosticar; a la
+      // pantalla va la versión que se entiende.
+      console.warn('[auth]', e?.code, e?.message)
+      const err = new Error(mensajeDeAuth(e))
+      err.code = e?.code
+      throw err
+    }
     const fbUser = resultado.user
     const token = await fbUser.getIdToken()
 
