@@ -227,10 +227,15 @@ async function listarTodosLosUsuarios(svc, firestore) {
   const usuarios = []
   for (const c of cuentasBase) {
     try {
+      // hidratarCuenta trae la cuenta completa desde Firestore (con consumo real)
       await svc.hidratarCuenta(c.id)
-      const estado = svc.estadoCuenta(c.id)
-      const cuenta = estado.cuenta
-      const consumoMes = estado.estado?.consumo?.[mesActual] || {}
+      const estadoRes = svc.estadoCuenta(c.id)
+      const cuenta = estadoRes.cuenta
+      const estadoQuota = estadoRes.estado
+
+      // estadoQuota.usado.mes contiene { piezas, planes, logos, costoUSD }
+      // estadoQuota.valor contiene { placasMes, placasTotal, ... }
+      const usadoMes = estadoQuota?.usado?.mes || {}
 
       usuarios.push({
         id: c.id,
@@ -240,15 +245,14 @@ async function listarTodosLosUsuarios(svc, firestore) {
         estado: cuenta.estado || 'activa',
         tieneMarca: Boolean(cuenta.marca),
         nombreComercio: cuenta.marca?.nombre || null,
-        rubro: null, // detalle solo en vista individual
+        rubro: null,
         creada: c.creada || null,
-        placasMes: consumoMes.piezas || 0,
-        planesMes: consumoMes.planes || 0,
-        totalPlacas: estado.estado?.valor?.placasHistorico || 0,
+        placasMes: usadoMes.piezas || estadoQuota?.valor?.placasMes || 0,
+        planesMes: usadoMes.planes || 0,
+        totalPlacas: estadoQuota?.valor?.placasTotal || 0,
         ultimaActividad: c.actualizada || c.creada || null,
       })
     } catch {
-      // Si una cuenta falla, la incluimos con datos mínimos
       usuarios.push({
         id: c.id,
         nombre: c.nombre || '(sin nombre)',

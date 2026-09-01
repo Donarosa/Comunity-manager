@@ -409,7 +409,7 @@ async function openPanel(id) {
     currentUser = data
     const c = data.cuenta || {}, m = data.marca || null, rm = data.resumenMetricas || {}, est = data.estado || {}
     const mesActual = (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}` })()
-    const consumoMes = est.consumo?.[mesActual] || {}
+    const consumoMes = est?.usado?.mes || {}
     document.getElementById('panel-avatar').textContent = initials(c.nombre)
     document.getElementById('panel-avatar').style.background = avatarColor(c.nombre)
     document.getElementById('panel-name').textContent = c.nombre || '—'
