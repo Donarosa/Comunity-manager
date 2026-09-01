@@ -1,7 +1,17 @@
-// Modal de Autenticación (Google + OTP por Email).
+// Modal de ingreso: Google, o probar como invitado.
+//
+// El código por correo estuvo acá y se sacó: no hay nada en el servidor que
+// mande mails —enviarOtp() genera el código y lo escribe en la consola—, así
+// que el botón prometía un correo que nunca salía y dejaba a la persona
+// esperando en la pantalla de los seis dígitos. Una puerta que no abre es peor
+// que una puerta menos.
+//
+// El backend sigue entero (/auth/otp/enviar, /auth/otp/verificar y las dos
+// funciones en auth.js): cuando haya un proveedor de correo conectado, volver
+// a prenderlo es reponer el botón y el paso del código.
 
 import { el, $, vaciar, aviso } from './ui.js'
-import { loginConGoogle, solicitarCodigoOtp, validarCodigoOtp, iniciarComoInvitado } from './auth.js'
+import { loginConGoogle, iniciarComoInvitado } from './auth.js'
 
 export function abrirModalAuth({ alAutenticar = () => {} } = {}) {
   // Evitar modales duplicados
@@ -25,20 +35,10 @@ export function abrirModalAuth({ alAutenticar = () => {} } = {}) {
     overlay.remove()
   }
 
-  let emailIngresado = ''
-  let codigoDevDetectado = null
-
-  function renderPasoEmail() {
+  function renderIngreso() {
     vaciar(caja)
 
     const msgError = el('p.aviso.malo.oculto', { style: 'margin-bottom:12px' })
-
-    const inpEmail = el('input', {
-      type: 'email',
-      placeholder: 'nombre@ejemplo.com',
-      required: true,
-      style: 'margin-bottom:12px;font-size:1rem;padding:10px 12px;',
-    })
 
     const inpNombre = el('input', {
       type: 'text',
@@ -62,7 +62,7 @@ export function abrirModalAuth({ alAutenticar = () => {} } = {}) {
           cerrar()
           alAutenticar(usuario)
         } catch (e) {
-          msgError.textContent = e.message || 'No se pudo entrar con Google. Probá de nuevo o usá tu correo.'
+          msgError.textContent = e.message || 'No se pudo entrar con Google. Probá de nuevo, o entrá como invitado.'
           msgError.classList.remove('oculto')
         } finally {
           btnGoogle.disabled = false
@@ -70,34 +70,6 @@ export function abrirModalAuth({ alAutenticar = () => {} } = {}) {
         }
       },
     })
-
-    const btnEnviarOtp = el('button.btn', {
-      style: 'width:100%;margin-top:8px;',
-      onclick: async () => {
-        const mail = inpEmail.value.trim()
-        if (!mail || !mail.includes('@')) {
-          msgError.textContent = 'Ingresá un correo electrónico válido'
-          msgError.classList.remove('oculto')
-          return
-        }
-        btnEnviarOtp.disabled = true
-        btnEnviarOtp.textContent = 'Enviando código...'
-        msgError.classList.add('oculto')
-
-        try {
-          const res = await solicitarCodigoOtp(mail)
-          emailIngresado = mail
-          codigoDevDetectado = res.codigoDev || null
-          renderPasoOtp(inpNombre.value.trim())
-        } catch (e) {
-          msgError.textContent = e.message
-          msgError.classList.remove('oculto')
-        } finally {
-          btnEnviarOtp.disabled = false
-          btnEnviarOtp.textContent = 'Enviar código por email (OTP)'
-        }
-      },
-    }, 'Enviar código por email (OTP)')
 
     const btnSaltear = el('button.btn.fantasma', {
       type: 'button',
@@ -107,7 +79,7 @@ export function abrirModalAuth({ alAutenticar = () => {} } = {}) {
         cerrar()
         alAutenticar(u)
       },
-    }, '⚡ Probar como invitado (Saltear registro por ahora)')
+    }, 'Probar como invitado')
 
     caja.append(
       el('div', { style: 'display:flex;justify-content:space-between;align-items:center;margin-bottom:16px' },
@@ -115,108 +87,20 @@ export function abrirModalAuth({ alAutenticar = () => {} } = {}) {
         el('button.btn-cerrar-modal', { onclick: cerrar }, '✕')
       ),
       el('p.apunte', { style: 'margin-bottom:18px' }, 'Accedé a tu dashboard personal, tu marca y todas tus placas.'),
+      msgError,
       btnGoogle,
-      el('div.separador-o', {}, el('span', {}, 'o con código por correo')),
-      msgError,
-      el('label.rotulo', { style: 'display:block;margin-bottom:6px' }, 'Tu correo electrónico'),
-      inpEmail,
+      el('div.separador-o', { style: 'margin:16px 0 10px' }, el('span', {}, 'o probá sin cuenta')),
       inpNombre,
-      btnEnviarOtp,
-      el('div.separador-o', { style: 'margin:14px 0 6px' }, el('span', {}, 'o también')),
-      btnSaltear
+      btnSaltear,
+      // El invitado puede escribir y renderizar; lo que pide cuenta son las
+      // sugerencias con IA y el banco de fotos. Decirlo acá evita que se
+      // entere recién cuando la función le responde que no.
+      el('p.apunte.chico', { style: 'margin-top:10px;text-align:center' },
+        'Como invitado podés armar y descargar placas. Las sugerencias de contenido y el banco de fotos piden cuenta.')
     )
 
-    setTimeout(() => inpEmail.focus(), 100)
+    setTimeout(() => btnGoogle.focus(), 100)
   }
 
-  function renderPasoOtp(nombreIngresado = '') {
-    vaciar(caja)
-
-    const inpCodigo = el('input.input-otp', {
-      type: 'text',
-      maxlength: '6',
-      placeholder: '000000',
-      autocomplete: 'one-time-code',
-      style: 'letter-spacing:0.35em;font-size:1.8rem;text-align:center;font-family:var(--mono);font-weight:700;padding:12px;margin:16px 0;',
-    })
-
-    const msgError = el('p.aviso.malo.oculto', { style: 'margin-bottom:12px' })
-
-    const btnVerificar = el('button.btn', {
-      style: 'width:100%;',
-      onclick: async () => {
-        const cod = inpCodigo.value.trim()
-        if (cod.length < 6) {
-          msgError.textContent = 'El código debe tener 6 dígitos'
-          msgError.classList.remove('oculto')
-          return
-        }
-        btnVerificar.disabled = true
-        btnVerificar.textContent = 'Verificando...'
-        msgError.classList.add('oculto')
-
-        try {
-          const resultado = await validarCodigoOtp(emailIngresado, cod, nombreIngresado)
-          cerrar()
-          alAutenticar(resultado.usuario)
-        } catch (e) {
-          msgError.textContent = e.message || 'Código incorrecto o expirado'
-          msgError.classList.remove('oculto')
-        } finally {
-          btnVerificar.disabled = false
-          btnVerificar.textContent = 'Verificar e Ingresar'
-        }
-      },
-    }, 'Verificar e Ingresar')
-
-    const btnReenviar = el('button.btn.texto.chico', {
-      onclick: async () => {
-        try {
-          btnReenviar.textContent = 'Reenviando...'
-          const res = await solicitarCodigoOtp(emailIngresado)
-          codigoDevDetectado = res.codigoDev || null
-          avisoReenvio.textContent = 'Código reenviado con éxito.'
-          avisoReenvio.classList.remove('oculto')
-          setTimeout(() => avisoReenvio.classList.add('oculto'), 4000)
-        } catch (e) {
-          msgError.textContent = e.message
-          msgError.classList.remove('oculto')
-        } finally {
-          btnReenviar.textContent = '¿No te llegó? Reenviar código'
-        }
-      },
-    }, '¿No te llegó? Reenviar código')
-
-    const avisoReenvio = el('p.apunte.chico.oculto', { style: 'color:var(--ok);margin-top:6px' })
-
-    const infoDev = codigoDevDetectado ? el('div.aviso.bien', { style: 'margin-top:14px;font-size:0.85rem' },
-      `Código de prueba: `, el('strong', { style: 'font-family:var(--mono);letter-spacing:0.1em;font-size:1.1rem' }, codigoDevDetectado)
-    ) : null
-
-    caja.append(
-      el('div', { style: 'display:flex;justify-content:space-between;align-items:center;margin-bottom:12px' },
-        el('h2', { style: 'font-size:1.3rem;margin:0' }, 'Ingresá el código'),
-        el('button.btn-cerrar-modal', { onclick: cerrar }, '✕')
-      ),
-      el('p.apunte', {}, `Te enviamos un código de 6 dígitos a `, el('strong', {}, emailIngresado)),
-      inpCodigo,
-      msgError,
-      btnVerificar,
-      el('div', { style: 'display:flex;justify-content:space-between;align-items:center;margin-top:16px' },
-        el('button.btn.texto.chico', { onclick: renderPasoEmail }, '← Cambiar correo'),
-        btnReenviar
-      ),
-      avisoReenvio,
-      infoDev
-    )
-
-    // Si detectamos código dev, lo auto-completamos para conveniencia en pruebas locales
-    if (codigoDevDetectado) {
-      inpCodigo.value = codigoDevDetectado
-    }
-
-    setTimeout(() => inpCodigo.focus(), 100)
-  }
-
-  renderPasoEmail()
+  renderIngreso()
 }

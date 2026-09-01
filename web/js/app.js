@@ -283,6 +283,26 @@ function vistaSugerir() {
         mostrarPlan(panel, r)
       } catch (e) {
         vaciar(panel)
+
+        // Que la función sea de registrados no es una falla: el invitado hizo
+        // todo bien y llegó hasta acá. Mostrarlo en rojo junto a "No se pudo
+        // armar" lo lee como que algo se rompió, y lo que corresponde es
+        // ofrecerle la puerta, no un cartel de error y un "probar de nuevo"
+        // que va a fallar igual.
+        if (e.codigo === 'solo_registrados') {
+          panel.append(
+            el('span.rotulo', {}, 'Un paso más'),
+            el('h2', { style: 'margin:6px 0 8px' }, 'Esto es para cuentas registradas'),
+            el('p.apunte', { style: 'margin-bottom:18px;max-width:52ch' },
+              'Estás probando como invitado. Entrá con tu cuenta —es gratis y toma diez segundos— ' +
+              'y las sugerencias de contenido se activan. Lo que armaste hasta acá no se pierde.'),
+            el('div.acciones-paso', {},
+              el('button.btn', { onclick: () => abrirModalAuth({ alAutenticar: () => location.reload() }) }, 'Entrar con mi cuenta'),
+              el('button.btn.texto', { onclick: abrirDashboard }, 'Seguir como invitado'))
+          )
+          return
+        }
+
         panel.append(
           el('span.rotulo', {}, 'Paso 3 de 3'),
           el('h2', { style: 'margin:6px 0 8px' }, 'No se pudo armar'),

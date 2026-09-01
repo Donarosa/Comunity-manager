@@ -838,5 +838,21 @@ test('el alta compara el dueño por las dos llaves', () => {
     'el alta mira solo una de las dos llaves: con la otra se pisa la cuenta de otro')
 })
 
+// El modal ofrecía "enviar código por email" y no hay nada en el servidor que
+// mande correos: enviarOtp() escribe el código en la consola y devuelve ok. La
+// persona quedaba esperando en la pantalla de los seis dígitos. Si algún día se
+// conecta un proveedor, esta prueba es la que hay que actualizar para volver a
+// prender el botón.
+test('no se ofrece una puerta de ingreso que el servidor no pueda abrir', () => {
+  const hayCorreo = ['nodemailer', 'resend', 'sendgrid', 'mailgun', 'postmark']
+    .some(lib => readFileSync(join(RAIZ, 'package.json'), 'utf8').includes(lib))
+  const modal = readFileSync(join(RAIZ, 'web/js/modal-auth.js'), 'utf8')
+  const ofreceOtp = /solicitarCodigoOtp|validarCodigoOtp/.test(modal.replace(/\/\/.*$/gm, ''))
+  if (!hayCorreo) {
+    assert.ok(!ofreceOtp,
+      'el modal ofrece el código por correo y no hay proveedor de mail: nadie recibe nada')
+  }
+})
+
 // El resumen va último: si se agrega un bloque abajo, tiene que contarlo.
 console.log(`\n${ok} pruebas OK${process.exitCode ? ' — con fallas' : ''}\n`)
