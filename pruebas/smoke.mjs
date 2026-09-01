@@ -20,7 +20,7 @@ import { verificar, consumir, estado, QuotaError } from '../core/quota/ledger.mj
 import { planToSpec, placaToSlide, soloCamposDe, CAMPOS_DE_PLANTILLA } from '../core/content/plan.mjs'
 import { CAMPOS_PRINCIPALES, camposSecundarios, plantillaSegunPosicion } from '../core/content/plantillas.mjs'
 import { temasLocales } from '../core/content/temas.mjs'
-import { esquemaParaGemini } from '../core/ai/gemini.mjs'
+import { esquemaParaGemini, costoUSD, MODEL } from '../core/ai/gemini.mjs'
 import { valorGenerado, REFERENCIA } from '../core/valor.mjs'
 import { intercalar, estadoBanco, guardarDelBanco } from '../core/media/imagenes.mjs'
 import { altaCuenta, subirLogo, renderizarPieza } from '../core/service.mjs'
@@ -911,6 +911,22 @@ test('los esquemas del producto siguen escritos como JSON Schema', () => {
     const fuente = readFileSync(join(RAIZ, ruta), 'utf8')
     assert.ok(/const SCHEMA = \{/.test(fuente), `${ruta} ya no define su esquema`)
   }
+})
+
+// El costo que reporta la app es el insumo del precio de la suscripción. Antes,
+// un modelo que no estaba en la tabla caía al precio de gemini-2.0-flash, el
+// más barato: se reportaba de menos y nadie se enteraba. Cuando Google retiró
+// ese modelo, el reemplazo habría heredado ese precio en silencio.
+test('un modelo sin precio conocido se estima de más, no de menos', () => {
+  const uso = { inputTokenCount: 1e6, outputTokenCount: 1e6 }
+  const barato = costoUSD(uso, 'gemini-2.0-flash')
+  const desconocido = costoUSD(uso, 'modelo-que-no-existe-todavia')
+  assert.ok(desconocido > barato,
+    'un modelo desconocido cuesta menos que el más barato de la tabla: se está subestimando')
+})
+
+test('el modelo por defecto no es uno que Google haya retirado', () => {
+  assert.notEqual(MODEL, 'gemini-2.0-flash', 'gemini-2.0-flash está retirado: devuelve 404')
 })
 
 // El resumen va último: si se agrega un bloque abajo, tiene que contarlo.

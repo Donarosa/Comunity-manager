@@ -52,15 +52,26 @@ export function esquemaParaGemini(nodo) {
 
 import { GoogleGenAI } from '@google/genai'
 
-export const MODEL = process.env.CM_MODEL || 'gemini-2.0-flash'
+export const MODEL = process.env.CM_MODEL || 'gemini-3.6-flash'
 
 // USD por millón de tokens (precios tier pago; en tier free es $0).
-// Útil si en algún momento superás el free tier o cambiás de plan.
+//
+// Este número es el que después define el precio de la suscripción, así que un
+// valor inventado no queda acá adentro: se propaga hasta lo que se le cobra al
+// cliente. Un modelo sin precio confirmado no lleva entrada y cae al tope de
+// abajo, que sobreestima a propósito.
 const PRECIOS = {
-  'gemini-2.0-flash':    { in: 0.10,  out: 0.40 },
+  'gemini-2.0-flash':    { in: 0.10,  out: 0.40 },   // retirado por Google
   'gemini-2.5-flash':    { in: 0.30,  out: 2.50 },
   'gemini-2.5-pro':      { in: 1.25,  out: 10.00 },
 }
+
+// PENDIENTE: confirmar el precio de gemini-3.6-flash en ai.google.dev/pricing y
+// sumarlo arriba. Hasta entonces se cobra al valor del modelo más caro que
+// conocemos: es un número equivocado, pero equivocado hacia arriba. Subestimar
+// el costo es lo que hace que una suscripción se venda por menos de lo que sale.
+const PRECIO_TOPE = { in: 1.25, out: 10.00 }
+const sinPrecio = new Set()
 
 /**
  * La IA no está configurada en este servidor.
@@ -100,7 +111,16 @@ export function client() {
 }
 
 export function costoUSD(usage, model = MODEL) {
-  const p = PRECIOS[model] || PRECIOS['gemini-2.0-flash']
+  // Antes caía al precio de gemini-2.0-flash, que es el más barato de la tabla:
+  // un modelo desconocido reportaba menos de lo que costaba y nadie se enteraba.
+  let p = PRECIOS[model]
+  if (!p) {
+    p = PRECIO_TOPE
+    if (!sinPrecio.has(model)) {
+      sinPrecio.add(model)
+      console.warn(`[gemini] sin precio para ${model}: se estima al tope ($${p.in}/$${p.out} por millón). Confirmalo en ai.google.dev/pricing.`)
+    }
+  }
   const inTok  = usage?.inputTokenCount  || usage?.input_tokens  || 0
   const outTok = usage?.outputTokenCount || usage?.output_tokens || 0
   return (inTok * p.in + outTok * p.out) / 1e6

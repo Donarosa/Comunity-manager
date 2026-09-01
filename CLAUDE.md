@@ -192,4 +192,11 @@ que redesplegar para que las tome. Se comprueba qué hay cargado con
 
 Cambiar el modelo: `CM_MODEL=gemini-2.5-flash`. Si lo cambiás, actualizá también
 la tabla de precios en `core/ai/gemini.mjs` — el costo reportado es lo que
-después define el precio de la suscripción.
+después define el precio de la suscripción. Un modelo que no esté en la tabla se
+cobra al valor del más caro que conocemos y avisa por consola: sobreestimar es
+recuperable, subestimar se descubre con la factura.
+
+Google retira modelos y el 404 no llega hasta la pantalla del cliente como algo
+entendible: dice "no armó nada". Si la generación deja de andar de un día para
+el otro sin que nadie haya tocado el código, eso es lo primero que hay que
+mirar.
