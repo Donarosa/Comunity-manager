@@ -6,6 +6,44 @@
 //
 // Usa "Controlled generation" (responseSchema) para garantizar salida JSON
 // válida, de la misma forma que claude.mjs usaba structured outputs.
+
+/* ── el esquema que entiende Gemini ───────────────────────
+ *
+ * responseSchema no es JSON Schema completo: es un subconjunto de OpenAPI, y
+ * ante una clave que no conoce no la ignora, devuelve 400 y se cae la
+ * funcionalidad entera. `additionalProperties: false` —que en JSON Schema es lo
+ * correcto para cerrar un objeto— tiraba abajo la sugerencia de contenido con
+ * un error de tres pantallas que no nombra la causa.
+ *
+ * Se filtra por lista blanca y no por lista negra a propósito: si mañana se
+ * agrega una clave que Gemini tampoco acepta, acá se cae sola y el esquema
+ * queda un poco menos estricto, en vez de romper el pedido en producción.
+ */
+const CLAVES_DE_ESQUEMA = new Set([
+  'type', 'format', 'title', 'description', 'nullable', 'enum', 'default',
+  'items', 'minItems', 'maxItems', 'properties', 'required', 'propertyOrdering',
+  'minProperties', 'maxProperties', 'minLength', 'maxLength', 'pattern',
+  'minimum', 'maximum', 'example', 'anyOf',
+])
+
+export function esquemaParaGemini(nodo) {
+  if (Array.isArray(nodo)) return nodo.map(esquemaParaGemini)
+  if (!nodo || typeof nodo !== 'object') return nodo
+
+  const limpio = {}
+  for (const [clave, valor] of Object.entries(nodo)) {
+    if (!CLAVES_DE_ESQUEMA.has(clave)) continue
+    if (clave === 'properties') {
+      limpio.properties = Object.fromEntries(
+        Object.entries(valor).map(([k, v]) => [k, esquemaParaGemini(v)]))
+    } else if (clave === 'items' || clave === 'anyOf') {
+      limpio[clave] = esquemaParaGemini(valor)
+    } else {
+      limpio[clave] = valor
+    }
+  }
+  return limpio
+}
 // El modelo por defecto es gemini-2.0-flash, que tiene 1.500 req/día gratis
 // en el tier free. Para más volumen se puede cambiar a gemini-2.5-pro.
 //
@@ -101,13 +139,14 @@ export async function pedirJSON({
 
   const genAI = client()
 
+
   const response = await genAI.models.generateContent({
     model: MODEL,
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     config: {
       systemInstruction,
       responseMimeType: 'application/json',
-      responseSchema: schema,
+      responseSchema: esquemaParaGemini(schema),
       maxOutputTokens: maxTokens,
       // thinkingConfig solo lo usan los modelos 2.5-*; los demás lo ignoran.
       thinkingConfig: { thinkingBudget },

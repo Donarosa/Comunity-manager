@@ -20,6 +20,7 @@ import { verificar, consumir, estado, QuotaError } from '../core/quota/ledger.mj
 import { planToSpec, placaToSlide, soloCamposDe, CAMPOS_DE_PLANTILLA } from '../core/content/plan.mjs'
 import { CAMPOS_PRINCIPALES, camposSecundarios, plantillaSegunPosicion } from '../core/content/plantillas.mjs'
 import { temasLocales } from '../core/content/temas.mjs'
+import { esquemaParaGemini } from '../core/ai/gemini.mjs'
 import { valorGenerado, REFERENCIA } from '../core/valor.mjs'
 import { intercalar, estadoBanco, guardarDelBanco } from '../core/media/imagenes.mjs'
 import { altaCuenta, subirLogo, renderizarPieza } from '../core/service.mjs'
@@ -857,6 +858,59 @@ test('toda ruta que da de alta una cuenta la trae primero de Firestore', () => {
   }
   assert.deepEqual(sinHidratar, [],
     `hay altas sin hidratar antes, en la línea ${sinHidratar}: van a pisar la marca del cliente`)
+})
+
+console.log('\nel esquema que se le manda al modelo')
+
+// responseSchema es un subconjunto de OpenAPI, no JSON Schema: ante una clave
+// que no conoce devuelve 400 y se cae la funcionalidad entera. Con
+// `additionalProperties: false` —que en JSON Schema es lo correcto— la
+// sugerencia de contenido no armaba nada, y el error no nombra la causa.
+test('el esquema sale sin claves que Gemini no conoce', () => {
+  // El 400 venía de un items dentro de un items dentro de un items, así que la
+  // prueba tiene que llegar igual de hondo.
+  const limpio = esquemaParaGemini({
+    type: 'object',
+    additionalProperties: false,
+    $schema: 'http://json-schema.org/draft-07/schema#',
+    required: ['placas'],
+    properties: {
+      placas: {
+        type: 'array',
+        items: {
+          type: 'object', additionalProperties: false,
+          properties: {
+            chips: { type: 'array', items: { type: 'object', additionalProperties: false, properties: { t: { type: 'string' } } } },
+          },
+        },
+      },
+    },
+  })
+  const plano = JSON.stringify(limpio)
+  for (const prohibida of ['additionalProperties', '$schema', '$ref', 'definitions', 'allOf', 'oneOf']) {
+    assert.ok(!plano.includes(prohibida), `el esquema todavía lleva ${prohibida}`)
+  }
+  // Y no se le puede comer la estructura al limpiarla.
+  assert.equal(limpio.properties.placas.items.properties.chips.items.properties.t.type, 'string')
+  assert.deepEqual(limpio.required, ['placas'])
+})
+
+// Que exista el saneador no sirve si el pedido no lo usa.
+test('el pedido a Gemini pasa el esquema por el saneador', () => {
+  const fuente = readFileSync(join(RAIZ, 'core/ai/gemini.mjs'), 'utf8')
+  assert.ok(/responseSchema:\s*esquemaParaGemini\(/.test(fuente),
+    'responseSchema manda el esquema crudo: Gemini va a devolver 400')
+})
+
+// Los esquemas del producto llevan additionalProperties porque en JSON Schema
+// corresponde. Esta prueba no pide sacarlo: comprueba que sigan pasando por el
+// saneador, que es lo que lo vuelve inofensivo.
+test('los esquemas del producto siguen escritos como JSON Schema', () => {
+  const conEsquema = ['core/content/plan.mjs', 'core/brand/identidad.mjs']
+  for (const ruta of conEsquema) {
+    const fuente = readFileSync(join(RAIZ, ruta), 'utf8')
+    assert.ok(/const SCHEMA = \{/.test(fuente), `${ruta} ya no define su esquema`)
+  }
 })
 
 // El resumen va último: si se agrega un bloque abajo, tiene que contarlo.

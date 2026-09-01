@@ -29,10 +29,8 @@ function mostrarLanding() {
   app.classList.add('oculto')
   landing.classList.remove('oculto')
   $$('[data-solo-landing]').forEach(n => n.classList.remove('oculto'))
-  btnEntrar.textContent = usuarioActual ? 'Ir al Dashboard' : 'Empezar'
-  // Con la sesión abierta, "Iniciar sesión" al lado de "Ir al Dashboard" son
-  // dos respuestas distintas a la misma pregunta.
-  btnLoginNav?.classList.toggle('oculto', Boolean(usuarioActual))
+  btnEntrar.textContent = 'Empezar'
+  btnLoginNav?.classList.remove('oculto')
 }
 
 function mostrarApp(pintar) {
@@ -439,10 +437,16 @@ async function arrancar() {
       const r = await api.cuenta(u.id)
       cuenta = r.cuenta
       actualizarChip(r.estado)
+      actualizarNavUsuario(u)
+      // Usuario logueado: ir directo al dashboard (o wizard si no completó la marca)
+      if (!cuenta.marca) abrirWizard()
+      else abrirDashboard()
     } catch {
       // Si la cuenta no existe en el backend, la sincronizamos
       await sincronizarUsuario(u)
     }
+  } else {
+    mostrarLanding()
   }
 
   btnEntrar.addEventListener('click', () => {
@@ -474,7 +478,6 @@ async function arrancar() {
   }
 
   iniciarCarruselPantallas()
-  mostrarLanding()
 }
 
 /* ── Carrusel dinámico de pantallas de salida ──────────────── */
