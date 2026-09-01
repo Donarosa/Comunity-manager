@@ -1,44 +1,49 @@
 # Lo que falta para que producción funcione
 
-Actualizado 31/08/2026.
+Actualizado 01/09/2026. Verificado contra producción, no deducido.
 
-**Hechos:** punto 1 (API cerrada) y punto 4 (`vercel.json`).
-**Faltan, y son manuales:** punto 2 (variables) y punto 3 (Storage).
+**Anda:** la API está cerrada, las cuentas y las marcas persisten en Firestore
+—sobreviven al reciclado de la instancia—, el ingreso con Google está
+habilitado, y el render sale en unos 4 segundos.
 
-## El orden cambió: Firebase va antes que Gemini
+**Falta una sola cosa, y es de dos clics.**
 
-En la primera versión de este archivo decía que `GEMINI_API_KEY` se podía cargar
-apenas estuviera desplegado el punto 1. **Eso era incorrecto** y el motivo es
-esta rama de `obtenerUsuarioAutenticado()`:
+## Activar Storage — lo único que queda
 
-```js
-if (!TOKEN && !firestore.estaActivo()) return { tipo: 'local', uid: token }
+Consola de Firebase > **Compilación > Storage > Comenzar**.
+
+Hoy `/salud` responde:
+
+```
+"almacen": false,
+"problemas": ["el bucket alquimia-d4929.firebasestorage.app no existe"]
 ```
 
-Sin `CM_TOKEN` y sin Firebase —que es exactamente el estado de producción hoy—
-cualquier cadena valía como sesión: `Bearer loquesea` entraba como el usuario
-"loquesea". La barrera devolvía 401 solo si el pedido no traía ninguna cabecera,
-que es justo lo que un atacante no hace. La puerta seguía abierta con un paso
-más.
+No es el nombre: se probaron las dos convenciones —`.appspot.com` y
+`.firebasestorage.app`— y ninguna existe, porque **no hay ningún bucket
+todavía**. Sin activarlo, las placas se renderizan bien pero viven en el disco
+temporal de la función y desaparecen cuando la instancia se recicla: el cliente
+genera una placa, cierra, vuelve, y el enlace de descarga da 404.
 
-Ya está arreglado —la rama quedó atada a no estar corriendo como función— pero
-la conclusión importa igual:
+Cuando lo actives, la consola muestra el bucket como `gs://algo`. Ese `algo` es
+el valor exacto que va en `FIREBASE_STORAGE_BUCKET` —ahora está cargado como
+`alquimia-d4929.firebasestorage.app`, que es lo más probable, pero conviene
+confirmarlo contra lo que diga la pantalla— y después hay que redesplegar.
 
-**Cargar `GEMINI_API_KEY` recién cuando `/salud` diga `firebase: true`.** Antes
-de eso no hay ninguna sesión verificable, porque verificar un token de Google
-requiere el Admin SDK, que es justamente lo que instala el punto 2.
+`/salud` lo verifica de verdad: si el bucket existe, dice `almacen: true`; si
+no, dice cuál buscó y no encontró.
 
-## Consecuencia mientras tanto
+## El ingreso por código de correo sigue sin funcionar
 
-Hasta que el punto 2 esté hecho, en producción **solo funciona el modo
-invitado**. Quien entre con Google va a comer 401.
+No hay nada en el código que mande mails. `enviarOtp()` genera el código, lo
+guarda y lo escribe en la consola del servidor. El usuario ve "Código enviado",
+pasa a la pantalla de los seis dígitos y espera algo que nunca sale.
 
-No es una regresión: el login con Google tampoco estaba verificado antes —el
-servidor aceptaba cualquier cosa sin mirarla—, así que lo que cambió es que
-ahora falla visible en vez de fallar en silencio. El invitado alcanza para
-mostrar el producto y no puede gastar un peso de API.
+Son dos caminos: conectar un proveedor —Resend tiene capa gratis— o sacar ese
+botón hasta que exista. Dejarlo como está manda gente a una pantalla sin salida.
 
 ---
+
 
 ## 1. Cerrar la API — HECHO
 
