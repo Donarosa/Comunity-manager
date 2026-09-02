@@ -143,6 +143,25 @@ export function guardarCuenta(cuenta) {
   return cuenta
 }
 
+/**
+ * Todas las cuentas del sistema, para el panel de administración.
+ *
+ * Leyendo el disco solo se ven las que esta instancia atendió desde que
+ * arrancó: el panel mostraba dos o tres clientes de los que hubiera. Es una
+ * lista corta y se consulta poco, así que sale de Firestore directo.
+ */
+export async function listarCuentasAsync() {
+  asegurarDirs()
+  if (!firestore.estaActivo()) return listarCuentas()
+  try {
+    const remotas = await firestore.listarCuentasDeFirestore()
+    if (remotas?.length) return remotas
+  } catch (err) {
+    console.warn('[Firestore] Error listando cuentas:', err.message)
+  }
+  return listarCuentas()
+}
+
 export function listarCuentas() {
   asegurarDirs()
   return readdirSync(CUENTAS)
@@ -284,6 +303,22 @@ export function registrarPlan(cuentaId, plan) {
   return item
 }
 
+export async function listarPlanesAsync(cuentaId) {
+  if (!idValido(cuentaId)) throw new Error('id de cuenta inválido')
+  asegurarDirs()
+  if (!firestore.estaActivo()) return listarPlanes(cuentaId)
+  try {
+    const remotos = await firestore.listarPlanesDeFirestore(cuentaId)
+    if (remotos?.length) {
+      escribir(archivoPlanes(cuentaId), remotos.slice(0, 50))
+      return remotos
+    }
+  } catch (err) {
+    console.warn('[Firestore] Error leyendo planes:', err.message)
+  }
+  return listarPlanes(cuentaId)
+}
+
 export function listarPlanes(cuentaId) {
   if (!idValido(cuentaId)) throw new Error('id de cuenta inválido')
   asegurarDirs()
@@ -313,6 +348,22 @@ export function registrarEventoEstadistica(cuentaId, evento, metadata = {}) {
   }
 
   return item
+}
+
+export async function obtenerEstadisticasAsync(cuentaId) {
+  if (!idValido(cuentaId)) throw new Error('id de cuenta inválido')
+  asegurarDirs()
+  if (!firestore.estaActivo()) return obtenerEstadisticas(cuentaId)
+  try {
+    const remotas = await firestore.obtenerEstadisticasDeFirestore(cuentaId)
+    if (remotas?.length) {
+      escribir(archivoStats(cuentaId), remotas.slice(0, 200))
+      return remotas
+    }
+  } catch (err) {
+    console.warn('[Firestore] Error leyendo estadísticas:', err.message)
+  }
+  return obtenerEstadisticas(cuentaId)
 }
 
 export function obtenerEstadisticas(cuentaId) {

@@ -7,6 +7,7 @@ const LLAVE_TOKEN = 'cm.auth.token'
 
 let usuarioActual = null
 let suscriptores = []
+let authListenerIniciado = false
 
 // Cargar usuario inicial desde localStorage
 try {
@@ -37,6 +38,33 @@ export function obtenerToken() {
   return localStorage.getItem(LLAVE_TOKEN) || usuarioActual?.id || null
 }
 
+/**
+ * Obtiene un token válido de Firebase Auth (refrescándolo automáticamente si expiró)
+ * o desde localStorage como fallback.
+ */
+export async function obtenerTokenValido(forzarRefresh = false) {
+  try {
+    const fb = await inicializarFirebaseClient()
+    if (fb?.listo && fb?.auth?.currentUser) {
+      const token = await fb.auth.currentUser.getIdToken(forzarRefresh)
+      if (token) {
+        localStorage.setItem(LLAVE_TOKEN, token)
+        return token
+      }
+    }
+  } catch (err) {
+    console.warn('[auth] No se pudo refrescar token de Firebase:', err?.message)
+  }
+  return localStorage.getItem(LLAVE_TOKEN) || usuarioActual?.id || null
+}
+
+/**
+ * Intenta forzar la renovación del token de Firebase Auth.
+ */
+export async function refrescarTokenFirebase(forzar = true) {
+  return await obtenerTokenValido(forzar)
+}
+
 function guardarSesion(usuario, token = null) {
   usuarioActual = usuario
   if (usuario) {
@@ -48,6 +76,47 @@ function guardarSesion(usuario, token = null) {
   }
   notificarCambio()
 }
+
+/**
+ * Mantiene la sesión de Firebase sincronizada en tiempo real.
+ * Si el usuario cierra el navegador y regresa, Firebase Auth restaura la sesión
+ * desde IndexedDB/localStorage y renueva el token automáticamente.
+ */
+async function iniciarListenerFirebaseAuth() {
+  if (authListenerIniciado) return
+  authListenerIniciado = true
+
+  try {
+    const fb = await inicializarFirebaseClient()
+    if (fb.listo && fb.auth) {
+      const { onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js')
+      onAuthStateChanged(fb.auth, async (fbUser) => {
+        if (fbUser) {
+          const token = await fbUser.getIdToken()
+          const usuario = {
+            id: fbUser.uid,
+            email: fbUser.email,
+            nombre: fbUser.displayName || fbUser.email?.split('@')[0] || 'Usuario',
+            foto: fbUser.photoURL || null,
+            proveedor: 'google',
+            metodo: 'firebase',
+          }
+          guardarSesion(usuario, token)
+        } else {
+          // Solo si el usuario estaba registrado como Firebase y se confirma la desautenticación
+          if (usuarioActual && usuarioActual.metodo === 'firebase') {
+            guardarSesion(null, null)
+          }
+        }
+      })
+    }
+  } catch (err) {
+    console.warn('[auth] Error iniciando sincronización de Firebase Auth:', err?.message)
+  }
+}
+
+// Iniciar listener en segundo plano
+iniciarListenerFirebaseAuth().catch(() => {})
 
 /* ── Login con Google ────────────────────────────────────── */
 
@@ -79,7 +148,13 @@ export async function loginConGoogle() {
   const fb = await inicializarFirebaseClient()
 
   if (fb.listo && fb.auth) {
-    const { signInWithPopup, GoogleAuthProvider } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js')
+    const { signInWithPopup, GoogleAuthProvider, setPersistence, browserLocalPersistence } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js')
+    
+    // Asegurar persistencia local duradera (sobrevive cierres de pestaña y navegador)
+    if (setPersistence && browserLocalPersistence) {
+      await setPersistence(fb.auth, browserLocalPersistence).catch(() => {})
+    }
+
     const provider = new GoogleAuthProvider()
     provider.setCustomParameters({ prompt: 'select_account' })
 
@@ -188,5 +263,7 @@ export async function cerrarSesion() {
     }
   } catch { /* ignora */ }
 
+  localStorage.removeItem('cm.cuenta')
+  localStorage.removeItem('cm.invitado.id')
   guardarSesion(null, null)
 }

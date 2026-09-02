@@ -972,16 +972,39 @@ test('toda placa renderizada se archiva', () => {
     `hay renders que no se archivan, en la línea ${sinArchivar}: esas placas desaparecen al reciclarse la instancia`)
 })
 
-// Tercera vez que aparece el mismo patrón: existe la lectura que consulta
-// Firestore, está exportada, y la ruta usa la sincrónica que solo mira el
-// disco. Pasó con las cuentas, con el alta de Firebase y con las
-// publicaciones: el historial se vaciaba solo al reciclarse la instancia.
-test('las publicaciones se leen de Firestore, no solo del disco', () => {
-  const fuente = readFileSync(join(RAIZ, 'core/api/server.mjs'), 'utf8')
-  const linea = fuente.split('\n').find(l => l.includes("sub === 'publicaciones'"))
-  assert.ok(linea, 'no está la ruta de publicaciones')
-  assert.ok(/await svc\.publicacionesDe\(/.test(linea),
-    'la ruta lista desde el disco: el historial desaparece al reciclarse la instancia')
+// El error más repetido de este proyecto: se escribe la lectura que consulta
+// Firestore, se exporta, y nadie la llama. Pasó con leerCuentaAsync, con el alta
+// de Firebase, y con las publicaciones, los planes y las estadísticas del
+// dashboard. El síntoma es siempre el mismo y siempre confuso: los datos
+// aparecen el día que se generaron y desaparecen al siguiente, sin ningún error.
+// Peor todavía cuando el contador de cuota —que vive en la cuenta, y esa sí se
+// hidrataba— seguía diciendo "10 placas este mes" con la grilla vacía abajo.
+test('no hay lecturas de Firestore escritas que nadie llame', () => {
+  const fs = readFileSync(join(RAIZ, 'core/store/firestore.mjs'), 'utf8')
+  const store = readFileSync(join(RAIZ, 'core/store/store.mjs'), 'utf8')
+  const huerfanas = [...fs.matchAll(/export async function (\w+DeFirestore)\b/g)]
+    .map(m => m[1])
+    .filter(nombre => !store.includes(nombre))
+  assert.deepEqual(huerfanas, [],
+    `estas lecturas existen y nadie las usa: ${huerfanas.join(', ')} — los datos se van a perder al reciclarse la instancia`)
+})
+
+test('las lecturas que hidratan llegan hasta el service', () => {
+  const store = readFileSync(join(RAIZ, 'core/store/store.mjs'), 'utf8')
+  const service = readFileSync(join(RAIZ, 'core/service.mjs'), 'utf8')
+  const huerfanas = [...store.matchAll(/export async function (\w+Async)\b/g)]
+    .map(m => m[1])
+    .filter(nombre => !service.includes(nombre))
+  assert.deepEqual(huerfanas, [], `el service no usa: ${huerfanas.join(', ')}`)
+})
+
+// Y que las rutas no se salteen la hidratación volviendo a la lectura de disco.
+test('las rutas del dashboard no leen del disco', () => {
+  const server = readFileSync(join(RAIZ, 'core/api/server.mjs'), 'utf8')
+  for (const sincronica of ['svc.listarPublicaciones(', 'svc.listarPlanes(', 'svc.obtenerEstadisticas(']) {
+    assert.ok(!server.includes(sincronica),
+      `${sincronica} solo mira el disco de la función: al día siguiente devuelve vacío`)
+  }
 })
 
 // El texto que devuelve el modelo es un borrador y hay que poder corregirlo

@@ -67,7 +67,7 @@ test('alta y recuperación de cuenta por UID de Firebase', () => {
 
 console.log('\nDashboard y Métricas Personales')
 
-test('el dashboard agrupa publicaciones, planes, métricas y estado', () => {
+await testAsync('el dashboard agrupa publicaciones, planes, métricas y estado', async () => {
   const uid = 'fb_usr_dash_' + Date.now()
   svc.altaCuenta({
     id: uid,
@@ -85,7 +85,7 @@ test('el dashboard agrupa publicaciones, planes, métricas y estado', () => {
   })
 
   // Obtener dashboard
-  const dash = svc.dashboardUsuario(uid)
+  const dash = await svc.dashboardUsuario(uid)
   assert.equal(dash.cuenta.id, uid)
   assert.equal(dash.marca.nombre, 'Negocio Dashboard')
   assert.ok(Array.isArray(dash.publicaciones))
