@@ -1016,5 +1016,18 @@ test('el texto del posteo se puede editar', () => {
   assert.ok(/api\.editarPublicacion\(/.test(app), 'se edita pero no se guarda')
 })
 
+// El nombre interno de la placa aparece en letra grande en la hoja de compartir
+// de iOS: 'feed-mtk6bc67' no dice ni de qué negocio es ni de cuándo, y con
+// varias guardadas no se distinguen.
+test('el archivo que se guarda lleva un nombre que se entiende', () => {
+  const editor = readFileSync(join(RAIZ, 'web/js/editor.js'), 'utf8')
+  assert.ok(/function nombreDeArchivo\(/.test(editor), 'no hay nombre para el archivo')
+  // No puede volver a usarse el nombre interno para lo que baja el usuario.
+  const usosCrudos = editor.match(/download: `\$\{a\.name\}\.png`/g) || []
+  assert.deepEqual(usosCrudos, [], 'una descarga sigue usando el nombre interno')
+  assert.ok(!/new File\(\[blob\], `\$\{a\.name\}\.png`/.test(editor),
+    'lo que se comparte sigue con el nombre interno')
+})
+
 // El resumen va último: si se agrega un bloque abajo, tiene que contarlo.
 console.log(`\n${ok} pruebas OK${process.exitCode ? ' — con fallas' : ''}\n`)

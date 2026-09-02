@@ -250,7 +250,7 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
               `+${n} ${n > 1 ? 'placas' : 'placa'} · `,
               el('b', {}, ref.simbolo + Math.round(n * ref.precioPorPlaca).toLocaleString('es-AR')),
               ` ${ref.modo === 'ahorro' ? 'ahorrados' : 'a precio de diseñador'}`) : null,
-            bloqueDeGuardado(r.archivos)
+            bloqueDeGuardado(r.archivos, cuenta?.marca?.nombre || cuenta?.nombre || '')
           )
         } catch (e) {
           errorBajar.append(aviso(
@@ -591,21 +591,37 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
  * cancela el permiso de compartir si entre el toque y la llamada hay una espera
  * de red. Cuando la persona toca, los datos ya están en memoria.
  */
-function bloqueDeGuardado(archivos) {
+/**
+ * Cómo se llama el archivo que ve la persona.
+ *
+ * El nombre interno —`feed-mtk6bc67`— aparece en letra grande en la hoja de
+ * compartir de iOS y en la carpeta de descargas, y no dice nada: ni de qué
+ * negocio es, ni de cuándo. Con varias placas guardadas es imposible
+ * distinguirlas. Va el nombre de la marca y la fecha, que es como uno las
+ * busca después.
+ */
+function nombreDeArchivo(marca, i, total) {
+  const hoy = new Date()
+  const fecha = `${String(hoy.getDate()).padStart(2, '0')}-${String(hoy.getMonth() + 1).padStart(2, '0')}`
+  const base = [marca, fecha].filter(Boolean).join(' ')
+  return total > 1 ? `${base} (${i + 1} de ${total}).png` : `${base}.png`
+}
+
+function bloqueDeGuardado(archivos, marca = '') {
   const n = archivos.length
   const caja = el('div', { style: 'display:flex;flex-direction:column;gap:10px;margin-top:14px' })
 
-  const listos = Promise.all(archivos.map(async a => {
+  const listos = Promise.all(archivos.map(async (a, i) => {
     const res = await fetch(a.url)
     if (!res.ok) throw new Error(`no se pudo leer ${a.name}`)
     const blob = await res.blob()
-    return new File([blob], `${a.name}.png`, { type: blob.type || 'image/png' })
+    return new File([blob], nombreDeArchivo(marca, i, n), { type: blob.type || 'image/png' })
   })).catch(() => null)
 
   // Un clic por archivo, espaciados: varios `download` simultáneos los bloquea
   // el navegador y solo baja el primero.
   const descargarTodo = () => archivos.forEach((a, i) => setTimeout(() => {
-    const link = el('a', { href: a.url, download: `${a.name}.png` })
+    const link = el('a', { href: a.url, download: nombreDeArchivo(marca, i, n) })
     document.body.append(link)
     link.click()
     link.remove()
@@ -638,15 +654,23 @@ function bloqueDeGuardado(archivos) {
   caja.append(principal)
 
   if (puedeCompartir) {
+    // Ningún sitio web puede escribir en la galería: iOS y Android no exponen
+    // ninguna forma de hacerlo, y la hoja de compartir es lo más cerca que se
+    // llega. Nombrar el botón exacto ahorra el momento de mirar una pantalla
+    // llena de iconos sin saber cuál es el que guarda.
+    const esIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+      || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
     caja.append(el('p.apunte.chico', { style: 'margin:0' },
-      'Se abre el menú de tu teléfono: desde ahí las guardás en la galería o las mandás directo a Instagram.'))
+      esIOS
+        ? `Se abre el menú del teléfono. Tocá “Guardar ${n > 1 ? 'imágenes' : 'imagen'}” y ${n > 1 ? 'quedan' : 'queda'} en tu galería, o elegí Instagram para publicar de una.`
+        : `Se abre el menú del teléfono. Elegí “Guardar en Fotos” y ${n > 1 ? 'quedan' : 'queda'} en tu galería, o mandalas directo a Instagram.`))
   }
 
   // Con un carrusel conviene poder bajar una sola, para rehacer nada más que esa.
   if (n > 1) {
     caja.append(el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' },
       archivos.map((a, i) => el('a.btn.fantasma.chico', {
-        href: a.url, download: `${a.name}.png`,
+        href: a.url, download: nombreDeArchivo(marca, i, n),
       }, `Placa ${i + 1}`))))
   }
 
