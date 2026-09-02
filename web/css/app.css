@@ -1454,11 +1454,63 @@ input:focus, select:focus, textarea:focus {
 .carrusel-pantallas {
   position: relative;
   width: 100%;
-  overflow: hidden;
-  padding: 32px 0 36px;
+  padding: 0;
 }
 
-/* El track se desplaza via JS cambiando --carrusel-offset */
+/* Envoltorio con máscara de desvanecimiento suave para que las tarjetas no se corten en los bordes */
+.carrusel-mask {
+  width: 100%;
+  overflow: hidden;
+  padding: 32px 0 36px;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(0, 0, 0, 0.05) 15px,
+    rgba(0, 0, 0, 0.35) 45px,
+    rgba(0, 0, 0, 0.85) 85px,
+    #000 130px,
+    #000 calc(100% - 130px),
+    rgba(0, 0, 0, 0.85) calc(100% - 85px),
+    rgba(0, 0, 0, 0.35) calc(100% - 45px),
+    rgba(0, 0, 0, 0.05) calc(100% - 15px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(0, 0, 0, 0.05) 15px,
+    rgba(0, 0, 0, 0.35) 45px,
+    rgba(0, 0, 0, 0.85) 85px,
+    #000 130px,
+    #000 calc(100% - 130px),
+    rgba(0, 0, 0, 0.85) calc(100% - 85px),
+    rgba(0, 0, 0, 0.35) calc(100% - 45px),
+    rgba(0, 0, 0, 0.05) calc(100% - 15px),
+    transparent 100%
+  );
+}
+
+@media (max-width: 640px) {
+  .carrusel-mask {
+    padding: 20px 0 26px;
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      #000 35px,
+      #000 calc(100% - 35px),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      #000 35px,
+      #000 calc(100% - 35px),
+      transparent 100%
+    );
+  }
+}
+
+/* El track se desplaza via JS cambiando transform */
 .carrusel-track {
   display: flex;
   align-items: center;
