@@ -4287,3 +4287,57 @@ html.con-sesion .arranque { display: block; }
   .frasco-liquido, .frasco-onda, .frasco-burbuja { animation: none; }
   .frasco-burbuja { opacity: .35; }
 }
+
+/* ── El resultado de la IA, con la forma del editor ─────────
+ *
+ * Salía en una sola columna con la placa como miniatura de 88 píxeles arriba
+ * del texto: el trabajo terminado mostrado del tamaño de un ícono, y el texto a
+ * corregir lejos de la placa a la que pertenece. Ahora es la misma disposición
+ * que el editor —lo que se toca a la izquierda, lo que se mira a la derecha—
+ * así que las dos pantallas se leen igual.
+ */
+.resultado {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) 400px;
+  gap: 28px;
+  align-items: start;
+  padding: 26px 0;
+  border-top: 1px solid var(--linea);
+}
+/* La columna que se edita. Sin ancho mínimo propio: lo pone la grilla, y el
+   textarea de adentro crece con el contenido. */
+.resultado-texto { min-width: 0; }
+
+.resultado-placas {
+  position: sticky;
+  top: calc(var(--bar-h, 70px) + 16px);
+  background: #fff;
+  border: 2px solid var(--color-rule);
+  border-radius: 20px;
+  padding: 14px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.resultado-placa {
+  display: block;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--linea-fuerte);
+  transition: transform .15s var(--ease-out), box-shadow .15s var(--ease-out);
+}
+.resultado-placa:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .12);
+}
+.resultado-placa img { width: 100%; display: block; }
+
+/* En pantalla angosta la placa va arriba: es lo primero que uno quiere ver, y
+   dejarla debajo del texto obliga a scrollear para saber qué salió. */
+@media (max-width: 900px) {
+  .resultado { grid-template-columns: 1fr; }
+  .resultado-placas { position: static; order: -1; }
+  .resultado-placa { max-width: 320px; margin: 0 auto; }
+}
+@media (prefers-reduced-motion: reduce) { .resultado-placa { transition: none; } }

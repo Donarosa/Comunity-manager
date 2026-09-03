@@ -489,6 +489,15 @@ function editorDeTexto(pub) {
   return caja
 }
 
+/** El nombre con el que se baja una placa del plan. Igual criterio que en el
+ *  editor: el nombre interno no dice de qué negocio es ni de cuándo. */
+function nombreDeDescarga(pub, i, total) {
+  const hoy = new Date()
+  const fecha = `${String(hoy.getDate()).padStart(2, '0')}-${String(hoy.getMonth() + 1).padStart(2, '0')}`
+  const base = [cuenta?.marca?.nombre || cuenta?.nombre || '', fecha].filter(Boolean).join(' ')
+  return total > 1 ? `${base} (${i + 1} de ${total}).png` : `${base}.png`
+}
+
 function mostrarPlan(cont, r) {
   vaciar(cont)
   cont.append(
@@ -499,21 +508,40 @@ function mostrarPlan(cont, r) {
     }, '← Volver al Dashboard para ver todas tus placas')
   )
 
+  /* Cada publicación con la misma forma que el editor: la placa grande a la
+   * derecha y lo que se corrige a la izquierda.
+   *
+   * Salían las dos cosas en una columna, con la placa como una miniatura de 88
+   * píxeles arriba del texto. Era el resultado del trabajo mostrado del tamaño
+   * de un ícono, y encima el texto que hay que corregir quedaba lejos de la
+   * placa a la que corresponde. */
   for (const pub of r.publicaciones) {
-    const bloque = el('section', { style: 'padding:22px 0;border-top:1px solid var(--linea)' })
-    bloque.append(
+    const bloque = el('section.resultado', {})
+
+    const izq = el('div.resultado-texto', {},
       el('span.rotulo', {}, `${pub.dia} · ${pub.canal}`),
-      el('h3', { style: 'margin:3px 0 8px' }, pub.objetivo)
+      el('h3', { style: 'margin:3px 0 14px' }, pub.objetivo),
+      editorDeTexto(pub)
     )
-    if (pub.archivos?.length) {
-      bloque.append(el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px' },
-        pub.archivos.map(a => {
-          const url = a.startsWith('/') ? a : `/piezas/${cuenta.id}/${r.carpeta.split('/').pop()}/${a}`
-          return el('a', { href: url, target: '_blank', download: a },
-            el('img', { src: url, style: 'width:88px;border:1px solid var(--linea-fuerte);border-radius:2px;display:block' }))
-        })))
+
+    const der = el('div.resultado-placas')
+    const urls = (pub.archivos || []).map(a =>
+      a.startsWith('/') ? a : `/piezas/${cuenta.id}/${r.carpeta.split('/').pop()}/${a}`)
+
+    if (urls.length) {
+      der.append(el('span.rotulo', { style: 'display:block;text-align:center;margin-bottom:10px' },
+        urls.length > 1 ? `${urls.length} placas` : 'Tu placa'))
+      // En un carrusel se ven todas, una debajo de otra: son las que se suben
+      // en ese orden y conviene revisarlas en el mismo.
+      for (const [i, url] of urls.entries()) {
+        der.append(el('a.resultado-placa', {
+          href: url, target: '_blank', download: nombreDeDescarga(pub, i, urls.length),
+          title: 'Abrir en tamaño real',
+        }, el('img', { src: url, alt: `Placa ${i + 1}`, loading: 'lazy' })))
+      }
     }
-    bloque.append(editorDeTexto(pub))
+
+    bloque.append(izq, der)
     cont.append(bloque)
   }
 
