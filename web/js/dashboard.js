@@ -460,7 +460,18 @@ function tarjetaCuota(estado) {
   const limites = estado?.plan?.limites || {}
   const usado = estado?.usado || {}
 
+  // Una cuenta interna no tiene tope, y ese tope llega como null: Infinity no
+  // sobrevive a JSON.stringify. Sin contemplarlo, la barra se salteaba por el
+  // `if (!tope)` de abajo y la tarjeta quedaba con el título y nada debajo.
+  const sinTope = estado?.plan?.id === 'interno'
+
   const barra = (etiqueta, gastado, tope) => {
+    if (sinTope) {
+      return el('div.cuota-linea', {},
+        el('div.cuota-cab', {},
+          el('span', {}, etiqueta),
+          el('b', {}, `${gastado} · sin límite`)))
+    }
     if (!tope) return null
     const proporcion = Math.min(1, gastado / tope)
     const quedan = Math.max(0, tope - gastado)
@@ -481,7 +492,7 @@ function tarjetaCuota(estado) {
   }
 
   return el('div.dash-metrica-card.dash-metrica-card--cuota', {},
-    el('span.rotulo', {}, 'Placas que te quedan'),
+    el('span.rotulo', {}, sinTope ? 'Placas generadas' : 'Placas que te quedan'),
     el('div.cuota-barras', {},
       barra('Este mes', usado.mes?.piezas || 0, limites.piezasMes),
       barra('Hoy', usado.dia?.piezas || 0, limites.piezasDia))

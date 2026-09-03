@@ -41,10 +41,36 @@ export const PLANES = {
 
 export const PLAN_POR_DEFECTO = 'unico'
 
+/**
+ * Las cuentas internas, por variable de entorno.
+ *
+ * `CUENTAS_INTERNAS` lleva los ids separados por coma. Va por entorno y no
+ * guardado en la cuenta a propósito: así el plan interno no se puede otorgar
+ * desde ninguna ruta de la aplicación —ni por error ni a mano por alguien que
+ * consiguió un token— y para sacarlo alcanza con editar una variable, sin tocar
+ * datos de nadie.
+ */
+const internas = () => new Set(
+  (process.env.CUENTAS_INTERNAS || '').split(',').map(s => s.trim()).filter(Boolean)
+)
+
+/** ¿Esta cuenta corre sin límites? */
+export const esInterna = id => Boolean(id) && internas().has(String(id))
+
 export function resolverPlan(id) {
   const p = PLANES[id || PLAN_POR_DEFECTO]
   if (!p) throw new Error(`plan desconocido: "${id}"`)
   return p
+}
+
+/**
+ * El plan que le toca a una cuenta.
+ *
+ * Se resuelve por el id y no por lo que diga `cuenta.plan`, porque la cuenta la
+ * escribe la aplicación y la lista la escribe quien opera el servidor.
+ */
+export function planDeCuenta(cuenta) {
+  return resolverPlan(esInterna(cuenta?.id) ? 'interno' : cuenta?.plan)
 }
 
 // Qué recurso consume cada acción, y contra qué límites se mide.

@@ -4,7 +4,7 @@
 // se reseteara a las 21:00 hora local, el usuario vería un comportamiento que no
 // puede explicarse.
 
-import { resolverPlan, RECURSOS } from './plan.mjs'
+import { planDeCuenta, RECURSOS } from './plan.mjs'
 
 const TZ = process.env.CM_TZ || 'America/Argentina/Buenos_Aires'
 
@@ -35,7 +35,7 @@ function contadores(cuenta) {
 }
 
 export function estado(cuenta) {
-  const plan = resolverPlan(cuenta.plan)
+  const plan = planDeCuenta(cuenta)
   const { mes, dia, delMes, delDia } = contadores(cuenta)
   const L = plan.limites
 
@@ -60,7 +60,7 @@ export function estado(cuenta) {
 export function verificar(cuenta, recurso, cantidad = 1) {
   const r = RECURSOS[recurso]
   if (!r) throw new Error(`recurso desconocido: ${recurso}`)
-  const plan = resolverPlan(cuenta.plan)
+  const plan = planDeCuenta(cuenta)
   const { delMes, delDia } = contadores(cuenta)
   const L = plan.limites
 

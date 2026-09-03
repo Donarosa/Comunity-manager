@@ -1204,5 +1204,37 @@ test('cada frasco lleva su propia máscara', () => {
   assert.ok(/url\(#frasco-\$\{id\}\)/.test(fuente), 'la máscara no apunta al id de esta instancia')
 })
 
+console.log('\ncuentas internas')
+
+// El plan sin límites se otorga por variable de entorno y no guardándolo en la
+// cuenta: así ninguna ruta de la aplicación puede concederlo, ni por error ni a
+// mano por alguien que consiguió un token.
+await testAsync('el plan interno sale del entorno, no de la cuenta', async () => {
+  const { planDeCuenta, esInterna } = await import('../core/quota/plan.mjs')
+  const previo = process.env.CUENTAS_INTERNAS
+  try {
+    process.env.CUENTAS_INTERNAS = 'uid-del-dueno, otra'
+    assert.equal(planDeCuenta({ id: 'uid-del-dueno', plan: 'unico' }).id, 'interno')
+    assert.equal(planDeCuenta({ id: 'un-cliente', plan: 'unico' }).id, 'unico')
+
+    // Ni siquiera diciendo que su plan es interno: la cuenta no decide esto.
+    process.env.CUENTAS_INTERNAS = ''
+    assert.equal(esInterna('uid-del-dueno'), false)
+    assert.equal(planDeCuenta({ id: 'un-vivo', plan: 'unico' }).id, 'unico')
+  } finally {
+    if (previo === undefined) delete process.env.CUENTAS_INTERNAS
+    else process.env.CUENTAS_INTERNAS = previo
+  }
+})
+
+// Infinity no sobrevive a JSON.stringify: llega como null. Si el tablero no lo
+// contempla, la tarjeta de cuota queda con el título y nada debajo.
+test('el tablero contempla una cuenta sin tope', () => {
+  const dash = readFileSync(join(RAIZ, 'web/js/dashboard.js'), 'utf8')
+  assert.ok(/plan\?\.id === 'interno'/.test(dash), 'el tablero no distingue una cuenta sin tope')
+  assert.equal(JSON.parse(JSON.stringify({ x: Infinity })).x, null,
+    'si esto cambia, revisar el resto del supuesto')
+})
+
 // El resumen va último: si se agrega un bloque abajo, tiene que contarlo.
 console.log(`\n${ok} pruebas OK${process.exitCode ? ' — con fallas' : ''}\n`)

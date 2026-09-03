@@ -112,6 +112,13 @@ cáscaras la exponen — no la escribas dos veces.
 - **Cuota: verificar antes de llamar a la API, consumir después de que salió
   bien.** Al revés se le cobra al usuario una pieza que nunca vio, o se gasta
   plata de API en un pedido que igual se iba a rechazar.
+- **Las cuentas sin límite salen de `CUENTAS_INTERNAS`,** una variable de
+  entorno con los ids separados por coma, y nunca de un campo guardado en la
+  cuenta. La cuenta la escribe la aplicación; la variable la escribe quien opera
+  el servidor. Así el plan interno no se puede otorgar desde ninguna ruta —ni
+  por error ni a mano con un token robado— y para sacarlo alcanza con editar la
+  variable. `Infinity` no sobrevive a `JSON.stringify`: al navegador llega como
+  `null`, así que cualquier pantalla que muestre topes tiene que contemplarlo.
 - **Previsualizar no consume cuota; renderizar el PNG sí.** Escribir tiene que
   ser gratis, o el usuario redacta con miedo.
 - **No generamos imágenes.** Ni fotos de producto ni de local. O es del negocio,
