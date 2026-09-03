@@ -227,7 +227,9 @@ En orden de qué desbloquea más:
    Falta email + clave (o un enlace mágico, que para este público es menos
    fricción) y el token en la API.
 3. **Cobro.** Mercado Pago para Argentina. Un webhook que escriba `cuenta.plan`
-   y `cuenta.estado`, más una pantalla de "se venció tu plan".
+   y `cuenta.estado`, más una pantalla de "se venció tu plan". El modelo ya está
+   decidido y está escrito abajo, en *Cómo se cobra*: hay que implementarlo, no
+   definirlo.
 4. **WhatsApp.** La web ya está, pero para este público un bot de WhatsApp tiene
    menos fricción todavía: no hay que registrarse ni instalar nada. El núcleo
    expone HTTP, así que es otra cáscara sobre `service.mjs`.
@@ -238,3 +240,44 @@ En orden de qué desbloquea más:
 6. **Multi-marca.** Para quien maneja varios negocios o para agencias chicas.
    El límite ya existe (`marcas` en el plan); falta que una cuenta pueda tener
    más de una.
+
+
+## Cómo se cobra
+
+Decidido, sin implementar todavía. Se hace junto con el cobro (punto 3 de *Lo
+que falta*): antes no tiene sentido, porque no hay forma de que alguien pague.
+
+**Una semana gratis, para todos.** Quien se registra entra directo al producto
+con los límites del plan único —120 placas por mes, 24 por día, 12 generaciones
+de contenido— sin poner una tarjeta. La semana empieza el día del alta.
+
+**Al octavo día, el producto se bloquea.** No se degrada ni se recorta: se
+bloquea. La marca, las placas y los textos quedan guardados y a la vista, pero
+no se puede generar nada nuevo. Que lo que ya hizo siga estando es lo que hace
+que valga la pena volver.
+
+**Al pagar se libera con los mismos límites de siempre.** El plan pago no da
+más que la prueba: da la continuidad. Nadie sube de tope por pagar, así que el
+límite es una constante del producto y no una palanca comercial —lo que
+simplifica el costo de API, que es lo que ese tope protege.
+
+**Nadie tiene cuota infinita, salvo la cuenta del dueño.** Esa excepción vive en
+`CUENTAS_INTERNAS`, una variable de entorno con los ids, y nunca en un campo de
+la cuenta: la cuenta la escribe la aplicación y la variable la escribe quien
+opera el servidor. Ninguna ruta puede otorgar el plan interno, ni por error ni
+con un token robado. Si mañana hace falta una cuenta de demo para una reunión,
+va por ahí y se saca después editando la variable.
+
+### Lo que hay que construir cuando llegue el momento
+
+- `cuenta.estado` con los tres valores que esto necesita: `prueba`, `activa`,
+  `vencida`. Hoy existe el campo y siempre dice `activa`.
+- La fecha de fin de prueba. `cuenta.creada` ya está, así que sale de ahí.
+- El bloqueo en `verificar()`, que es el único lugar por donde pasan todas las
+  acciones que cuestan: si la cuenta está vencida, rechaza antes de llamar a
+  ninguna API. La regla de "verificar antes, consumir después" ya está puesta y
+  esto entra en el mismo lugar.
+- La pantalla de vencido, que tiene que mostrar lo que la persona ya hizo. Un
+  bloqueo que además esconde el trabajo previo no invita a pagar: asusta.
+- El webhook de Mercado Pago escribiendo `estado`, y nada más. El plan no cambia
+  porque no hay a qué cambiarlo.

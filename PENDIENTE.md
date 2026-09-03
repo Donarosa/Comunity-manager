@@ -93,3 +93,17 @@ Y una decisión de producto antes de escribir nada: rehacer una placa corregida
 vuelve a consumir cuota de `piezas`. Puede quedar así —es un render real— o
 puede no cobrarse la primera corrección de una placa recién hecha, que evita que
 alguien publique con un error para no gastar una pieza.
+
+
+---
+
+## Anotado, sin hacer: la prueba de una semana y el bloqueo
+
+El modelo de cobro está decidido y escrito en `PRODUCTO.md`, en *Cómo se cobra*.
+En dos líneas: una semana gratis para todos con los límites normales, después el
+producto se bloquea hasta que se paga, y al pagar se libera con **los mismos**
+límites. Nadie tiene cuota infinita salvo la cuenta del dueño, que ya está
+resuelta con `CUENTAS_INTERNAS`.
+
+Se implementa junto con el cobro y no antes: sin una forma de pagar, un bloqueo
+es una pared sin puerta.
