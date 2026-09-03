@@ -4205,3 +4205,30 @@ html.con-sesion .arranque { display: block; }
 .disp-mini--centrada .disp-b--t2 { width: 50%; }
 
 @media (prefers-reduced-motion: reduce) { .disp-opcion { transition: none; } }
+
+/* ── Los campos que caen en un mismo recuadro de la placa ───
+ *
+ * En la oferta hay dos zonas: el título va arriba y suelto, y la cifra, la
+ * etiqueta, el texto y las condiciones van adentro de la caja. En un formulario
+ * plano no hay manera de saber cuál es cuál hasta generar la placa, así que el
+ * recuadro del formulario repite el de la placa.
+ */
+.campo-grupo {
+  border: 1.5px solid var(--linea-fuerte);
+  border-radius: 14px;
+  padding: 16px 14px 4px;
+  margin-bottom: 22px;
+  background: color-mix(in oklab, var(--color-paper) 60%, transparent);
+}
+.campo-grupo-titulo {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  margin-bottom: 14px;
+}
+/* El último campo del grupo no necesita su margen: lo pone el recuadro. */
+.campo-grupo > .campo:last-child { margin-bottom: 12px; }

@@ -1138,5 +1138,22 @@ test('cada banco declara si su atribución es obligatoria', () => {
     'Unsplash dejó de exigir crédito: sus términos de API sí lo piden')
 })
 
+// La cifra de la promo es lo más grande de la placa y estaba detrás de un botón
+// que decía "Agregar un emoji". Al abrir la plantilla el recuadro salía casi
+// vacío y se terminaba armando con lo que sobrara.
+test('la oferta no esconde ningún campo detrás de un botón', () => {
+  assert.deepEqual(camposSecundarios('oferta'), [],
+    'la oferta volvió a tener campos escondidos: el recuadro sale vacío al abrirla')
+})
+
+test('el campo de la cifra ya no se llama emoji', () => {
+  const editor = readFileSync(join(RAIZ, 'web/js/editor.js'), 'utf8')
+  const i = editor.indexOf('  emoji: {')
+  const decl = editor.slice(i, i + 260)
+  assert.ok(!/label: 'Un emoji/.test(decl), 'volvió a llamarse emoji: dibuja la cifra, no un emoji')
+  assert.ok(/2×1|50%/.test(decl), 'el ejemplo dejó de mostrar una cifra')
+  assert.ok(!/agregar:/.test(decl), 'la cifra volvió a quedar detrás de un botón')
+})
+
 // El resumen va último: si se agrega un bloque abajo, tiene que contarlo.
 console.log(`\n${ok} pruebas OK${process.exitCode ? ' — con fallas' : ''}\n`)

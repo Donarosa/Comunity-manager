@@ -58,10 +58,18 @@ const CAMPOS = {
   // usa la palabra "fuente" —dentro del editor no compite con la tipografía,
   // que se elige en el alta— y la ayuda muestra cómo queda estampado.
   fuente: { label: 'La fuente del dato', ayuda: 'Quién publicó el número que estás usando. Al pie de la placa sale como «Fuente — INDEC».', ej: 'INDEC, 2025', max: 90, agregar: 'Citar la fuente de un dato' },
-  emoji: { label: 'Un emoji, si querés', ayuda: 'Uno solo, va grande arriba del título.', ej: '🥖', max: 4, agregar: 'Agregar un emoji' },
+  // Se llamaba "emoji" y dibuja la cifra de la promo: 64 píxeles, negrita, en el
+  // centro del recuadro. Con ese nombre, ese ejemplo y un tope de 4 caracteres,
+  // lo que se escribía ahí nunca era lo que la placa esperaba.
+  emoji: { label: '¿Cuál es la oferta?', ayuda: 'La cifra que la gente busca: 2×1, 50%, $4.500. Sale grande, en el medio del recuadro.', ej: '2×1', max: 14 },
   chips: { label: 'Precios o condiciones', ayuda: 'De 2 a 3, cortitos. Uno por línea.', ej: 'Desde $4.500\nRetiro en el local' },
   pasos: { label: 'Los pasos', ayuda: 'Tres o cuatro. Con más, la placa se aprieta y deja de leerse.' },
   imagen: { label: 'La foto' },
+}
+
+/** Campos que la placa dibuja dentro de un mismo recuadro. */
+const GRUPOS = {
+  oferta: { titulo: 'El recuadro de la oferta', campos: ['emoji', 'kicker', 'cuerpo', 'chips'] },
 }
 
 const vacia = plantilla => ({
@@ -498,7 +506,21 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
      * antes de poder publicar. Un campo que ya tiene algo escrito se muestra
      * abierto: si no, al volver a editar la placa desaparecería del formulario
      * un texto que sí está saliendo en el PNG. */
+    /* Los campos que caen dentro de un recuadro de la placa se muestran dentro
+     * de un recuadro del formulario. En la oferta hay dos zonas —el título va
+     * arriba, suelto, y las otras cuatro adentro de la caja— y sin marcarlo no
+     * hay forma de saber cuál es cuál hasta generar la placa. */
+    const grupo = GRUPOS[p.plantilla]
+    let cajaGrupo = null
     for (const campo of CAMPOS_PRINCIPALES[p.plantilla] || PLANTILLAS[p.plantilla].campos) {
+      if (grupo?.campos.includes(campo)) {
+        if (!cajaGrupo) {
+          cajaGrupo = el('div.campo-grupo', {}, el('span.campo-grupo-titulo', {}, grupo.titulo))
+          form.append(cajaGrupo)
+        }
+        cajaGrupo.append(armarCampo(campo, p, refrescarDemorado, medidor))
+        continue
+      }
       form.append(armarCampo(campo, p, refrescarDemorado, medidor))
     }
 

@@ -39,7 +39,11 @@ export const CAMPOS_PRINCIPALES = {
   portada: ['titulo', 'cuerpo'],
   texto: ['titulo', 'cuerpo'],
   pasos: ['titulo', 'pasos'],
-  oferta: ['titulo', 'chips'],
+  // La oferta abre entera. Tres de sus cinco campos estaban detrás de un botón
+  // —incluida la cifra, que es lo más grande de la placa— así que al elegir la
+  // plantilla el recuadro salía casi vacío y se armaba con lo que sobrara. El
+  // orden es el del recuadro: primero qué es la oferta, después cómo se rotula.
+  oferta: ['titulo', 'emoji', 'kicker', 'cuerpo', 'chips'],
   cierre: ['titulo', 'cuerpo'],
   frase: ['titulo', 'cuerpo'],
   foto: ['titulo', 'imagen'],

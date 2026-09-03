@@ -98,7 +98,10 @@ const PLACA = {
       items: { type: 'string' },
       description: 'Solo en "oferta": 2 o 3 chips de 1 a 3 palabras. En el resto, array vacío.',
     },
-    emoji: { type: 'string', description: 'Solo en "oferta": un emoji. En el resto, vacío.' },
+    // Dibuja la cifra grande del recuadro, no un emoji: el nombre del campo
+    // quedó de antes. Pedirle un emoji al modelo ponía un panecillo a 64px
+    // donde el negocio esperaba su descuento.
+    emoji: { type: 'string', description: 'Solo en "oferta": la cifra de la promoción tal como se anuncia — "2×1", "50%", "$4.500". Sin inventar: si el pedido no trae un número, vacío. En el resto de las plantillas, vacío.' },
     fuente: { type: 'string', description: 'De dónde sale el dato duro, si la placa afirma uno. Si no, vacío.' },
     linea2: { type: 'string', description: 'Solo en "foto": la segunda línea, la que va en color. En el resto, vacío.' },
   },
