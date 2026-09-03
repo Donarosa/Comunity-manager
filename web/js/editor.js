@@ -164,7 +164,8 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
      * lienzo mide bastante menos que en el escritorio, y una escala calculada
      * para 400px deja la placa cortada. Se recalcula contra el ancho real. */
     const F = FORMATOS[st.canal] || FORMATOS.feed
-    const lienzo = el('div.lienzo', { style: `aspect-ratio:${F.w}/${F.h};max-width:${F.maxAncho}px` })
+    const lienzo = el('div.lienzo')
+    const zona = el('div.lienzo-zona')
     const marco = el('iframe', {
       width: F.w,
       height: F.h,
@@ -172,13 +173,45 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
       title: 'Vista previa de la placa',
     })
     lienzo.append(marco)
+    zona.append(lienzo)
 
+    /* La escala se mide y se corrige, en dos pasos.
+     *
+     * Con el panel sticky el alto quedó acotado a la pantalla, y una escala
+     * calculada solo contra el ancho dibujaba la placa más alta que su caja: la
+     * vista previa salía con el título cortado abajo.
+     *
+     * No se puede resolver pidiéndole el alto disponible a un contenedor
+     * flexible: ese alto depende del lienzo y el lienzo dependería de él, así
+     * que la caja colapsa a cero. Se aplica la escala por ancho, se mira cuánto
+     * se pasó el panel de su tope —scrollHeight contra clientHeight— y se
+     * descuenta esa diferencia. Dos mediciones y ningún número mágico. */
+    const aplicar = escala => {
+      lienzo.style.width = `${Math.round(F.w * escala)}px`
+      lienzo.style.height = `${Math.round(F.h * escala)}px`
+      marco.style.transform = `scale(${escala})`
+    }
+
+    let ajustando = false
     const ajustarEscala = () => {
-      const ancho = lienzo.clientWidth
-      if (ancho) marco.style.transform = `scale(${ancho / F.w})`
+      if (ajustando) return
+      ajustando = true
+      try {
+        const disponible = Math.min(zona.clientWidth, F.maxAncho)
+        if (!disponible) return
+        let escala = disponible / F.w
+        aplicar(escala)
+        const sobra = vista.scrollHeight - vista.clientHeight
+        if (sobra > 1) {
+          escala = Math.max(0.05, (F.h * escala - sobra) / F.h)
+          aplicar(escala)
+        }
+      } finally {
+        ajustando = false
+      }
     }
     ajustarEscala()
-    new ResizeObserver(ajustarEscala).observe(lienzo)
+    new ResizeObserver(ajustarEscala).observe(zona)
 
     const errorVista = el('div', { style: 'margin-top:12px' })
     const medidor = el('div.medidor', { style: 'margin-top:10px' })
@@ -264,7 +297,7 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
 
     vista.append(
       el('span.rotulo', { style: 'display:block;margin-bottom:10px' }, 'Vista previa'),
-      lienzo, errorVista,
+      zona, errorVista,
       el('p.apunte.chico', { style: 'margin-top:12px' },
         'Así va a salir. Escribir y probar no descuenta nada del plan: solo se descuenta cuando generás.'),
       el('div', { style: 'margin-top:16px' }, generar),

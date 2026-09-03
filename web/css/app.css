@@ -3448,7 +3448,6 @@ input:focus, select:focus, textarea:focus {
   border-radius: 18px;
   overflow: hidden;
   position: relative;
-  width: 100%;
   margin: 0 auto;
   background: var(--color-paper-2);
   border: 1.5px solid var(--color-rule);
@@ -4101,3 +4100,21 @@ html.con-sesion .arranque { display: block; }
 @media (prefers-reduced-motion: reduce) {
   .arranque-bloque { animation: none; }
 }
+
+/* ── La zona donde entra la vista previa ────────────────────
+ *
+ * El panel de la vista previa quedó sticky y con la altura acotada a la
+ * pantalla. Sin una zona propia, el lienzo era un ítem de flex más y se
+ * achataba: perdía su proporción mientras el iframe se seguía escalando contra
+ * el ancho, y la placa salía con el título cortado abajo.
+ *
+ * Acá el lienzo no se estira: se le dan ancho y alto en píxeles desde el JS,
+ * calculados con la dimensión que aprieta. La zona solo reserva el lugar y lo
+ * centra.
+ */
+.lienzo-zona {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+.lienzo-zona .lienzo { flex: 0 0 auto; }
