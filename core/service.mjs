@@ -7,7 +7,8 @@
 import { readFileSync } from 'fs'
 import {
   crearCuenta, leerCuenta, leerCuentaAsync, guardarCuenta, listarCuentas, carpetaPiezas,
-  listarPublicacionesAsync, actualizarPublicacion,
+  listarPublicacionesAsync, actualizarPublicacion, listarPlanesAsync, obtenerEstadisticasAsync,
+  listarCuentasAsync,
   registrarPublicacion, listarPublicaciones, registrarPlan, listarPlanes,
   registrarEventoEstadistica, obtenerEstadisticas,
   guardarCodigoOtpLocal, verificarCodigoOtpLocal,
@@ -99,11 +100,22 @@ export function estadoCuenta(id) {
   return { cuenta: resumen(cuenta), estado: estadoCompleto(cuenta) }
 }
 
-export function dashboardUsuario(id) {
+/**
+ * Todo lo que muestra el dashboard.
+ *
+ * Es asincrónica porque las tres listas hay que traerlas de Firestore. Con las
+ * lecturas sincrónicas —que solo miran el disco de la función— el dashboard
+ * salía vacío al día siguiente: la cuota decía "10 placas este mes", porque el
+ * contador vive en la cuenta y esa sí se hidrataba, y abajo no había ninguna.
+ * Peor que no mostrar nada: mostraba que el trabajo existió y no aparecía.
+ */
+export async function dashboardUsuario(id) {
   const cuenta = leerCuenta(id)
-  const publicaciones = listarPublicaciones(id)
-  const planes = listarPlanes(id)
-  const estadisticas = obtenerEstadisticas(id)
+  const [publicaciones, planes, estadisticas] = await Promise.all([
+    listarPublicacionesAsync(id),
+    listarPlanesAsync(id),
+    obtenerEstadisticasAsync(id),
+  ])
   const est = estadoCompleto(cuenta)
 
   return {
@@ -501,6 +513,21 @@ export async function editarPublicacion(cuentaId, pubId, { caption, hashtags } =
     ? hashtags.map(h => String(h).trim()).filter(Boolean).map(h => h.startsWith('#') ? h : `#${h}`)
     : undefined
   return actualizarPublicacion(cuentaId, pubId, { caption, hashtags: limpios })
+}
+
+/** Todas las cuentas, traídas de Firestore si hace falta. */
+export async function cuentasDe() {
+  return listarCuentasAsync()
+}
+
+/** Los planes guardados, traídos de Firestore si hace falta. */
+export async function planesDe(cuentaId) {
+  return listarPlanesAsync(cuentaId)
+}
+
+/** La actividad guardada, traída de Firestore si hace falta. */
+export async function estadisticasDe(cuentaId) {
+  return obtenerEstadisticasAsync(cuentaId)
 }
 
 /** Las publicaciones guardadas, traídas de Firestore si hace falta. */

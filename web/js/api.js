@@ -1,6 +1,6 @@
 // Cliente HTTP. Agrega autenticación Bearer automática y endpoints del dashboard.
 
-import { obtenerToken } from './auth.js'
+import { obtenerToken, obtenerTokenValido, refrescarTokenFirebase } from './auth.js'
 
 const API_BASE = (typeof window !== 'undefined' && window.location && (
   window.location.protocol === 'file:' ||
@@ -11,17 +11,30 @@ async function pedir(ruta, { metodo = 'GET', cuerpo, texto = false } = {}) {
   const headers = {}
   if (cuerpo) headers['content-type'] = 'application/json'
 
-  const token = obtenerToken()
+  const token = (await obtenerTokenValido()) || obtenerToken()
   if (token) {
     headers['authorization'] = `Bearer ${token}`
   }
 
   const urlCompleta = ruta.startsWith('http') ? ruta : `${API_BASE}${ruta}`
-  const res = await fetch(urlCompleta, {
+  let res = await fetch(urlCompleta, {
     method: metodo,
     headers,
     body: cuerpo ? JSON.stringify(cuerpo) : undefined,
   })
+
+  // Si dio 401 y teníamos sesión, intentar refrescar el token de Firebase y reintentar una vez
+  if (res.status === 401 && token) {
+    const tokenRefresco = await refrescarTokenFirebase(true)
+    if (tokenRefresco && tokenRefresco !== token) {
+      headers['authorization'] = `Bearer ${tokenRefresco}`
+      res = await fetch(urlCompleta, {
+        method: metodo,
+        headers,
+        body: cuerpo ? JSON.stringify(cuerpo) : undefined,
+      })
+    }
+  }
 
   if (texto && res.ok) return res.text()
 
@@ -29,10 +42,7 @@ async function pedir(ruta, { metodo = 'GET', cuerpo, texto = false } = {}) {
   try { datos = await res.json() } catch { /* respuesta sin cuerpo */ }
 
   if (!res.ok) {
-    // La sesión guardada ya no sirve: una cuenta de invitado de una versión
-    // anterior, o un token vencido. Dejarla puesta hace que todo falle con
-    // mensajes que no dicen lo único que hay que hacer, que es volver a entrar.
-    // Se limpia y se recarga: la app arranca sin sesión y muestra el ingreso.
+    // La sesión guardada ya no sirve y no se pudo refrescar.
     if (res.status === 401 && obtenerToken()) {
       localStorage.removeItem('cm.auth.usuario')
       localStorage.removeItem('cm.auth.token')

@@ -131,7 +131,7 @@ export async function handleListarUsuarios(svc, firestore, json) {
 export async function handleDetalleUsuario(id, svc, json) {
   try {
     await svc.hidratarCuenta(id)
-    const detalle = svc.dashboardUsuario(id)
+    const detalle = await svc.dashboardUsuario(id)
     return json(200, detalle)
   } catch (e) {
     if (/no existe|no encuentro|no encontrado/i.test(e.message)) {

@@ -512,6 +512,9 @@ async function arrancar() {
   // Suscribirse a cambios en la sesión de Auth
   enCambioDeAuth(u => {
     actualizarNavUsuario(u)
+    if (u && !cuenta && app.classList.contains('oculto')) {
+      sincronizarUsuario(u).catch(() => {})
+    }
   })
 
   const u = obtenerUsuario()

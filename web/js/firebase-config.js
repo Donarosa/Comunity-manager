@@ -56,12 +56,17 @@ export async function inicializarFirebaseClient() {
   try {
     // Importamos dinámicamente Firebase SDK oficial
     const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js')
-    const { getAuth, GoogleAuthProvider } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js')
+    const { getAuth, GoogleAuthProvider, setPersistence, browserLocalPersistence } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js')
     const { getFirestore } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js')
 
     const apps = getApps()
     firebaseApp = apps.length ? apps[0] : initializeApp(config)
     authInstance = getAuth(firebaseApp)
+    if (setPersistence && browserLocalPersistence) {
+      await setPersistence(authInstance, browserLocalPersistence).catch(err => {
+        console.warn('[Firebase Auth] No se pudo fijar persistencia local:', err?.message)
+      })
+    }
     dbInstance = getFirestore(firebaseApp)
 
     console.log('[Firebase Web] Inicializado correctamente con proyecto:', config.projectId)

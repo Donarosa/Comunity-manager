@@ -415,7 +415,7 @@ async function despachar(req, res) {
     /* — cuentas y dashboards — */
     if (m === 'GET' && url.pathname === '/cuentas') {
       if (usuario.tipo !== 'admin') return json(res, 403, { error: 'no disponible' })
-      return json(res, 200, { cuentas: svc.listarCuentas() })
+      return json(res, 200, { cuentas: await svc.cuentasDe() })
     }
     if (m === 'POST' && url.pathname === '/cuentas') {
       const cuerpo = await leerBody(req)
@@ -451,10 +451,10 @@ async function despachar(req, res) {
       await svc.hidratarCuenta(id)
 
       if (m === 'GET' && !sub) return json(res, 200, svc.estadoCuenta(id))
-      if (m === 'GET' && sub === 'dashboard') return json(res, 200, svc.dashboardUsuario(id))
+      if (m === 'GET' && sub === 'dashboard') return json(res, 200, await svc.dashboardUsuario(id))
       if (m === 'GET' && sub === 'publicaciones') return json(res, 200, { publicaciones: await svc.publicacionesDe(id) })
-      if (m === 'GET' && sub === 'planes') return json(res, 200, { planes: svc.listarPlanes(id) })
-      if (m === 'GET' && sub === 'estadisticas') return json(res, 200, { estadisticas: svc.obtenerEstadisticas(id) })
+      if (m === 'GET' && sub === 'planes') return json(res, 200, { planes: await svc.planesDe(id) })
+      if (m === 'GET' && sub === 'estadisticas') return json(res, 200, { estadisticas: await svc.estadisticasDe(id) })
       // ?refrescar=1 pide temas nuevos aunque los guardados sigan vigentes.
       if (m === 'GET' && sub === 'temas') {
         return json(res, 200, await svc.temasParaPublicar(id, {
