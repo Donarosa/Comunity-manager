@@ -410,9 +410,9 @@ function ejemplosDeCampos(placa) {
     emoji: 'Tu oferta acá',
     chips: ['Tu dato', 'Otro dato'],
     pasos: [
-      { numero: '1', etiqueta: 'Paso 1', titulo: 'Qué se hace primero', detalle: 'Una línea de explicación' },
-      { numero: '2', etiqueta: 'Paso 2', titulo: 'Qué sigue', detalle: 'Una línea de explicación' },
-      { numero: '3', etiqueta: 'Paso 3', titulo: 'Cómo termina', detalle: 'Una línea de explicación' },
+      { numero: '1', etiqueta: 'Paso 1', titulo: 'Qué se hace primero' },
+      { numero: '2', etiqueta: 'Paso 2', titulo: 'Qué sigue' },
+      { numero: '3', etiqueta: 'Paso 3', titulo: 'Cómo termina' },
     ],
   }
 
@@ -421,7 +421,26 @@ function ejemplosDeCampos(placa) {
   const declarados = CAMPOS_DE_PLANTILLA[plantilla] || CAMPOS_DE_PLANTILLA.texto
   const relleno = {}
   for (const campo of declarados) {
-    if (ejemplos[campo] !== undefined && vacio(placa?.[campo])) relleno[campo] = ejemplos[campo]
+    if (ejemplos[campo] === undefined) continue
+
+    // Los pasos no están vacíos aunque no tengan nada escrito: el editor abre
+    // con tres ya creados y los textos en blanco. Mirar solo si el arreglo
+    // existe dejaba la placa con tres cajas numeradas y nada adentro, que es
+    // justo lo que había que evitar. Se rellena paso por paso.
+    if (campo === 'pasos' && Array.isArray(placa?.pasos) && placa.pasos.length) {
+      relleno.pasos = placa.pasos.map((paso, i) => {
+        const ej = ejemplos.pasos[i % ejemplos.pasos.length]
+        return {
+          ...paso,
+          numero: paso.numero || String(i + 1),
+          etiqueta: vacio(paso.etiqueta) ? ej.etiqueta : paso.etiqueta,
+          titulo: vacio(paso.titulo) ? ej.titulo : paso.titulo,
+        }
+      })
+      continue
+    }
+
+    if (vacio(placa?.[campo])) relleno[campo] = ejemplos[campo]
   }
   return relleno
 }

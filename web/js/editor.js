@@ -584,7 +584,7 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
 
     if (campo === 'pasos') {
       if (!p.pasos.length) {
-        p.pasos = [1, 2, 3].map(n => ({ numero: String(n), etiqueta: '', titulo: '', detalle: '' }))
+        p.pasos = [1, 2, 3].map(n => ({ numero: String(n), etiqueta: '', titulo: '' }))
       }
       const cont = el('div')
       const repintar = () => {
@@ -595,7 +595,6 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
           for (const [clave, etiqueta, ej] of [
             ['etiqueta', 'Etiqueta corta', 'Día uno'],
             ['titulo', 'Qué se hace', 'Se alimenta la madre'],
-            ['detalle', 'Una línea más', 'Harina y agua. Nada más.'],
           ]) {
             const inp = el('input', { type: 'text', placeholder: ej, value: paso[clave], style: 'margin-bottom:6px' })
             inp.addEventListener('input', () => { paso[clave] = inp.value; alEscribir() })
@@ -606,7 +605,7 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
         const acciones = el('div', { style: 'display:flex;gap:8px;margin-top:10px' })
         if (p.pasos.length < 4) {
           acciones.append(el('button.btn.fantasma.chico', {
-            onclick: () => { p.pasos.push({ numero: String(p.pasos.length + 1), etiqueta: '', titulo: '', detalle: '' }); repintar(); alEscribir() },
+            onclick: () => { p.pasos.push({ numero: String(p.pasos.length + 1), etiqueta: '', titulo: '' }); repintar(); alEscribir() },
           }, '+ Paso'))
         }
         if (p.pasos.length > 2) {

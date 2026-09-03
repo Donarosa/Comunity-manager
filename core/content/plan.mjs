@@ -63,12 +63,11 @@ No todo es vender. Sobre el total del plan, apuntá a: la mitad contenido útil 
 const PASO = {
   type: 'object',
   additionalProperties: false,
-  required: ['numero', 'etiqueta', 'titulo', 'detalle'],
+  required: ['numero', 'etiqueta', 'titulo'],
   properties: {
     numero: { type: 'string', description: 'El número del paso: "1", "2"…' },
     etiqueta: { type: 'string', description: 'Etiqueta de 1 o 2 palabras: "Primero", "Al final".' },
     titulo: { type: 'string', description: 'Qué se hace en este paso. Hasta 40 caracteres.' },
-    detalle: { type: 'string', description: 'Una línea explicando el paso. Hasta 110 caracteres.' },
   },
 }
 
@@ -224,7 +223,11 @@ export function placaToSlide(placa, { nombre, idx = '', formato = 'feed', foto =
     case 'pasos':
       return {
         ...base, style: 'flat', type: 'steps', kick: p.kicker, title: p.titulo, idx,
-        steps: (p.pasos || []).map(s => ({ n: s.numero, k: s.etiqueta, t: s.titulo, d: s.detalle })),
+        // Sin `d`: el paso quedó en etiqueta y qué se hace. El motor sigue
+        // sabiendo dibujar esa línea —el spec la admite— pero ni el editor ni
+        // el modelo la producen, así que las placas de los dos caminos salen
+        // iguales.
+        steps: (p.pasos || []).map(s => ({ n: s.numero, k: s.etiqueta, t: s.titulo })),
       }
     case 'oferta':
       // Nada de valores de relleno acá. Un "2 × 1" o un "BENEFICIO EXCLUSIVO"
