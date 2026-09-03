@@ -2447,6 +2447,22 @@ input:focus, select:focus, textarea:focus {
   margin: 3px 0 1px;
 }
 
+.dash-metrica-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.dash-metrica-cifra-fila {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 2px 0 1px;
+}
+
 /* Tarjeta Ahorro Destacada (Elevada visualmente) */
 .dash-metrica-card--ahorro {
   background: linear-gradient(145deg, #ffffff 0%, #f0fdf4 100%);
@@ -2466,9 +2482,10 @@ input:focus, select:focus, textarea:focus {
 }
 .dash-metrica-cifra--ahorro {
   color: #15803d;
-  font-size: 2.15rem;
+  font-size: clamp(1.6rem, 5vw, 2.15rem);
   font-weight: 800;
-  margin: 2px 0;
+  margin: 0;
+  letter-spacing: -0.02em;
 }
 .chip-ahorro-destacado {
   font-family: var(--font-label);
@@ -2481,10 +2498,13 @@ input:focus, select:focus, textarea:focus {
   padding: 2px 8px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .ahorro-aclaracion {
   color: var(--color-ink-2);
   line-height: 1.35;
+  font-size: 0.84rem;
 }
 .ahorro-badge-pill {
   font-size: 0.75rem;
@@ -2493,9 +2513,9 @@ input:focus, select:focus, textarea:focus {
   background: rgba(34, 197, 94, 0.12);
   padding: 3px 8px;
   border-radius: 6px;
-  margin-top: 6px;
   display: inline-block;
-  width: fit-content;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .dash-marca-box {
@@ -3782,11 +3802,27 @@ input:focus, select:focus, textarea:focus {
   .editor { display: flex; flex-direction: column; padding: 12px 0 60px; }
   .editor-vista { order: -1; }
 
-  /* Cinco columnas de fotos en 390px son miniaturas de 60px: no se ve nada. */
-  .galeria { grid-template-columns: repeat(3, 1fr); gap: 8px; }
-
-  .dash-metricas-grid { grid-template-columns: repeat(2, 1fr); }
-  .dash-header { flex-direction: column; align-items: flex-start; gap: 14px; }
+  /* Métricas en 1 sola columna en móvil para que las cifras y textos no se compriman */
+  .dash-metricas-grid { grid-template-columns: 1fr; gap: 10px; }
+  .dash-metrica-card { padding: 1rem 1.15rem; }
+  .dash-metrica-cifra--ahorro { font-size: 1.85rem; }
+  .dash-tabs-home-wrap {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .dash-tabs-home-wrap .dash-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    width: 100%;
+    padding-bottom: 6px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .dash-cta-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .dash-header { flex-direction: column; align-items: flex-start; gap: 12px; padding: 1rem 1.15rem; }
   .dash-acciones-top { width: 100%; }
 
   .item-actividad { grid-template-columns: 1fr; gap: 3px; }

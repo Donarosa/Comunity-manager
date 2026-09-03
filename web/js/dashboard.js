@@ -108,22 +108,24 @@ function renderizarHome({
     el('strong.dash-metrica-cifra', {}, String(totalPubs)),
     el('span.apunte.chico', {}, `${placasMes} placas generadas este mes`),
     el('button.btn.chico.btn--outline', {
-      style: 'margin-top:10px;width:100%;font-size:0.82rem;padding:6px 10px;',
+      style: 'margin-top:8px;width:100%;font-size:0.82rem;padding:6px 10px;text-align:center;justify-content:center;',
       onclick: () => onAbrirDashboard('pubs'),
     }, 'Ver mis placas en Dashboard →')
   )
 
   // Tarjeta Ahorro acumulado DESTACADA a 10 USD/placa
   const cardAhorro = el('div.dash-metrica-card.dash-metrica-card--ahorro', {},
-    el('div', { style: 'display:flex;justify-content:space-between;align-items:center;' },
+    el('div.dash-metrica-topbar', {},
       el('span.rotulo', { style: 'color:#15803d;font-weight:700;' }, 'Ahorro acumulado'),
       el('span.chip-ahorro-destacado', {}, '💰 US$10 / placa')
     ),
-    el('strong.dash-metrica-cifra.dash-metrica-cifra--ahorro', {}, ahorroTxt),
+    el('div.dash-metrica-cifra-fila', {},
+      el('strong.dash-metrica-cifra.dash-metrica-cifra--ahorro', {}, ahorroTxt),
+      el('span.ahorro-badge-pill', {}, '✨ vs diseñador')
+    ),
     el('span.apunte.chico.ahorro-aclaracion', {},
       valorObj?.texto?.aclaracion || 'a US$10 la placa — lo que cobra un diseñador por una placa suelta'
-    ),
-    el('div.ahorro-badge-pill', {}, '✨ Ahorro vs diseñador freelance')
+    )
   )
 
   const metricasGrid = el('div.dash-metricas-grid', {},
