@@ -1236,5 +1236,40 @@ test('el tablero contempla una cuenta sin tope', () => {
     'si esto cambia, revisar el resto del supuesto')
 })
 
+console.log('\nel editor en el teléfono')
+
+// En una pantalla angosta la placa manda: el formulario es una hoja que sube y
+// una barra de abajo elige qué grupo se ve. Antes la vista previa iba arriba y
+// el formulario debajo, los dos estáticos, así que al bajar a escribir el
+// título la placa se iba de la pantalla.
+test('el formulario se arma una sola vez y se reparte en grupos', () => {
+  const editor = readFileSync(join(RAIZ, 'web/js/editor.js'), 'utf8')
+  assert.ok(/const enGrupo =/.test(editor), 'los bloques dejaron de declarar a qué grupo van')
+  // Ningún bloque puede volver a colgarse del formulario sin grupo: quedaría
+  // fuera de todas las hojas y sería inalcanzable en el teléfono.
+  const sueltos = (editor.match(/^\s*form\.append\(/gm) || []).filter(l => !/enGrupo/.test(l))
+  assert.equal(sueltos.length, 1, 'hay un bloque que se agrega sin grupo: en el teléfono no se puede abrir')
+})
+
+test('la barra del teléfono solo ofrece lo que la placa tiene', () => {
+  const editor = readFileSync(join(RAIZ, 'web/js/editor.js'), 'utf8')
+  assert.ok(/const hay = id =>/.test(editor), 'la barra dejó de mirar qué grupos existen')
+  // Sin foto de fondo no hay grupo "foto" y sin carrusel no hay "placas": una
+  // herramienta que abre una hoja vacía es peor que no tenerla.
+  assert.ok(/HERRAMIENTAS\.filter/.test(editor), 'la barra muestra herramientas fijas')
+})
+
+// El editor de escritorio es una grilla con gap y align-items:start, y las dos
+// se heredan. Sin volver a stretch la vista previa se encoge al ancho de su
+// contenido; sin anular el gap, la barra de herramientas cae abajo del borde.
+test('el editor del teléfono anula lo que hereda del de escritorio', () => {
+  const css = readFileSync(join(RAIZ, 'web/css/app.css'), 'utf8')
+  const i = css.indexOf('.editor--movil {')
+  const bloque = css.slice(i, i + 1400)
+  assert.ok(/align-items:\s*stretch/.test(bloque), 'hereda align-items:start y la placa sale del tamaño de una miniatura')
+  assert.ok(/gap:\s*0/.test(bloque), 'hereda el gap y la barra queda fuera de la pantalla')
+  assert.ok(/position:\s*fixed/.test(bloque), 'sin fijar al viewport la barra queda al final de una página que scrollea')
+})
+
 // El resumen va último: si se agrega un bloque abajo, tiene que contarlo.
 console.log(`\n${ok} pruebas OK${process.exitCode ? ' — con fallas' : ''}\n`)
