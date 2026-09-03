@@ -22,6 +22,7 @@ import { generarLogo } from './brand/logo.mjs'
 import { buscarIsotipos } from './brand/repositorio.mjs'
 import { sugerirIdentidad } from './brand/identidad.mjs'
 import { generarPlan, planToSpec, placaToSlide } from './content/plan.mjs'
+import { CAMPOS_DE_PLANTILLA } from './content/plantillas.mjs'
 import { generarTemas, temasLocales } from './content/temas.mjs'
 import { renderSpec, htmlFor } from './render/engine.mjs'
 import { buscarImagenes, guardarDelBanco, guardarSubida, estadoBanco } from './media/imagenes.mjs'
@@ -369,6 +370,62 @@ export function subirLogo(cuentaId, datos) {
   return { logo: norm, marca: cuenta.marca, estado: estadoCompleto(cuenta) }
 }
 
+/**
+ * Qué mostrar en los campos que todavía están vacíos.
+ *
+ * Solo para la vista previa: al render de verdad no llegan, así que una placa
+ * generada nunca sale con esto impreso. Sirve para que se vea la forma de la
+ * placa mientras se escribe —dónde cae cada cosa y cuánto ocupa— en vez de un
+ * rectángulo casi vacío del que no se deduce nada.
+ *
+ * Están redactados como consignas y no como contenido creíble, y es a propósito:
+ * un ejemplo tipo "2 × 1" se lee como una promoción que el negocio estaría
+ * haciendo, y si alguien no lo reemplaza termina publicando algo falso sobre sí
+ * mismo. "Tu oferta acá" no puede confundirse con la placa terminada.
+ */
+function ejemplosDeCampos(placa) {
+  const vacio = v => v == null || v === '' || (Array.isArray(v) && !v.length)
+  const plantilla = placa?.plantilla
+
+  const titulo = {
+    frase: 'Tu frase principal',
+    cierre: '¿Hablamos?',
+    pasos: 'Los pasos, uno por uno',
+    oferta: 'Tu producto o servicio',
+    manifiesto: 'Lo que defiende tu negocio',
+  }[plantilla] || 'Escribí tu título'
+
+  const cuerpo = {
+    frase: 'La línea que acompaña a la frase.',
+    cierre: 'Cómo te contactan: teléfono, dirección u horario.',
+    oferta: 'Qué incluye y hasta cuándo vale.',
+  }[plantilla] || 'Acá va el texto que acompaña al título. Dos o tres líneas alcanzan.'
+
+  const ejemplos = {
+    kicker: 'Tu volanta',
+    titulo,
+    cuerpo,
+    linea2: 'Tu segunda línea',
+    fuente: 'De dónde sacaste el dato',
+    emoji: 'Tu oferta acá',
+    chips: ['Tu dato', 'Otro dato'],
+    pasos: [
+      { numero: '1', etiqueta: 'Paso 1', titulo: 'Qué se hace primero', detalle: 'Una línea de explicación' },
+      { numero: '2', etiqueta: 'Paso 2', titulo: 'Qué sigue', detalle: 'Una línea de explicación' },
+      { numero: '3', etiqueta: 'Paso 3', titulo: 'Cómo termina', detalle: 'Una línea de explicación' },
+    ],
+  }
+
+  // Solo los campos que esta plantilla dibuja: rellenar los demás no cambiaría
+  // nada en pantalla y ensuciaría el spec.
+  const declarados = CAMPOS_DE_PLANTILLA[plantilla] || CAMPOS_DE_PLANTILLA.texto
+  const relleno = {}
+  for (const campo of declarados) {
+    if (ejemplos[campo] !== undefined && vacio(placa?.[campo])) relleno[campo] = ejemplos[campo]
+  }
+  return relleno
+}
+
 export function previsualizar(cuentaId, { canal = 'feed', placa, marcaTemporal = null }) {
   const cuenta = leerCuenta(cuentaId)
   let marca = cuenta.marca
@@ -393,21 +450,7 @@ export function previsualizar(cuentaId, { canal = 'feed', placa, marcaTemporal =
   }
 
   const formato = canal === 'historia' ? 'story' : canal === 'cuadrado' ? 'cuadrado' : 'feed'
-  const placaPreview = {
-    ...placa,
-    titulo: (placa?.titulo != null && placa.titulo !== '') ? placa.titulo : (
-      placa?.plantilla === 'frase' ? 'Tu frase principal' :
-      placa?.plantilla === 'cierre' ? '¿Hablamos?' :
-      placa?.plantilla === 'pasos' ? 'Los pasos' :
-      placa?.plantilla === 'oferta' ? 'Tu producto o servicio' :
-      'Escribí tu título'
-    ),
-    pasos: (placa?.pasos && placa.pasos.length > 0) ? placa.pasos : [
-      { numero: '1', etiqueta: 'Paso 1', titulo: 'Primer paso', detalle: 'Explicación del paso' },
-      { numero: '2', etiqueta: 'Paso 2', titulo: 'Segundo paso', detalle: 'Explicación del paso' },
-      { numero: '3', etiqueta: 'Paso 3', titulo: 'Tercer paso', detalle: 'Explicación del paso' },
-    ],
-  }
+  const placaPreview = { ...placa, ...ejemplosDeCampos(placa) }
   const slide = placaToSlide(placaPreview, { nombre: 'preview', idx: placa?.idx || '', formato, foto: placa?.foto || null })
 
   if (slide.style === 'foto' && !slide.photo) {

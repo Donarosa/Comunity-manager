@@ -1063,5 +1063,30 @@ test('la flecha de volver del navegador retrocede dentro de la app', () => {
   assert.ok(/alPaso\?\.\(/.test(editor), 'el editor no informa en qué paso está: la flecha se saltea sus pantallas')
 })
 
+// La vista previa rellena los campos vacíos para que se vea la forma de la
+// placa mientras se escribe. Eso no puede filtrarse al render: una placa
+// generada con "Tu volanta" impreso se publica así.
+test('los ejemplos de la vista previa no llegan al render', () => {
+  const fuente = readFileSync(join(RAIZ, 'core/service.mjs'), 'utf8')
+  const llamadas = [...fuente.matchAll(/ejemplosDeCampos\(/g)]
+  // Una es la declaración de la función, la otra su único uso.
+  assert.equal(llamadas.length, 2, 'ejemplosDeCampos se usa en más de un lugar')
+  const usada = fuente.slice(0, llamadas[1].index)
+  assert.ok(usada.lastIndexOf('export function previsualizar') > usada.lastIndexOf('export async function renderizarPieza'),
+    'los ejemplos se están aplicando fuera de la vista previa')
+})
+
+// Y que sigan siendo consignas. Un ejemplo que parece contenido real —"2 × 1",
+// "20% OFF"— se publica tal cual si nadie lo reemplaza, y el negocio termina
+// anunciando algo que no está haciendo.
+test('los ejemplos se leen como consigna, no como contenido', () => {
+  const fuente = readFileSync(join(RAIZ, 'core/service.mjs'), 'utf8')
+  const i = fuente.indexOf('function ejemplosDeCampos')
+  const bloque = fuente.slice(i, fuente.indexOf('export function previsualizar'))
+  // Ni cifras ni porcentajes: son los que se leen como una promoción vigente.
+  assert.ok(!/['\`][^'\`]*\d+\s*%/.test(bloque), 'hay un ejemplo con un porcentaje')
+  assert.ok(!/['\`]\s*\d+\s*[x×]\s*\d+\s*['\`]/i.test(bloque), 'hay un ejemplo tipo 2 × 1')
+})
+
 // El resumen va último: si se agrega un bloque abajo, tiene que contarlo.
 console.log(`\n${ok} pruebas OK${process.exitCode ? ' — con fallas' : ''}\n`)
