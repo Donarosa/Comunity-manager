@@ -134,6 +134,7 @@ button { font: inherit; background: none; border: 0; padding: 0; cursor: pointer
   background: var(--color-paper-2);
   border: 1px solid var(--color-rule);
   border-radius: var(--r-pill);
+  white-space: nowrap;
 }
 
 .eyebrow__dot {
@@ -2416,7 +2417,7 @@ input:focus, select:focus, textarea:focus {
 
 .dash-metricas-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   gap: 14px;
   margin-bottom: 1.15rem;
 }
@@ -2451,7 +2452,14 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
+}
+
+.dash-metrica-topbar .rotulo {
+  margin: 0;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .dash-metrica-cifra-fila {
