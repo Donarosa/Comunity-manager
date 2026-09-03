@@ -685,7 +685,7 @@ nav a.apunte:hover, .nav__links a:hover {
 
 /* ═══ WIZARD & DASHBOARD UI ═══ */
 #app-cuerpo {
-  padding: 1.25rem 0 5rem;
+  padding: 1.25rem var(--page-gutter) 2.5rem;
   max-width: 58rem;
   margin: 0 auto;
 }
@@ -2361,7 +2361,7 @@ input:focus, select:focus, textarea:focus {
 .dashboard-usuario, .dashboard-galeria {
   max-width: var(--page-max);
   margin: 0 auto;
-  padding: 0 0 3.5rem;
+  padding: 0 0 1rem;
 }
 
 .dashboard-galeria {
@@ -3903,9 +3903,15 @@ body { overflow-x: hidden; }
 
 /* El dock tapa una franja del pie: la pantalla que lo muestra termina con aire
    suficiente para que la última tarjeta no quede debajo de la píldora. */
-#app-cuerpo:has(.dock-acciones) { padding-bottom: calc(6rem + 76px); }
+#app-cuerpo:has(.dock-acciones) { padding-bottom: calc(1.5rem + 68px); }
 
 @media (max-width: 620px) {
+  #app-cuerpo {
+    padding: 1rem 1rem 2rem;
+  }
+  #app-cuerpo:has(.dock-acciones) {
+    padding-bottom: calc(1rem + 68px);
+  }
   .dock-acciones {
     left: 12px;
     right: 12px;
