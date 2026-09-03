@@ -407,7 +407,11 @@ function ejemplosDeCampos(placa) {
     cuerpo,
     linea2: 'Tu segunda línea',
     fuente: 'De dónde sacaste el dato',
-    emoji: 'Tu oferta acá',
+    // El campo `emoji` alimenta la cifra grande de la promo, y es el único donde
+    // un ejemplo no puede ir: cualquier cosa que se dibuje ahí a 64px se lee
+    // como la oferta vigente. Ni siquiera "Tu oferta acá" servía: aparecía en
+    // el lugar más visible de la placa y no había campo evidente para
+    // cambiarla. Queda sin ejemplo hasta que se decida qué es este campo.
     chips: ['Tu dato', 'Otro dato'],
     pasos: [
       { numero: '1', etiqueta: marcarEjemplo('Paso 1'), titulo: marcarEjemplo('Qué se hace primero') },
