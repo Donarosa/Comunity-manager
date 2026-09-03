@@ -313,19 +313,13 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
 
     /* — cabecera — */
     form.append(
-      el('div', { style: 'display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--color-rule);' },
-        el('div', {},
-          // En un carrusel se dice qué papel cumple la placa: la primera y la
-          // última se dibujan distinto y conviene que se sepa antes de escribir.
-          el('span.rotulo', {}, esCarrusel
-            ? `Carrusel · placa ${st.activa + 1} de ${st.placas.length}${PAPEL[plantillaSegunPosicion(p.plantilla, st.activa, st.placas.length)] || ''}`
-            : F.rotulo),
-          el('h2', { style: 'margin:2px 0 0;' }, 'Escribí tu placa')
-        ),
-        el('div', { style: 'display:flex;gap:8px;align-items:center;' },
-          el('button.btn.btn--outline.btn--mint.chico', { onclick: () => { st.canal = null; st.tipo = null; st.placas = []; st.activa = 0; pintar() } }, '📐 Cambiar formato'),
-          alVolver ? el('button.btn.fantasma.chico', { onclick: alVolver }, '← Volver al Dashboard') : null
-        )
+      el('div', { style: 'margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--color-rule);' },
+        // En un carrusel se dice qué papel cumple la placa: la primera y la
+        // última se dibujan distinto y conviene que se sepa antes de escribir.
+        el('span.rotulo', {}, esCarrusel
+          ? `Carrusel · placa ${st.activa + 1} de ${st.placas.length}${PAPEL[plantillaSegunPosicion(p.plantilla, st.activa, st.placas.length)] || ''}`
+          : F.rotulo),
+        el('h2', { style: 'margin:2px 0 0;' }, 'Escribí tu placa')
       )
     )
 

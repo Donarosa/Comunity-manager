@@ -72,7 +72,7 @@ function actualizarNavUsuario(u) {
         if (cuenta) abrirHome()
       }
     }
-    btnEntrar.textContent = pantallaActual === 'dashboard' ? 'Inicio' : 'Dashboard'
+    btnEntrar.textContent = (pantallaActual === 'editor' || pantallaActual === 'wizard' || pantallaActual === 'plan') ? 'Inicio' : 'Generar contenido'
   } else {
     if (btnLoginNav) btnLoginNav.classList.remove('oculto')
     if (usuarioNav) usuarioNav.classList.add('oculto')
@@ -138,7 +138,7 @@ function abrirDashboard(tabInicial = 'pubs') {
 async function abrirEditor() {
   if (!cuenta) return entrar()
   pantallaActual = 'editor'
-  btnEntrar.textContent = 'Dashboard'
+  btnEntrar.textContent = 'Inicio'
   await asegurarCatalogo()
   mostrarApp(cont => iniciarEditor({
     contenedor: cont,
@@ -152,7 +152,7 @@ async function abrirEditor() {
 async function abrirWizard() {
   if (!cuenta) return entrar()
   pantallaActual = 'wizard'
-  btnEntrar.textContent = 'Dashboard'
+  btnEntrar.textContent = 'Inicio'
   await asegurarCatalogo()
   mostrarApp(cont => iniciarWizard({
     contenedor: cont,
@@ -192,6 +192,8 @@ const FORMAS = [
 
 function vistaSugerir() {
   if (!cuenta) return entrar()
+  pantallaActual = 'plan'
+  btnEntrar.textContent = 'Inicio'
   const st = { tema: '', forma: 'carrusel', posteos: 3, historias: 2 }
 
   mostrarApp(cont => {
@@ -582,10 +584,10 @@ async function arrancar() {
 
   btnEntrar.addEventListener('click', () => {
     if (!app.classList.contains('oculto')) {
-      if (pantallaActual === 'dashboard') {
+      if (pantallaActual === 'editor' || pantallaActual === 'wizard' || pantallaActual === 'plan') {
         abrirHome()
       } else {
-        abrirDashboard()
+        abrirEditor()
       }
       return
     }

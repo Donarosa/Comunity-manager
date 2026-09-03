@@ -688,6 +688,9 @@ nav a.apunte:hover, .nav__links a:hover {
   max-width: 58rem;
   margin: 0 auto;
 }
+#app-cuerpo:has(.editor) {
+  max-width: 1240px;
+}
 
 .card, .panel {
   background: #fff;
@@ -3398,7 +3401,7 @@ input:focus, select:focus, textarea:focus {
 
 .editor-vista {
   position: sticky;
-  top: 90px;
+  top: calc(var(--bar-h, 70px) + 20px);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -3408,6 +3411,8 @@ input:focus, select:focus, textarea:focus {
   border-radius: 24px;
   padding: 24px;
   box-shadow: var(--shadow-card);
+  max-height: calc(100vh - var(--bar-h, 70px) - 36px);
+  overflow-y: auto;
 }
 
 /* El lienzo es una caja de proporción fija —el JS le pone el aspect-ratio del
@@ -3841,7 +3846,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* Ninguna pantalla scrollea de costado: lo ancho scrollea dentro de su caja. */
-body { overflow-x: hidden; }
+body { overflow-x: clip; }
 .orden-scroll, .tabla-scroll { overflow-x: auto; }
 
 /* ══════════════════════════════════════════════════════════
