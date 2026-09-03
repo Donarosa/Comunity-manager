@@ -64,7 +64,7 @@ function actualizarNavUsuario(u) {
         if (cuenta) abrirHome()
       }
     }
-    btnEntrar.textContent = pantallaActual === 'dashboard' ? 'Inicio' : 'Dashboard'
+    btnEntrar.textContent = pantallaActual === 'dashboard' ? 'Inicio' : 'Ver mis placas'
   } else {
     if (btnLoginNav) btnLoginNav.classList.remove('oculto')
     if (usuarioNav) usuarioNav.classList.add('oculto')
@@ -89,7 +89,7 @@ async function asegurarCatalogo() {
 function abrirHome() {
   if (!cuenta) return entrar()
   pantallaActual = 'home'
-  btnEntrar.textContent = 'Dashboard'
+  btnEntrar.textContent = 'Ver mis placas'
   mostrarApp(cont => iniciarHome({
     contenedor: cont,
     cuentaId: cuenta.id,
@@ -130,7 +130,7 @@ function abrirDashboard(tabInicial = 'pubs') {
 async function abrirEditor() {
   if (!cuenta) return entrar()
   pantallaActual = 'editor'
-  btnEntrar.textContent = 'Dashboard'
+  btnEntrar.textContent = 'Ver mis placas'
   await asegurarCatalogo()
   mostrarApp(cont => iniciarEditor({
     contenedor: cont,
@@ -144,7 +144,7 @@ async function abrirEditor() {
 async function abrirWizard() {
   if (!cuenta) return entrar()
   pantallaActual = 'wizard'
-  btnEntrar.textContent = 'Dashboard'
+  btnEntrar.textContent = 'Ver mis placas'
   await asegurarCatalogo()
   mostrarApp(cont => iniciarWizard({
     contenedor: cont,

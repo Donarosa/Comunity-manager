@@ -109,8 +109,8 @@ function renderizarHome({
     el('span.apunte.chico', {}, `${placasMes} placas generadas este mes`),
     el('button.btn.chico.btn--outline', {
       style: 'margin-top:8px;width:100%;font-size:0.82rem;padding:6px 10px;text-align:center;justify-content:center;',
-      onclick: () => onAbrirDashboard('pubs'),
-    }, 'Ver mis placas en Dashboard →')
+      onclick: onAbrirEditor,
+    }, '+ Generar contenido')
   )
 
   // Tarjeta Ahorro acumulado DESTACADA a 10 USD/placa
@@ -136,14 +136,87 @@ function renderizarHome({
 
   /* ── 3. Panel de Identidad de Marca ── */
   const panelMarca = el('div.dash-marca-box', {})
-  if (marca) {
-    const C = marca.colors?.flat
-    const paleta = C ? el('div.dash-paleta-preview', {},
-      colorBadge('Fondo claro', C.bg),
-      colorBadge('Fondo oscuro', C.darkBg),
-      colorBadge('Acento', C.accent)
-    ) : null
+  if (marca && marca.colors?.flat) {
+    const C = marca.colors.flat
 
+    // La tarjeta toma la identidad y colores de la marca
+    panelMarca.style.backgroundColor = C.bg || '#ffffff'
+    panelMarca.style.borderColor = C.accent ? `${C.accent}40` : 'var(--color-rule)'
+    panelMarca.style.borderLeft = C.accent ? `6px solid ${C.accent}` : '1.5px solid var(--color-rule)'
+    panelMarca.style.boxShadow = C.accent ? `0 4px 20px ${C.accent}15` : 'var(--shadow-card)'
+
+    const rotuloMarca = el('span.rotulo', {
+      style: C.accent ? `background: ${C.accent}18; color: ${C.accentDeep || C.accent}; border: 1px solid ${C.accent}35;` : ''
+    }, 'Identidad de Marca')
+
+    // Título con tipografía y color de la marca
+    const nombreMarcaEl = el('h3', {
+      style: `margin: 6px 0 3px; font-size: 1.35rem; font-weight: 800; color: ${C.darkBg || C.ink || 'inherit'};`
+    })
+
+    if (marca.wordmark?.base && marca.wordmark?.accent) {
+      nombreMarcaEl.append(
+        el('span', {}, marca.wordmark.base + ' '),
+        el('span', { style: `color: ${C.accent};` }, marca.wordmark.accent)
+      )
+    } else {
+      nombreMarcaEl.textContent = marca.nombre
+    }
+
+    const infoDetalle = el('p.apunte.chico', {
+      style: `color: ${C.muted || 'var(--color-muted)'}; margin: 0;`
+    }, `${marca.handle || '@tu_marca'} · Tipografía: ${marca.fonts?.preset || 'Seriedad'}`)
+
+    const btnEditar = el('button.btn.fantasma.chico', {
+      style: C.accent ? `color: ${C.accentDeep || C.accent}; border-color: ${C.accent}55; background: #ffffff; font-weight: 600;` : '',
+      onclick: onAbrirWizard
+    }, 'Editar marca')
+
+    // Isotipo / logo preview si existe
+    let logoPreview = null
+    if (marca.logo?.inner) {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+      svg.setAttribute('viewBox', marca.logo.viewBox || '0 0 100 100')
+      svg.setAttribute('width', '36')
+      svg.setAttribute('height', '36')
+      svg.style.color = C.accent || C.darkBg || 'currentColor'
+      svg.style.stroke = 'currentColor'
+      svg.style.fill = 'none'
+      svg.style.strokeWidth = String(marca.logo.strokeWidth || 6)
+      svg.style.strokeLinecap = 'round'
+      svg.style.strokeLinejoin = 'round'
+      svg.innerHTML = marca.logo.inner
+
+      logoPreview = el('div.dash-marca-logo-thumb', {
+        style: `width:44px;height:44px;border-radius:12px;background:#ffffff;border:1px solid ${C.accent}30;display:flex;align-items:center;justify-content:center;padding:4px;flex-shrink:0;box-shadow:0 2px 8px ${C.accent}12;`
+      }, svg)
+    }
+
+    const infoIzquierda = el('div', { style: 'display:flex;align-items:center;gap:14px;' },
+      logoPreview,
+      el('div', {},
+        rotuloMarca,
+        nombreMarcaEl,
+        infoDetalle
+      )
+    )
+
+    const paleta = el('div.dash-paleta-preview', {
+      style: `border-top: 1px solid ${C.hair || (C.accent + '25')};`
+    },
+      colorBadge('Fondo claro', C.bg, `background:#ffffff; border-color:${C.accent}30; color:${C.ink || 'inherit'};`),
+      colorBadge('Fondo oscuro', C.darkBg, `background:#ffffff; border-color:${C.accent}30; color:${C.ink || 'inherit'};`),
+      colorBadge('Acento', C.accent, `background:#ffffff; border-color:${C.accent}30; color:${C.ink || 'inherit'};`)
+    )
+
+    panelMarca.append(
+      el('div.dash-marca-cabecera', {},
+        infoIzquierda,
+        btnEditar
+      ),
+      paleta
+    )
+  } else if (marca) {
     panelMarca.append(
       el('div.dash-marca-cabecera', {},
         el('div', {},
@@ -152,8 +225,7 @@ function renderizarHome({
           el('p.apunte.chico', {}, `${marca.handle || '@tu_marca'} · Tipografía: ${marca.fonts?.preset || 'Seriedad'}`)
         ),
         el('button.btn.fantasma.chico', { onclick: onAbrirWizard }, 'Editar marca')
-      ),
-      paleta
+      )
     )
   } else {
     panelMarca.append(
@@ -177,7 +249,7 @@ function renderizarHome({
     ),
     el('button.btn.chico.btn--mint.dash-cta-btn', {
       onclick: () => onAbrirDashboard('pubs'),
-    }, '🖼 Ir a Dashboard →')
+    }, '🖼 Ver mis placas →')
   )
 
   /* ── 5. Acciones directas (Dock flotante sin botón de dashboard duplicado) ── */
@@ -459,8 +531,8 @@ function tarjetaCuota(estado) {
   )
 }
 
-function colorBadge(etiqueta, hex) {
-  return el('div.dash-color-item', {},
+function colorBadge(etiqueta, hex, estiloExtra = '') {
+  return el('div.dash-color-item', { style: estiloExtra },
     el('span.color-dot', { style: `background-color:${hex};` }),
     el('span.apunte.chico', {}, `${etiqueta}: ${hex}`)
   )
