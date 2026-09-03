@@ -92,14 +92,7 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
    * antes la flecha te sacaba del sitio desde cualquiera de ellos. */
   const pasoActual = () => {
     if (!st.canal) return ['formato', alVolver]
-    if (st.canal === 'feed' && !st.tipo) return ['tipo', () => { st.canal = null; pintar() }]
-    return ['editar', () => {
-      // En feed se vuelve a elegir post o carrusel; en historia y cuadrada ese
-      // paso no existe, así que se vuelve a la elección de formato.
-      if (st.canal === 'feed') st.tipo = null
-      else st.canal = null
-      pintar()
-    }]
+    return ['editar', () => { st.canal = null; st.tipo = null; pintar() }]
   }
 
   /* Volver, una sola vez y por un solo camino.
@@ -118,7 +111,7 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
 
   const pintar = () => {
     vaciar(contenedor)
-    if (!st.canal || (st.canal === 'feed' && !st.tipo)) elegirFormato()
+    if (!st.canal) elegirFormato()
     else editar()
     alPaso?.(...pasoActual())
     window.scrollTo({ top: 0, behavior: 'instant' })
@@ -138,38 +131,40 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
         el('span', { style: 'flex:1' }, detalle),
         el('span.rotulo', { style: 'margin-top:4px' }, medidas))
 
-    if (!st.canal) {
-      cont.append(
-        el('span.rotulo', {}, 'Nueva publicación'),
-        el('h2', { style: 'margin:6px 0 8px' }, '¿Dónde va?'),
-        el('p.intro', {}, 'La diferencia es el tamaño del lienzo, y cambia cómo se arma la placa: una historia se ve a pantalla completa y con la mano tapando la parte de abajo.'),
-        el('div.opciones', {},
-          opcion('Feed', 'El posteo que queda en tu perfil.', '1080×1350',
-            () => { st.canal = 'feed'; pintar() }),
-          opcion('Historia', 'Se ve 24 horas, a pantalla completa. También sirve de portada de reel.', '1080×1920',
-            () => { st.canal = 'historia'; st.placas = [vacia('texto')]; pintar() }),
-          opcion('Cuadrada', 'La clásica. Entra bien en el perfil y sirve para reutilizar en otras redes.', '1080×1080',
-            () => { st.canal = 'cuadrado'; st.placas = [vacia('texto')]; pintar() })
-        ),
-        el('div.aviso', { style: 'margin-top:24px' },
-          'Instagram te deja recortar el formato justo antes de publicar. Si bajás una placa de feed y la querés como historia, te la va a recortar por los costados y podés perder texto: conviene armarla en el formato en el que la vas a subir.')
-      )
-      contenedor.append(cont)
-      return
+    /* Las cuatro juntas.
+     *
+     * Eran dos pantallas: primero dónde va y después, solo para feed, si es una
+     * placa o varias. Esa segunda existía para un caso de tres, así que en
+     * historia y en cuadrada era un paso que no preguntaba nada; y para quien
+     * elegía feed eran dos clics para algo que entra en una lista de cuatro.
+     *
+     * El aviso sobre el recorte de Instagram bajaba a la primera pantalla y se
+     * conserva acá arriba: se lee igual y ya no cuesta un paso. */
+    const arrancar = (canal, tipo, placas) => () => {
+      st.canal = canal
+      st.tipo = tipo
+      st.placas = placas
+      pintar()
     }
 
     cont.append(
-      el('span.rotulo', {}, 'Publicación de feed'),
-      el('h2', { style: 'margin:6px 0 8px' }, '¿Una placa o varias?'),
-      el('p.intro', {}, 'Un carrusel se desliza: sirve cuando tenés algo que contar en partes. Un posteo suelto es una idea sola.'),
+      el('span.rotulo', {}, 'Nueva publicación'),
+      el('h2', { style: 'margin:6px 0 8px' }, '¿Qué vas a armar?'),
+      el('p.intro', {}, 'Cada formato cambia el tamaño del lienzo y cómo se acomoda el texto. Instagram te deja recortar antes de publicar, pero recorta por los costados y podés perder texto: conviene armarla en el formato en el que la vas a subir.'),
       el('div.opciones', {},
-        opcion('Post', 'Una sola placa.', '1 imagen',
-          () => { st.tipo = 'post'; st.placas = [vacia('texto')]; pintar() }),
-        opcion('Carrusel', 'Empieza con una portada y termina pidiendo la acción.', 'hasta 6',
-          // Las tres arrancan iguales: la primera se dibuja como portada y la
-          // última como cierre por estar donde están, no por elección.
-          () => { st.tipo = 'carrusel'; st.placas = [vacia('texto'), vacia('texto'), vacia('texto')]; pintar() })
+        opcion('Post de feed', 'Una placa sola, la que queda en tu perfil.', '1080×1350',
+          arrancar('feed', 'post', [vacia('texto')])),
+        // Las tres arrancan iguales: la primera se dibuja como portada y la
+        // última como cierre por estar donde están, no por elección.
+        opcion('Carrusel', 'Varias que se deslizan: empieza con una portada y termina pidiendo la acción.', 'hasta 6',
+          arrancar('feed', 'carrusel', [vacia('texto'), vacia('texto'), vacia('texto')])),
+        opcion('Historia', 'Se ve 24 horas, a pantalla completa. También sirve de portada de reel.', '1080×1920',
+          arrancar('historia', null, [vacia('texto')])),
+        opcion('Cuadrada', 'La clásica. Entra bien en el perfil y sirve para reutilizar en otras redes.', '1080×1080',
+          arrancar('cuadrado', null, [vacia('texto')]))
       ),
+      // De la primera pantalla se vuelve al inicio. Antes no había salida a la
+      // vista acá: se dependía de la cabecera.
       el('div.acciones-paso', {}, el('button.btn.texto', { onclick: irAtras }, '← Volver'))
     )
     contenedor.append(cont)

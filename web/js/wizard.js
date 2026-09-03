@@ -296,7 +296,7 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, marca = null, mo
       ),
       el('div.edicion-card__body', {},
         el('b', { style: 'display:block;text-transform:capitalize;margin-bottom:2px;' }, `Preset ${st.tipografia}`),
-        el('span', {}, 'Fuentes para títulos principales, volantas y frases de impacto.')
+        el('span', {}, 'Fuentes para títulos principales, etiquetas y frases de impacto.')
       ),
       el('div.edicion-card__footer', {},
         el('span', {}, 'Cambiar tipografía ➔')
@@ -675,7 +675,7 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, marca = null, mo
       if (t.id === st.tipografia) muestra.classList.add('elegida')
       grupo.append(muestra)
     }
-    bloque(cont, 'Tipografía', 'Determina cómo se ven los titulares, frases y volantas en cada placa.', grupo)
+    bloque(cont, 'Tipografía', 'Determina cómo se ven los titulares, frases y etiquetas en cada placa.', grupo)
   }
 
   function seccionIdentidadYFirma(cont) {

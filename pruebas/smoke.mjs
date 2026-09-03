@@ -1088,5 +1088,29 @@ test('los ejemplos se leen como consigna, no como contenido', () => {
   assert.ok(!/['\`]\s*\d+\s*[x×]\s*\d+\s*['\`]/i.test(bloque), 'hay un ejemplo tipo 2 × 1')
 })
 
+// Los ejemplos se marcan para que se distingan de lo escrito. La marca es un
+// span dentro del valor —el motor no tiene estado de "provisorio", es el mismo
+// que produce el PNG— y por eso mismo no puede escaparse al render.
+test('los ejemplos de la vista previa van marcados', () => {
+  const fuente = readFileSync(join(RAIZ, 'core/service.mjs'), 'utf8')
+  assert.ok(/const marcarEjemplo/.test(fuente), 'los ejemplos ya no se marcan')
+  assert.ok(/class="ej"/.test(fuente), 'falta la clase que los atenúa')
+  // El estilo se inyecta solo en la vista previa, nunca en el motor.
+  const enMotor = readFileSync(join(RAIZ, 'core/render/engine.mjs'), 'utf8')
+  assert.ok(!/\.ej\{/.test(enMotor), 'el estilo de los ejemplos se filtró al motor')
+})
+
+// Eran dos pantallas y la segunda solo existía para feed: en historia y en
+// cuadrada era un paso que no preguntaba nada.
+test('elegir formato es una sola pantalla', () => {
+  const editor = readFileSync(join(RAIZ, 'web/js/editor.js'), 'utf8')
+  assert.ok(!/'tipo',/.test(editor), 'volvió el paso intermedio de post o carrusel')
+  const i = editor.indexOf('function elegirFormato')
+  const pantalla = editor.slice(i, i + 2600)
+  for (const opcion of ['Post de feed', 'Carrusel', 'Historia', 'Cuadrada']) {
+    assert.ok(pantalla.includes(opcion), `falta la opción ${opcion}`)
+  }
+})
+
 // El resumen va último: si se agrega un bloque abajo, tiene que contarlo.
 console.log(`\n${ok} pruebas OK${process.exitCode ? ' — con fallas' : ''}\n`)

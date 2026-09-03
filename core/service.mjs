@@ -402,7 +402,7 @@ function ejemplosDeCampos(placa) {
   }[plantilla] || 'Acá va el texto que acompaña al título. Dos o tres líneas alcanzan.'
 
   const ejemplos = {
-    kicker: 'Tu volanta',
+    kicker: 'Tu etiqueta',
     titulo,
     cuerpo,
     linea2: 'Tu segunda línea',
@@ -410,9 +410,9 @@ function ejemplosDeCampos(placa) {
     emoji: 'Tu oferta acá',
     chips: ['Tu dato', 'Otro dato'],
     pasos: [
-      { numero: '1', etiqueta: 'Paso 1', titulo: 'Qué se hace primero' },
-      { numero: '2', etiqueta: 'Paso 2', titulo: 'Qué sigue' },
-      { numero: '3', etiqueta: 'Paso 3', titulo: 'Cómo termina' },
+      { numero: '1', etiqueta: marcarEjemplo('Paso 1'), titulo: marcarEjemplo('Qué se hace primero') },
+      { numero: '2', etiqueta: marcarEjemplo('Paso 2'), titulo: marcarEjemplo('Qué sigue') },
+      { numero: '3', etiqueta: marcarEjemplo('Paso 3'), titulo: marcarEjemplo('Cómo termina') },
     ],
   }
 
@@ -433,17 +433,31 @@ function ejemplosDeCampos(placa) {
         return {
           ...paso,
           numero: paso.numero || String(i + 1),
-          etiqueta: vacio(paso.etiqueta) ? ej.etiqueta : paso.etiqueta,
-          titulo: vacio(paso.titulo) ? ej.titulo : paso.titulo,
+          etiqueta: vacio(paso.etiqueta) ? marcarEjemplo(ej.etiqueta) : paso.etiqueta,
+          titulo: vacio(paso.titulo) ? marcarEjemplo(ej.titulo) : paso.titulo,
         }
       })
       continue
     }
 
-    if (vacio(placa?.[campo])) relleno[campo] = ejemplos[campo]
+    if (vacio(placa?.[campo])) {
+      relleno[campo] = Array.isArray(ejemplos[campo])
+        ? ejemplos[campo].map(marcarEjemplo)
+        : marcarEjemplo(ejemplos[campo])
+    }
   }
   return relleno
 }
+
+/**
+ * Envolver un ejemplo para que se vea que todavía no está escrito.
+ *
+ * Se marca el valor y no el elemento porque el motor no tiene —ni tiene por qué
+ * tener— un estado de "esto es provisorio": es el mismo render que produce el
+ * PNG. Los templates ya insertan HTML en estos campos (los resaltes van así),
+ * de modo que el span pasa sin tocar ninguna plantilla.
+ */
+const marcarEjemplo = v => typeof v === 'string' ? `<span class="ej">${v}</span>` : v
 
 export function previsualizar(cuentaId, { canal = 'feed', placa, marcaTemporal = null }) {
   const cuenta = leerCuenta(cuentaId)
@@ -476,7 +490,22 @@ export function previsualizar(cuentaId, { canal = 'feed', placa, marcaTemporal =
     slide.photoData = lienzoVacio(marca.colors.foto.bg)
   }
 
-  return { html: htmlFor(slide, marca, formato), formato }
+  /* Lo que todavía no se escribió se ve atenuado y con punteado.
+   *
+   * Va acá y no en el motor: el motor es el mismo que produce el PNG y no puede
+   * saber de estados provisorios. Sin esta marca la vista previa mostraba los
+   * ejemplos igual que el texto escrito, así que no se distinguía lo propio de
+   * la consigna —y peor con los campos que están detrás de un "+", que ni
+   * siquiera se van a imprimir si no se agregan—. */
+  // box-decoration-break: sin esto, un ejemplo que ocupa dos líneas recibe un
+  // solo contorno que envuelve las dos y cruza el espacio vacío del final de la
+  // primera. Con `clone` cada línea lleva el suyo y se lee como texto marcado.
+  const estiloEjemplos =
+    '<style>.ej{opacity:.42;outline:1.5px dashed currentColor;outline-offset:3px;' +
+    'border-radius:4px;font-style:normal;' +
+    '-webkit-box-decoration-break:clone;box-decoration-break:clone}</style>'
+
+  return { html: htmlFor(slide, marca, formato) + estiloEjemplos, formato }
 }
 
 function lienzoVacio(color) {
