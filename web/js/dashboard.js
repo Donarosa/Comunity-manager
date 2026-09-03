@@ -115,13 +115,16 @@ function renderizarHome({
 
   // Tarjeta Ahorro total DESTACADA a 10 USD/placa
   const cardAhorro = el('div.dash-metrica-card.dash-metrica-card--ahorro', {},
+    // Una sola píldora arriba. Eran dos y decían lo mismo: "US$10 / placa"
+    // arriba y la aclaración completa abajo, con "vs diseñador" en el medio.
+    // La que importa es contra qué se compara; el precio ya está en la línea
+    // de abajo.
     el('div.dash-metrica-topbar', {},
       el('span.rotulo', { style: 'color:#15803d;font-weight:700;' }, 'Ahorro total'),
-      el('span.chip-ahorro-destacado', {}, '💰 US$10 / placa')
+      el('span.chip-ahorro-destacado', {}, '✨ vs diseñador')
     ),
     el('div.dash-metrica-cifra-fila', {},
-      el('strong.dash-metrica-cifra.dash-metrica-cifra--ahorro', {}, ahorroTxt),
-      el('span.ahorro-badge-pill', {}, '✨ vs diseñador')
+      el('strong.dash-metrica-cifra.dash-metrica-cifra--ahorro', {}, ahorroTxt)
     ),
     el('span.apunte.chico.ahorro-aclaracion', {},
       valorObj?.texto?.aclaracion || 'a US$10 la placa — lo que cobra un diseñador por una placa suelta'

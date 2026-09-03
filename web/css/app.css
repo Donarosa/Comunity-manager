@@ -690,7 +690,7 @@ nav a.apunte:hover, .nav__links a:hover {
   margin: 0 auto;
 }
 #app-cuerpo:has(.editor) {
-  max-width: 1240px;
+  max-width: 1320px;
 }
 
 .card, .panel {
@@ -2517,18 +2517,6 @@ input:focus, select:focus, textarea:focus {
   line-height: 1.35;
   font-size: 0.84rem;
 }
-.ahorro-badge-pill {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #15803d;
-  background: rgba(34, 197, 94, 0.12);
-  padding: 3px 8px;
-  border-radius: 6px;
-  display: inline-block;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
 .dash-marca-box {
   background: #fff;
   border: 1.5px solid var(--color-rule);
@@ -3393,11 +3381,11 @@ input:focus, select:focus, textarea:focus {
   display: grid;
   /* La columna de la vista previa manda: es donde el usuario mira. El formulario
      se queda con lo que sobre, que le alcanza de sobra. */
-  grid-template-columns: minmax(380px, 1fr) 520px;
+  grid-template-columns: minmax(360px, 1fr) 560px;
   gap: 28px;
   align-items: start;
   padding: 24px 0 80px;
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
 }
 
@@ -3486,6 +3474,10 @@ input:focus, select:focus, textarea:focus {
 @media (prefers-reduced-motion: reduce) {
   .editor-vista .lienzo.cargando::after { animation: none; }
 }
+
+/* El rótulo aporta contexto pero no puede costar alto: el panel ya espacia con
+   su gap, y lo que sobra ahí se le resta a la placa. */
+.editor-vista > .rotulo { margin: 0; }
 
 .editor-vista .btn {
   width: 100%;
@@ -4138,6 +4130,11 @@ html.con-sesion .arranque { display: block; }
      leer el esquema. */
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
+  /* Acotada a propósito. La columna del formulario se ensanchó para que la
+     vista previa creciera, y sin este tope las tarjetas crecían con ella: un
+     esquema de referencia no necesita ser grande, y al ocupar media pantalla
+     compite con la placa, que es lo que hay que mirar. */
+  max-width: 330px;
 }
 .disp-opcion {
   display: flex;

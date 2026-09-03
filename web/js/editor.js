@@ -75,9 +75,9 @@ const PAPEL = { portada: ' · la portada', cierre: ' · la que cierra' }
 
 /** Lienzo de cada canal. Los números salen de core/render/formats.mjs. */
 const FORMATOS = {
-  feed: { w: 1080, h: 1350, rotulo: 'Post de feed (1080×1350)', maxAncho: 520 },
-  historia: { w: 1080, h: 1920, rotulo: 'Historia (1080×1920)', maxAncho: 430 },
-  cuadrado: { w: 1080, h: 1080, rotulo: 'Placa cuadrada (1080×1080)', maxAncho: 520 },
+  feed: { w: 1080, h: 1350, rotulo: 'Post de feed (1080×1350)', maxAncho: 560 },
+  historia: { w: 1080, h: 1920, rotulo: 'Historia (1080×1920)', maxAncho: 460 },
+  cuadrado: { w: 1080, h: 1080, rotulo: 'Placa cuadrada (1080×1080)', maxAncho: 560 },
 }
 
 /* ── pantalla ────────────────────────────────────────────── */
@@ -245,8 +245,8 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
     ajustarEscala()
     new ResizeObserver(ajustarEscala).observe(zona)
 
-    const errorVista = el('div', { style: 'margin-top:12px' })
-    const medidor = el('div.medidor', { style: 'margin-top:10px' })
+    const errorVista = el('div')
+    const medidor = el('div.medidor')
 
     async function refrescar() {
       lienzo.classList.add('cargando')
@@ -330,7 +330,7 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
     vista.append(
       el('span.rotulo', { style: 'display:block;margin-bottom:10px' }, 'Vista previa'),
       zona, errorVista,
-      el('div', { style: 'margin-top:16px' }, generar),
+      el('div', {}, generar),
       errorBajar, salida, medidor
     )
 
