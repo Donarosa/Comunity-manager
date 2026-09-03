@@ -5,7 +5,7 @@
 // Esta separación permite probar el sistema de inmediato en modo local,
 // y que al conectar Firebase los datos pasen a la nube automáticamente.
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, renameSync } from 'fs'
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, renameSync, unlinkSync } from 'fs'
 import { resolve, dirname, join } from 'path'
 import { fileURLToPath } from 'url'
 import { randomUUID } from 'crypto'
@@ -141,6 +141,26 @@ export function guardarCuenta(cuenta) {
   }
 
   return cuenta
+}
+
+export function eliminarCuenta(id) {
+  if (!idValido(id)) throw new Error('id de cuenta inválido')
+  asegurarDirs()
+  const rutas = [archivoCuenta(id), archivoPubs(id), archivoPlanes(id), archivoStats(id)]
+  for (const r of rutas) {
+    if (existsSync(r)) {
+      try { unlinkSync(r) } catch { /* ignore */ }
+    }
+  }
+  return true
+}
+
+export async function eliminarCuentaAsync(id) {
+  eliminarCuenta(id)
+  if (firestore.estaActivo()) {
+    await firestore.eliminarCuentaDeFirestore(id)
+  }
+  return true
 }
 
 /**

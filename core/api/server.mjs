@@ -339,6 +339,12 @@ async function despachar(req, res) {
         return json(res, resultado._code, resultado._body)
       }
 
+      // DELETE /admin/usuarios/:id
+      if (m === 'DELETE' && matchDetalle) {
+        const resultado = await admin.handleEliminarUsuario(matchDetalle[1], svc, (code, body) => ({ _code: code, _body: body }))
+        return json(res, resultado._code, resultado._body)
+      }
+
       return json(res, 404, { error: `Ruta admin no encontrada: ${m} ${url.pathname}` })
     }
 

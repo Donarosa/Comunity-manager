@@ -119,6 +119,8 @@
   .panel-btn{flex:1;padding:.65rem;border-radius:var(--radius);font-size:.88rem;font-weight:600;cursor:pointer;border:1px solid;transition:all .15s;text-align:center}
   .panel-btn.pause-btn{border-color:rgba(239,68,68,.4);color:var(--red);background:rgba(239,68,68,.08)}
   .panel-btn.resume-btn{border-color:rgba(34,197,94,.4);color:var(--green);background:rgba(34,197,94,.08)}
+  .panel-btn.delete-btn{border-color:rgba(239,68,68,.7);color:#fff;background:rgba(239,68,68,.85)}
+  .panel-btn.delete-btn:hover{background:var(--red)}
   .panel-btn:hover{opacity:.8}
   .panel-btn:disabled{opacity:.4;cursor:not-allowed}
   .pubs-list{display:flex;flex-direction:column;gap:.5rem}
@@ -463,9 +465,29 @@ async function openPanel(id) {
 }
 
 function renderPanelActions(id, estado) {
-  document.getElementById('panel-actions').innerHTML = estado === 'activa'
+  const toggleBtn = estado === 'activa'
     ? `<button class="panel-btn pause-btn" onclick="panelToggle('${id}','activa')">⏸ Pausar cuenta</button>`
     : `<button class="panel-btn resume-btn" onclick="panelToggle('${id}','pausada')">▶ Reactivar cuenta</button>`
+  const deleteBtn = `<button class="panel-btn delete-btn" onclick="panelDelete('${id}')">🗑 Eliminar</button>`
+  document.getElementById('panel-actions').innerHTML = `${toggleBtn}${deleteBtn}`
+}
+
+async function panelDelete(id) {
+  const u = allUsers.find(x => x.id === id)
+  const nom = u?.nombre || u?.email || id
+  if (!confirm(`¿Estás seguro de eliminar permanentemente la cuenta "${nom}" y todos sus datos?`)) return
+  document.querySelectorAll('.panel-actions .panel-btn').forEach(b => { b.disabled = true; b.textContent = '…' })
+  try {
+    await api(`/admin/usuarios/${id}`, { method: 'DELETE' })
+    allUsers = allUsers.filter(x => x.id !== id)
+    closePanel()
+    renderTable(currentSearch())
+    loadAnalytics()
+    toast('Usuario eliminado correctamente')
+  } catch (e) {
+    toast(e.message, 'err')
+    renderPanelActions(id, u?.estado || 'activa')
+  }
 }
 
 async function panelToggle(id, estadoActual) {

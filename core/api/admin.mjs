@@ -166,6 +166,22 @@ export async function handleCambiarEstado(id, req, leerBody, svc, json) {
 }
 
 /**
+ * DELETE /admin/usuarios/:id
+ * Elimina una cuenta y sus recursos.
+ */
+export async function handleEliminarUsuario(id, svc, json) {
+  try {
+    await svc.eliminarCuentaUsuario(id)
+    return json(200, { ok: true, id, eliminado: true })
+  } catch (e) {
+    if (/no existe|no encuentro|no encontrado/i.test(e.message)) {
+      return json(404, { error: 'Usuario no encontrado' })
+    }
+    throw e
+  }
+}
+
+/**
  * GET /admin/analitica
  * Métricas globales de la plataforma.
  */

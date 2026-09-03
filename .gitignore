@@ -21,3 +21,4 @@ web/capturas/
 .DS_Store
 .wrangler/
 .vercel
+.env*.local

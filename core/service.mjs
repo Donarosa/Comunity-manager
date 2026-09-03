@@ -8,7 +8,7 @@ import { readFileSync } from 'fs'
 import {
   crearCuenta, leerCuenta, leerCuentaAsync, guardarCuenta, listarCuentas, carpetaPiezas,
   listarPublicacionesAsync, actualizarPublicacion, listarPlanesAsync, obtenerEstadisticasAsync,
-  listarCuentasAsync,
+  listarCuentasAsync, eliminarCuentaAsync,
   registrarPublicacion, listarPublicaciones, registrarPlan, listarPlanes,
   registrarEventoEstadistica, obtenerEstadisticas,
   guardarCodigoOtpLocal, verificarCodigoOtpLocal,
@@ -497,6 +497,14 @@ export function cambiarEstadoUsuario(id, nuevoEstado) {
     nombre: cuenta.nombre,
     email: cuenta.email,
   }
+}
+
+/**
+  * Elimina una cuenta de usuario por completo (para uso del admin).
+  * @param {string} id - ID de la cuenta
+  */
+export async function eliminarCuentaUsuario(id) {
+  return await eliminarCuentaAsync(id)
 }
 
 /**

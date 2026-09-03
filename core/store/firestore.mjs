@@ -232,6 +232,26 @@ export async function listarCuentasDeFirestore() {
   })
 }
 
+export async function eliminarCuentaDeFirestore(id) {
+  if (!db) return false
+  const docRef = db.collection('cuentas').doc(id)
+  try {
+    const subcols = await docRef.listCollections()
+    for (const sub of subcols) {
+      const snap = await sub.get()
+      for (const d of snap.docs) {
+        await d.ref.delete()
+      }
+    }
+    await docRef.delete()
+    return true
+  } catch (err) {
+    console.warn('[Firestore] Error eliminando cuenta:', err.message)
+    throw err
+  }
+}
+
+
 /* ── Publicaciones y Piezas ──────────────────────────────── */
 
 export async function guardarPublicacionEnFirestore(cuentaId, publicacion) {
