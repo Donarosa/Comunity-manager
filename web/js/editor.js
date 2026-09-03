@@ -102,6 +102,20 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
     }]
   }
 
+  /* Volver, una sola vez y por un solo camino.
+   *
+   * Si el botón ejecutara la acción directamente, la pantalla anterior
+   * registraría su paso de nuevo y el historial crecería en vez de achicarse:
+   * la flecha del navegador quedaría rebotando entre dos pantallas. Se delega
+   * en history.back(), que dispara el mismo camino que la flecha. Sin alPaso
+   * —el editor usado fuera de la aplicación— no hay historial que mover y se
+   * llama a la acción directa. */
+  const irAtras = () => {
+    const [, volver] = pasoActual()
+    if (alPaso) history.back()
+    else volver?.()
+  }
+
   const pintar = () => {
     vaciar(contenedor)
     if (!st.canal || (st.canal === 'feed' && !st.tipo)) elegirFormato()
@@ -156,7 +170,7 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
           // última como cierre por estar donde están, no por elección.
           () => { st.tipo = 'carrusel'; st.placas = [vacia('texto'), vacia('texto'), vacia('texto')]; pintar() })
       ),
-      el('div.acciones-paso', {}, el('button.btn.texto', { onclick: () => { st.canal = null; pintar() } }, '← Volver'))
+      el('div.acciones-paso', {}, el('button.btn.texto', { onclick: irAtras }, '← Volver'))
     )
     contenedor.append(cont)
   }
@@ -361,11 +375,20 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
     }
 
     /* — cabecera — */
+    // El botón de volver sale del mismo lugar que usa la flecha del navegador,
+    // así los dos hacen exactamente lo mismo: en feed vuelve a elegir post o
+    // carrusel, y en historia y cuadrada a elegir el formato. Esta pantalla era
+    // la única del editor sin una salida a la vista.
     form.append(
       el('div', { style: 'margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--color-rule);' },
+        el('button.btn.texto.chico', {
+          type: 'button',
+          style: 'margin-bottom:10px;padding-left:0',
+          onclick: irAtras,
+        }, '← Volver'),
         // En un carrusel se dice qué papel cumple la placa: la primera y la
         // última se dibujan distinto y conviene que se sepa antes de escribir.
-        el('span.rotulo', {}, esCarrusel
+        el('div.rotulo', {}, esCarrusel
           ? `Carrusel · placa ${st.activa + 1} de ${st.placas.length}${PAPEL[plantillaSegunPosicion(p.plantilla, st.activa, st.placas.length)] || ''}`
           : F.rotulo),
         el('h2', { style: 'margin:2px 0 0;' }, 'Escribí tu placa')
