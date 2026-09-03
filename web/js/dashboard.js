@@ -110,13 +110,13 @@ function renderizarHome({
     el('button.btn.chico.btn--outline', {
       style: 'margin-top:8px;width:100%;font-size:0.82rem;padding:6px 10px;text-align:center;justify-content:center;',
       onclick: () => onAbrirDashboard('pubs'),
-    }, 'Ver mis placas en Dashboard →')
+    }, 'Ver mis placas →')
   )
 
-  // Tarjeta Ahorro acumulado DESTACADA a 10 USD/placa
+  // Tarjeta Ahorro total DESTACADA a 10 USD/placa
   const cardAhorro = el('div.dash-metrica-card.dash-metrica-card--ahorro', {},
     el('div.dash-metrica-topbar', {},
-      el('span.rotulo', { style: 'color:#15803d;font-weight:700;' }, 'Ahorro acumulado'),
+      el('span.rotulo', { style: 'color:#15803d;font-weight:700;' }, 'Ahorro total'),
       el('span.chip-ahorro-destacado', {}, '💰 US$10 / placa')
     ),
     el('div.dash-metrica-cifra-fila', {},
@@ -136,14 +136,87 @@ function renderizarHome({
 
   /* ── 3. Panel de Identidad de Marca ── */
   const panelMarca = el('div.dash-marca-box', {})
-  if (marca) {
-    const C = marca.colors?.flat
-    const paleta = C ? el('div.dash-paleta-preview', {},
-      colorBadge('Fondo claro', C.bg),
-      colorBadge('Fondo oscuro', C.darkBg),
-      colorBadge('Acento', C.accent)
-    ) : null
+  if (marca && marca.colors?.flat) {
+    const C = marca.colors.flat
 
+    // La tarjeta toma la identidad y colores de la marca
+    panelMarca.style.backgroundColor = C.bg || '#ffffff'
+    panelMarca.style.borderColor = C.accent ? `${C.accent}40` : 'var(--color-rule)'
+    panelMarca.style.borderLeft = C.accent ? `6px solid ${C.accent}` : '1.5px solid var(--color-rule)'
+    panelMarca.style.boxShadow = C.accent ? `0 4px 20px ${C.accent}15` : 'var(--shadow-card)'
+
+    const rotuloMarca = el('span.rotulo', {
+      style: C.accent ? `background: ${C.accent}18; color: ${C.accentDeep || C.accent}; border: 1px solid ${C.accent}35;` : ''
+    }, 'Identidad de Marca')
+
+    // Título con tipografía y color de la marca
+    const nombreMarcaEl = el('h3', {
+      style: `margin: 6px 0 3px; font-size: 1.35rem; font-weight: 800; color: ${C.darkBg || C.ink || 'inherit'};`
+    })
+
+    if (marca.wordmark?.base && marca.wordmark?.accent) {
+      nombreMarcaEl.append(
+        el('span', {}, marca.wordmark.base + ' '),
+        el('span', { style: `color: ${C.accent};` }, marca.wordmark.accent)
+      )
+    } else {
+      nombreMarcaEl.textContent = marca.nombre
+    }
+
+    const infoDetalle = el('p.apunte.chico', {
+      style: `color: ${C.muted || 'var(--color-muted)'}; margin: 0;`
+    }, `${marca.handle || '@tu_marca'} · Tipografía: ${marca.fonts?.preset || 'Seriedad'}`)
+
+    const btnEditar = el('button.btn.fantasma.chico', {
+      style: C.accent ? `color: ${C.accentDeep || C.accent}; border-color: ${C.accent}55; background: #ffffff; font-weight: 600;` : '',
+      onclick: onAbrirWizard
+    }, 'Editar marca')
+
+    // Isotipo / logo preview si existe
+    let logoPreview = null
+    if (marca.logo?.inner) {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+      svg.setAttribute('viewBox', marca.logo.viewBox || '0 0 100 100')
+      svg.setAttribute('width', '36')
+      svg.setAttribute('height', '36')
+      svg.style.color = C.accent || C.darkBg || 'currentColor'
+      svg.style.stroke = 'currentColor'
+      svg.style.fill = 'none'
+      svg.style.strokeWidth = String(marca.logo.strokeWidth || 6)
+      svg.style.strokeLinecap = 'round'
+      svg.style.strokeLinejoin = 'round'
+      svg.innerHTML = marca.logo.inner
+
+      logoPreview = el('div.dash-marca-logo-thumb', {
+        style: `width:44px;height:44px;border-radius:12px;background:#ffffff;border:1px solid ${C.accent}30;display:flex;align-items:center;justify-content:center;padding:4px;flex-shrink:0;box-shadow:0 2px 8px ${C.accent}12;`
+      }, svg)
+    }
+
+    const infoIzquierda = el('div', { style: 'display:flex;align-items:center;gap:14px;' },
+      logoPreview,
+      el('div', {},
+        rotuloMarca,
+        nombreMarcaEl,
+        infoDetalle
+      )
+    )
+
+    const paleta = el('div.dash-paleta-preview', {
+      style: `border-top: 1px solid ${C.hair || (C.accent + '25')};`
+    },
+      colorBadge('Fondo claro', C.bg, `background:#ffffff; border-color:${C.accent}30; color:${C.ink || 'inherit'};`),
+      colorBadge('Fondo oscuro', C.darkBg, `background:#ffffff; border-color:${C.accent}30; color:${C.ink || 'inherit'};`),
+      colorBadge('Acento', C.accent, `background:#ffffff; border-color:${C.accent}30; color:${C.ink || 'inherit'};`)
+    )
+
+    panelMarca.append(
+      el('div.dash-marca-cabecera', {},
+        infoIzquierda,
+        btnEditar
+      ),
+      paleta
+    )
+  } else if (marca) {
     panelMarca.append(
       el('div.dash-marca-cabecera', {},
         el('div', {},
@@ -152,8 +225,7 @@ function renderizarHome({
           el('p.apunte.chico', {}, `${marca.handle || '@tu_marca'} · Tipografía: ${marca.fonts?.preset || 'Seriedad'}`)
         ),
         el('button.btn.fantasma.chico', { onclick: onAbrirWizard }, 'Editar marca')
-      ),
-      paleta
+      )
     )
   } else {
     panelMarca.append(
@@ -172,12 +244,11 @@ function renderizarHome({
   const pestaniasHome = el('div.dash-tabs-home-wrap', {},
     el('div.dash-tabs', {},
       el('button.dash-tab-btn.activo', { onclick: () => onAbrirDashboard('pubs') }, `Mis Placas (${publicaciones.length})`),
-      el('button.dash-tab-btn', { onclick: () => onAbrirDashboard('planes') }, `Planes (${planes.length})`),
       el('button.dash-tab-btn', { onclick: () => onAbrirDashboard('stats') }, `Actividad (${estadisticas.length})`)
     ),
     el('button.btn.chico.btn--mint.dash-cta-btn', {
       onclick: () => onAbrirDashboard('pubs'),
-    }, '🖼 Ir a Dashboard →')
+    }, '🖼 Ver mis placas →')
   )
 
   /* ── 5. Acciones directas (Dock flotante sin botón de dashboard duplicado) ── */
@@ -264,7 +335,7 @@ function renderizarDashboardView({
         el('h1', { style: 'font-size:1.6rem;margin:0;font-weight:800;' }, 'Dashboard de Placas')
       ),
       el('p.apunte', { style: 'margin:4px 0 0;' },
-        `${publicaciones.length} publicaciones · ${planes.length} planes · ${marca?.nombre || cuenta.nombre}`
+        `${publicaciones.length} publicaciones · ${marca?.nombre || cuenta.nombre}`
       )
     ),
     el('div.dash-acciones-top', { style: 'display:flex;gap:8px;' },
@@ -273,12 +344,11 @@ function renderizarDashboardView({
     )
   )
 
-  /* ── Pestañas: Publicaciones, Planes, Actividad ── */
+  /* ── Pestañas: Publicaciones, Actividad ── */
   const pestanias = el('div.dash-tabs', {})
   const tabPubs = el('button.dash-tab-btn' + (tabInicial === 'pubs' ? '.activo' : ''), {}, `Mis Placas (${publicaciones.length})`)
-  const tabPlanes = el('button.dash-tab-btn' + (tabInicial === 'planes' ? '.activo' : ''), {}, `Planes (${planes.length})`)
   const tabStats = el('button.dash-tab-btn' + (tabInicial === 'stats' ? '.activo' : ''), {}, `Actividad (${estadisticas.length})`)
-  pestanias.append(tabPubs, tabPlanes, tabStats)
+  pestanias.append(tabPubs, tabStats)
 
   const cuerpoTab = el('div.dash-tab-cuerpo', { style: 'margin-top:16px;' })
 
@@ -316,43 +386,6 @@ function renderizarDashboardView({
     cuerpoTab.append(grilla)
   }
 
-  function renderPlanes() {
-    vaciar(cuerpoTab)
-    if (planes.length === 0) {
-      cuerpoTab.append(
-        el('div.dash-vacio', {},
-          el('h4', {}, 'No tenés planes de contenido guardados.'),
-          el('p.apunte', { style: 'margin:6px 0 16px;' }, 'La IA puede redactar tus copys, hashtags y armar el calendario de la semana.'),
-          el('button.btn.chico', { onclick: onAbrirPlan }, 'Armar un plan semanal')
-        )
-      )
-      return
-    }
-
-    for (const pl of planes) {
-      const fechaTxt = pl.fecha ? new Date(pl.fecha).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' }) : ''
-      const card = el('div.dash-plan-card', {},
-        el('div.dash-plan-header', {},
-          el('div', {},
-            el('span.rotulo', {}, fechaTxt),
-            el('h3', { style: 'margin:2px 0 6px;' }, pl.resumen || 'Plan de contenido semanal'),
-            el('p.apunte.chico', {}, `${pl.publicaciones?.length || 0} publicaciones generadas`)
-          )
-        ),
-        el('div.dash-plan-pubs-lista', {},
-          (pl.publicaciones || []).map(pub =>
-            el('div.dash-plan-pub-item', {},
-              el('strong', {}, `${pub.dia} · ${pub.canal}`),
-              el('p', { style: 'font-size:0.9rem;margin:4px 0;' }, pub.objetivo),
-              el('p.apunte.chico', { style: 'white-space:pre-wrap;background:var(--papel);padding:8px;border-radius:2px;margin-top:6px;' }, pub.caption)
-            )
-          )
-        )
-      )
-      cuerpoTab.append(card)
-    }
-  }
-
   function renderActividad() {
     vaciar(cuerpoTab)
     if (estadisticas.length === 0) {
@@ -380,17 +413,13 @@ function renderizarDashboardView({
     activarTab(tabPubs)
     renderPublicaciones('todos')
   }
-  tabPlanes.onclick = () => {
-    activarTab(tabPlanes)
-    renderPlanes()
-  }
   tabStats.onclick = () => {
     activarTab(tabStats)
     renderActividad()
   }
 
   function activarTab(btnActivo) {
-    [tabPubs, tabPlanes, tabStats].forEach(b => b.classList.remove('activo'))
+    [tabPubs, tabStats].forEach(b => b.classList.remove('activo'))
     btnActivo.classList.add('activo')
   }
 
@@ -400,10 +429,7 @@ function renderizarDashboardView({
     cuerpoTab
   )
 
-  if (tabInicial === 'planes') {
-    activarTab(tabPlanes)
-    renderPlanes()
-  } else if (tabInicial === 'stats') {
+  if (tabInicial === 'stats') {
     activarTab(tabStats)
     renderActividad()
   } else {
@@ -459,8 +485,8 @@ function tarjetaCuota(estado) {
   )
 }
 
-function colorBadge(etiqueta, hex) {
-  return el('div.dash-color-item', {},
+function colorBadge(etiqueta, hex, estiloExtra = '') {
+  return el('div.dash-color-item', { style: estiloExtra },
     el('span.color-dot', { style: `background-color:${hex};` }),
     el('span.apunte.chico', {}, `${etiqueta}: ${hex}`)
   )

@@ -97,7 +97,7 @@ async function asegurarCatalogo() {
 function abrirHome() {
   if (!cuenta) return entrar()
   pantallaActual = 'home'
-  btnEntrar.textContent = 'Dashboard'
+  btnEntrar.textContent = 'Generar contenido'
   mostrarApp(cont => iniciarHome({
     contenedor: cont,
     cuentaId: cuenta.id,
@@ -117,7 +117,7 @@ function abrirHome() {
 function abrirDashboard(tabInicial = 'pubs') {
   if (!cuenta) return entrar()
   pantallaActual = 'dashboard'
-  btnEntrar.textContent = 'Inicio'
+  btnEntrar.textContent = 'Generar contenido'
   mostrarApp(cont => iniciarDashboard({
     contenedor: cont,
     cuentaId: cuenta.id,
