@@ -306,10 +306,13 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
               : 'Lista: tu placa en alta resolución, 2160 píxeles de ancho.'),
             // El incremento, en el momento en que se produjo. Es cuando más
             // significa: recién vio el trabajo salir.
+            // Se dice qué se ahorró, no a qué precio se hizo. "US$10 a precio de
+            // diseñador" se lee como lo que costó; el valor está en lo que no
+            // hubo que pagar.
             ref ? el('p.medidor', { style: 'margin-top:8px' },
-              `+${n} ${n > 1 ? 'placas' : 'placa'} · `,
+              'Te ahorraste ',
               el('b', {}, ref.simbolo + Math.round(n * ref.precioPorPlaca).toLocaleString('es-AR')),
-              ` ${ref.modo === 'ahorro' ? 'ahorrados' : 'a precio de diseñador'}`) : null,
+              ` de un diseñador o community manager`) : null,
             bloqueDeGuardado(r.archivos, cuenta?.marca?.nombre || cuenta?.nombre || '')
           )
         } catch (e) {
@@ -528,7 +531,7 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
         inicial: p.foto,
         onElegir: img => {
           p.foto = img
-          p.credito = img.credito || ''
+          p.credito = creditoQueCorresponde(img)
           refrescarDemorado()
         },
       })
@@ -557,7 +560,7 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
         inicial: p.foto,
         onElegir: img => {
           p.foto = img
-          p.credito = img.credito || ''
+          p.credito = creditoQueCorresponde(img)
           // Ya hay imagen: el aviso de "todavía no elegiste una" sobra. Se saca
           // por su clase, no por ser el primero: otros avisos —el de licencia,
           // sin ir más lejos— aparecen en el mismo momento.
@@ -725,6 +728,20 @@ function esquemaDeDisposicion(id, esDeLaMarca = false) {
   const caja = el(`div.disp-mini.disp-mini--${id || 'clasica'}${esDeLaMarca ? ' disp-mini--marca' : ''}`)
   for (const b of barras) caja.append(el(`i.disp-b.disp-b--${b}`))
   return caja
+}
+
+/**
+ * Qué crédito estampar en la placa.
+ *
+ * Solo el que la licencia exige: Unsplash lo pide en sus términos de API y
+ * Openverse lo hereda de las Creative Commons. Pexels y Pixabay no obligan, y
+ * una línea de texto sobre la foto que nadie pide le come diseño a la placa.
+ *
+ * La decisión va acá y no en el spec porque acá se conoce la licencia: al
+ * render la foto viaja como ruta y ese dato ya se perdió.
+ */
+function creditoQueCorresponde(img) {
+  return img?.atribucion === 'obligatoria' ? (img.credito || '') : ''
 }
 
 function bloqueDeGuardado(archivos, marca = '') {

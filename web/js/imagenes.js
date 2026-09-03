@@ -30,7 +30,10 @@ export function selectorDeImagen({ cuentaId, orientacion = '', inicial = null, o
         el('div', {},
           el('div.chico', { style: 'font-weight:600;margin-bottom:2px' }, 'Imagen elegida'),
           elegida.credito
-            ? el('div.credito', {}, elegida.credito, el('br'), 'Se agrega al pie de la placa. Dejalo: es la condición de la licencia.')
+            ? el('div.credito', {}, elegida.credito, el('br'),
+                elegida.atribucion === 'obligatoria'
+                  ? 'Va al pie de la placa. Dejalo: es la condición de la licencia de este banco.'
+                  : 'Este banco no exige crédito, así que la placa sale limpia. Si querés agradecerlo, copiá esta línea en el texto del posteo.')
             : el('div.credito', {}, 'Foto propia, sin crédito necesario.'),
           // ShareAlike es una obligación que le queda al negocio, no a nosotros:
           // callarla sería dejarle un problema legal escondido en una placa.
@@ -68,7 +71,7 @@ export function selectorDeImagen({ cuentaId, orientacion = '', inicial = null, o
           })
           const r = await api.subirImagen(cuentaId, { datos, nombre: archivo.name })
           vaciar(estado)
-          elegir({ url: r.url, ruta: r.ruta, credito: '' })
+          elegir({ url: r.url, ruta: r.ruta, credito: '', atribucion: 'no' })
         } catch (e) {
           vaciar(estado).append(aviso(e.message, 'malo'))
         }
@@ -111,7 +114,7 @@ export function selectorDeImagen({ cuentaId, orientacion = '', inicial = null, o
               b.style.opacity = '.5'
               try {
                 const g = await api.traerDelBanco(cuentaId, img.id)
-                elegir({ url: g.url, ruta: g.ruta, credito: g.credito, shareAlike: g.shareAlike })
+                elegir({ url: g.url, ruta: g.ruta, credito: g.credito, shareAlike: g.shareAlike, atribucion: g.atribucion })
               } catch (e) {
                 vaciar(estado).append(aviso(e.message, 'malo'))
               } finally { b.style.opacity = '' }

@@ -119,7 +119,13 @@ cáscaras la exponen — no la escribas dos veces.
   crea una obra derivada— y sale con crédito. Si una licencia le deja una
   obligación al cliente (ShareAlike), hay que avisarle en pantalla, no
   esconderlo. Antes de agregar un banco, leé `core/media/proveedores/README.md`:
-  cada uno tiene requisitos propios de sus términos.
+  cada uno tiene requisitos propios de sus términos. **El crédito se estampa en
+  la placa solo donde la licencia lo exige** —Unsplash por sus términos de API,
+  Openverse por las Creative Commons—; Pexels y Pixabay no obligan y ahí la
+  placa sale limpia. Esa decisión se toma en el editor, al elegir la foto, y no
+  en el spec: al render la imagen viaja como ruta y el dato de la licencia ya se
+  perdió. Sacar el crédito donde sí es obligatorio rompe los términos del banco,
+  no es una decisión de diseño.
 - **Todo lo que venga del modelo o del usuario pasa por saneado antes de entrar
   a un render.** El logo por `sanitizeLogoInner()`; ninguna excepción.
 - **Nunca entregar placeholders** tipo "Lorem ipsum" o "TÍTULO ACÁ". Y ojo con

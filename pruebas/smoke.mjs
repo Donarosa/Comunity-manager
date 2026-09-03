@@ -1112,5 +1112,31 @@ test('elegir formato es una sola pantalla', () => {
   }
 })
 
+// El crédito sobre la foto se saca donde la licencia no lo exige, pero no se
+// puede sacar donde sí: Unsplash lo pide en sus términos de API y Openverse lo
+// hereda de las Creative Commons. Quitarlo ahí rompe los términos del banco.
+test('el crédito se estampa solo si la licencia lo exige', () => {
+  const editor = readFileSync(join(RAIZ, 'web/js/editor.js'), 'utf8')
+  assert.ok(/function creditoQueCorresponde/.test(editor), 'nadie decide según la licencia')
+  assert.ok(/atribucion === 'obligatoria'/.test(editor),
+    'el crédito ya no mira si la atribución es obligatoria')
+  // Y que la decisión se tome siempre por ahí, no copiando img.credito directo.
+  const sueltos = (editor.match(/p\.credito = img\.credito/g) || [])
+  assert.deepEqual(sueltos, [], 'hay una foto que estampa el crédito sin mirar la licencia')
+})
+
+// Los proveedores tienen que seguir declarando su régimen: sin ese dato la
+// decisión de arriba se cae al lado inseguro.
+test('cada banco declara si su atribución es obligatoria', () => {
+  for (const banco of ['unsplash', 'openverse', 'pexels', 'pixabay']) {
+    const fuente = readFileSync(join(RAIZ, `core/media/proveedores/${banco}.mjs`), 'utf8')
+    assert.ok(/atribucion:\s*'(obligatoria|opcional|no)'/.test(fuente),
+      `${banco} no declara su régimen de atribución`)
+  }
+  const unsplash = readFileSync(join(RAIZ, 'core/media/proveedores/unsplash.mjs'), 'utf8')
+  assert.ok(/atribucion:\s*'obligatoria'/.test(unsplash),
+    'Unsplash dejó de exigir crédito: sus términos de API sí lo piden')
+})
+
 // El resumen va último: si se agrega un bloque abajo, tiene que contarlo.
 console.log(`\n${ok} pruebas OK${process.exitCode ? ' — con fallas' : ''}\n`)
