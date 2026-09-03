@@ -157,6 +157,11 @@ function resumen(c) {
       colores: c.marca.colors || null,
       colorHex: c.marca.meta?.colorOriginal || null,
       tipografia: c.marca.fonts?.preset || null,
+      // La usa el editor para dibujar la tarjeta "La de tu marca" con la
+      // disposición que la marca realmente tiene. Sin esto dibujaba siempre la
+      // clásica, así que a cualquier marca que use otra le mostraba una que no
+      // era la suya.
+      disposicion: c.marca.disposicion || null,
     } : null,
   }
 }

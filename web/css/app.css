@@ -4132,7 +4132,11 @@ html.con-sesion .arranque { display: block; }
  */
 .disp-grilla {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  /* Tres y tres. Con auto-fit las seis se acomodaban según el ancho sobrante y
+     quedaba una fila de cinco y otra de una, que se ve como un error de armado.
+     En tres columnas las tarjetas además entran lo bastante grandes como para
+     leer el esquema. */
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
 }
 .disp-opcion {
@@ -4153,6 +4157,16 @@ html.con-sesion .arranque { display: block; }
 .disp-opcion:focus-visible { outline: 2px solid var(--color-focus, var(--color-ink)); outline-offset: 2px; }
 .disp-opcion.elegida { border-color: var(--color-accent, var(--color-ink)); }
 .disp-nombre { font-size: 0.78rem; font-weight: 700; line-height: 1.2; }
+/* Cuál es la disposición de la marca. Va debajo del nombre y en tono menor:
+   es un dato, no una segunda opción para elegir. */
+.disp-pie {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  margin-top: -3px;
+}
 
 /* El esquema. Las barras usan currentColor, así que basta con teñir la caja. */
 .disp-mini {

@@ -438,8 +438,21 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
     // volver a abrir, una vez por opción. Ahora cada una muestra un esquema de
     // dónde cae el texto y se elige de un toque.
     if (catalogo?.disposiciones?.length) {
+      // Cuál es "la de tu marca" de verdad. Sin esto la primera tarjeta dibujaba
+      // siempre el esquema de Clásica, así que con cualquier otra marca mostraba
+      // una disposición que no era la suya —y con Clásica quedaban dos tarjetas
+      // idénticas sin explicar por qué—.
+      const deLaMarca = cuenta?.marca?.disposicion || 'clasica'
+      const nombreDeLaMarca = catalogo.disposiciones.find(d => d.id === deLaMarca)?.label || ''
+
       const opciones = [
-        { id: '', label: 'La de tu marca', descripcion: 'La que elegiste al armar tu marca. Si no querés pensarlo, dejala.' },
+        {
+          id: '',
+          label: 'La de tu marca',
+          esquema: deLaMarca,
+          pie: nombreDeLaMarca,
+          descripcion: `La que elegiste al armar tu marca${nombreDeLaMarca ? `: ${nombreDeLaMarca}` : ''}. Si no querés pensarlo, dejala.`,
+        },
         ...catalogo.disposiciones,
       ]
       const grilla = el('div.disp-grilla')
@@ -455,8 +468,11 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
             refrescarDemorado()
           },
         },
-          esquemaDeDisposicion(d.id),
-          el('span.disp-nombre', {}, d.label)
+          esquemaDeDisposicion(d.esquema ?? d.id, Boolean(d.esquema)),
+          el('span.disp-nombre', {}, d.label),
+          // Decir cuál es evita la pregunta obvia: por qué dos tarjetas
+          // dibujan lo mismo cuando la marca ya usa esa disposición.
+          d.pie ? el('span.disp-pie', {}, d.pie) : null
         )
         if ((p.disposicion || '') === d.id) boton.classList.add('elegida')
         grilla.append(boton)
@@ -702,7 +718,7 @@ function nombreDeArchivo(marca, i, total) {
  * si el título va arriba, al medio o se come toda la placa, que es justamente
  * lo que el nombre no dice.
  */
-function esquemaDeDisposicion(id) {
+function esquemaDeDisposicion(id, esDeLaMarca = false) {
   const barras = {
     titular:  ['t', 't2', 't', 'aire', 'p'],
     centrada: ['linea', 't', 't2', 'linea', 'p2'],
@@ -710,7 +726,9 @@ function esquemaDeDisposicion(id) {
     ficha:    ['tchico', 'linea', 'pgrande', 'pgrande', 'pgrande2'],
   }[id] || ['k', 't', 't2', 'p', 'p2']
 
-  const caja = el(`div.disp-mini.disp-mini--${id || 'marca'}`)
+  // La clase de estilo sale de la disposición dibujada; la de la marca suma la
+  // suya para teñirse distinto sin cambiar la composición.
+  const caja = el(`div.disp-mini.disp-mini--${id || 'clasica'}${esDeLaMarca ? ' disp-mini--marca' : ''}`)
   for (const b of barras) caja.append(el(`i.disp-b.disp-b--${b}`))
   return caja
 }

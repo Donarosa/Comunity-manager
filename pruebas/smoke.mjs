@@ -1039,7 +1039,17 @@ test('la disposición se elige viendo un esquema, no leyendo un nombre', () => {
   // La primera opción tiene que seguir siendo la de la marca: es la que ya está
   // puesta y la que queda en la gran mayoría de las placas.
   const i = editor.indexOf('const opciones = [')
-  assert.ok(/La de tu marca/.test(editor.slice(i, i + 260)), 'la de la marca dejó de ir primera')
+  assert.ok(/La de tu marca/.test(editor.slice(i, i + 320)), 'la de la marca dejó de ir primera')
+})
+
+// La primera tarjeta dibujaba siempre el esquema de Clásica. Con una marca que
+// usa otra disposición mostraba una que no era la suya, y con Clásica quedaban
+// dos tarjetas idénticas sin explicar por qué.
+test('la tarjeta de la marca dibuja la disposición de la marca', () => {
+  const editor = readFileSync(join(RAIZ, 'web/js/editor.js'), 'utf8')
+  assert.ok(/marca\?\.disposicion/.test(editor),
+    'la tarjeta de la marca no mira qué disposición tiene la marca')
+  assert.ok(/disp-pie/.test(editor), 'no dice cuál es la disposición de la marca')
 })
 
 // La aplicación vive en una sola URL, así que sin esto la flecha de volver del
