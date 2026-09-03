@@ -3391,8 +3391,10 @@ input:focus, select:focus, textarea:focus {
  * ══════════════════════════════════════════════════════════ */
 .editor {
   display: grid;
-  grid-template-columns: minmax(420px, 1fr) 440px;
-  gap: 36px;
+  /* La columna de la vista previa manda: es donde el usuario mira. El formulario
+     se queda con lo que sobre, que le alcanza de sobra. */
+  grid-template-columns: minmax(380px, 1fr) 520px;
+  gap: 28px;
   align-items: start;
   padding: 24px 0 80px;
   max-width: 1200px;
@@ -3423,17 +3425,19 @@ input:focus, select:focus, textarea:focus {
 
 .editor-vista {
   position: sticky;
-  top: calc(var(--bar-h, 70px) + 20px);
+  top: calc(var(--bar-h, 70px) + 12px);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 10px;
   background: #fff;
   border: 2px solid var(--color-rule);
   border-radius: 24px;
-  padding: 24px;
+  /* Poco margen a propósito: lo que importa de este panel es la placa, y cada
+     píxel de padding se lo come al único lugar donde se ve el trabajo. */
+  padding: 14px 14px 18px;
   box-shadow: var(--shadow-card);
-  max-height: calc(100vh - var(--bar-h, 70px) - 36px);
+  max-height: calc(100vh - var(--bar-h, 70px) - 24px);
   overflow-y: auto;
 }
 

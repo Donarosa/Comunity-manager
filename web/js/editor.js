@@ -75,9 +75,9 @@ const PAPEL = { portada: ' · la portada', cierre: ' · la que cierra' }
 
 /** Lienzo de cada canal. Los números salen de core/render/formats.mjs. */
 const FORMATOS = {
-  feed: { w: 1080, h: 1350, rotulo: 'Post de feed (1080×1350)', maxAncho: 400 },
-  historia: { w: 1080, h: 1920, rotulo: 'Historia (1080×1920)', maxAncho: 330 },
-  cuadrado: { w: 1080, h: 1080, rotulo: 'Placa cuadrada (1080×1080)', maxAncho: 400 },
+  feed: { w: 1080, h: 1350, rotulo: 'Post de feed (1080×1350)', maxAncho: 520 },
+  historia: { w: 1080, h: 1920, rotulo: 'Historia (1080×1920)', maxAncho: 430 },
+  cuadrado: { w: 1080, h: 1080, rotulo: 'Placa cuadrada (1080×1080)', maxAncho: 520 },
 }
 
 /* ── pantalla ────────────────────────────────────────────── */
@@ -316,8 +316,6 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
     vista.append(
       el('span.rotulo', { style: 'display:block;margin-bottom:10px' }, 'Vista previa'),
       zona, errorVista,
-      el('p.apunte.chico', { style: 'margin-top:12px' },
-        'Así va a salir. Escribir y probar no descuenta nada del plan: solo se descuenta cuando generás.'),
       el('div', { style: 'margin-top:16px' }, generar),
       errorBajar, salida, medidor
     )
