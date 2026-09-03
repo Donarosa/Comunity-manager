@@ -57,7 +57,7 @@ function renderizarHome({
   alCerrarSesion,
 }) {
   vaciar(contenedor)
-  const { cuenta, marca, estado, publicaciones = [], resumenMetricas } = data
+  const { cuenta, marca, estado, publicaciones = [], planes = [], estadisticas = [], resumenMetricas } = data
   const usuarioAuth = obtenerUsuario()
 
   const panel = el('div.dashboard-usuario')
@@ -81,10 +81,7 @@ function renderizarHome({
         )
       )
     ),
-    el('div.dash-acciones-top', { style: 'display:flex;gap:8px;align-items:center;' },
-      el('button.btn.chico.btn--mint', {
-        onclick: () => onAbrirDashboard('pubs'),
-      }, '🖼 Ir a Dashboard'),
+    el('div.dash-acciones-top', {},
       el('button.btn.fantasma.chico', {
         onclick: async () => {
           if (confirm('¿Deseás cerrar la sesión actual?')) {
@@ -105,7 +102,7 @@ function renderizarHome({
   const totalPubs = resumenMetricas?.totalPublicaciones || publicaciones.length || 0
   const placasMes = resumenMetricas?.placasEsteMes || 0
 
-  // Tarjeta Publicaciones con contador y CTA claro a Dashboard
+  // Tarjeta Publicaciones con contador
   const cardPublicaciones = el('div.dash-metrica-card.dash-metrica-card--pubs', {},
     el('span.rotulo', {}, 'Publicaciones'),
     el('strong.dash-metrica-cifra', {}, String(totalPubs)),
@@ -169,12 +166,23 @@ function renderizarHome({
     )
   }
 
-  /* ── 4. Acciones directas ── */
+  /* ── 4. Pestañas y CTA a Dashboard en Home ── */
+  const pestaniasHome = el('div.dash-tabs-home-wrap', {},
+    el('div.dash-tabs', {},
+      el('button.dash-tab-btn.activo', { onclick: () => onAbrirDashboard('pubs') }, `Mis Placas (${publicaciones.length})`),
+      el('button.dash-tab-btn', { onclick: () => onAbrirDashboard('planes') }, `Planes (${planes.length})`),
+      el('button.dash-tab-btn', { onclick: () => onAbrirDashboard('stats') }, `Actividad (${estadisticas.length})`)
+    ),
+    el('button.btn.chico.btn--mint.dash-cta-btn', {
+      onclick: () => onAbrirDashboard('pubs'),
+    }, '🖼 Ir a Dashboard →')
+  )
+
+  /* ── 5. Acciones directas (Dock flotante sin botón de dashboard duplicado) ── */
   const barraAcciones = marca
     ? el('div.dock-acciones', {},
         el('button.btn', { onclick: onAbrirEditor }, '✎ Escribir yo'),
-        el('button.btn.cyan', { onclick: onAbrirPlan }, '✨ Sugerime'),
-        el('button.btn.btn--outline', { onclick: () => onAbrirDashboard('pubs') }, '🖼 Dashboard de Placas'))
+        el('button.btn.cyan', { onclick: onAbrirPlan }, '✨ Sugerime'))
     : el('div.dock-acciones', {},
         el('button.btn', { onclick: onAbrirWizard }, 'Armar mi marca para empezar'))
 
@@ -182,6 +190,7 @@ function renderizarHome({
     cabecera,
     metricasGrid,
     panelMarca,
+    pestaniasHome,
     barraAcciones
   )
 }
