@@ -1155,5 +1155,28 @@ test('el campo de la cifra ya no se llama emoji', () => {
   assert.ok(!/agregar:/.test(decl), 'la cifra volvió a quedar detrás de un botón')
 })
 
+// Cada plantilla tenía su explicación escrita y solo se mostraba la de la
+// elegida: para saber qué era "Frase" había que elegirla y leer abajo, una por
+// una. Ahora la explicación sigue al mouse y al foco del teclado.
+test('la explicación de la plantilla sigue a la que se está mirando', () => {
+  const editor = readFileSync(join(RAIZ, 'web/js/editor.js'), 'utf8')
+  assert.ok(/const mostrarPara = id =>/.test(editor), 'no hay forma de mostrar la explicación de otra')
+  assert.ok(/onmouseenter: \(\) => mostrarPara/.test(editor), 'no sigue al mouse')
+  // El foco importa tanto como el mouse: sin esto, quien navega con teclado
+  // vuelve a quedarse con la explicación de una sola.
+  assert.ok(/onfocus: \(\) => mostrarPara/.test(editor), 'no sigue al foco del teclado')
+})
+
+// "Manifiesto" es palabra de diseñador. El id interno sigue igual porque lo usan
+// el motor, el esquema del modelo y las placas ya guardadas: lo que cambia es
+// cómo se llama en pantalla.
+test('la plantilla se llama Idea sin cambiar su id', () => {
+  const editor = readFileSync(join(RAIZ, 'web/js/editor.js'), 'utf8')
+  const i = editor.indexOf('  manifiesto: { label:')
+  assert.ok(i > -1, 'se renombró el id: las placas guardadas dejan de encontrar su plantilla')
+  assert.ok(/label: 'Idea'/.test(editor.slice(i, i + 120)), 'no se llama Idea en pantalla')
+  assert.ok(CAMPOS_DE_PLANTILLA.manifiesto, 'el id manifiesto desapareció del núcleo')
+})
+
 // El resumen va último: si se agrega un bloque abajo, tiene que contarlo.
 console.log(`\n${ok} pruebas OK${process.exitCode ? ' — con fallas' : ''}\n`)

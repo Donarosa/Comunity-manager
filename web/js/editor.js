@@ -30,7 +30,12 @@ const ROTULOS = {
   pasos: { label: 'Pasos', para: 'Un proceso en 3 o 4 pasos.' },
   oferta: { label: 'Oferta', para: 'Un producto o servicio, con su precio.' },
   frase: { label: 'Frase', para: 'Una cita entre comillas, en bastardilla sobre color pleno.' },
-  manifiesto: { label: 'Manifiesto', para: 'Una declaración grande, con las palabras que importan en color.' },
+  // El id sigue siendo 'manifiesto': lo usan el motor, el esquema del modelo y
+  // las placas ya guardadas. Lo que cambia es cómo se llama en pantalla.
+  // "Manifiesto" es palabra de diseñador y suena a declaración de principios:
+  // nadie que atiende un mostrador iba a pensar que ahí entra "hacemos las
+  // milanesas como en casa".
+  manifiesto: { label: 'Idea', para: 'Una sola idea, en letras grandes. Sin explicación abajo: lo que decís es todo.' },
   foto: { label: 'Sobre una foto', para: 'Dos líneas cortas encima de una imagen.' },
 }
 
@@ -410,13 +415,27 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
       pasos: '🔢',
       oferta: '🏷️',
       frase: '💬',
-      manifiesto: '📣',
+      manifiesto: '💡',
       foto: '📸',
     }
+
+    /* La explicación se muestra de la que estás mirando, no solo de la elegida.
+     *
+     * Cada plantilla ya tenía su descripción escrita, pero solo salía la de la
+     * seleccionada: para saber qué era "Frase" había que elegirla y leer abajo,
+     * una por una. Ahora el renglón sigue al mouse y al foco del teclado, y
+     * vuelve a la elegida al salir. En el teléfono no hay "pasar por encima",
+     * así que ahí se comporta como antes: muestra la que está puesta. */
+    const explicacion = el('span.ayuda.ayuda-plantilla', {}, PLANTILLAS[p.plantilla].para)
+    const mostrarPara = id => { explicacion.textContent = PLANTILLAS[id].para }
 
     const grillaPlantillas = el('div.pestanas', { style: 'margin-top:6px;gap:8px;' })
     disponibles.forEach(([id, def]) => {
       const btn = el('button.pestana' + (id === p.plantilla ? '.activa' : ''), {
+        onmouseenter: () => mostrarPara(id),
+        onfocus: () => mostrarPara(id),
+        onmouseleave: () => mostrarPara(p.plantilla),
+        onblur: () => mostrarPara(p.plantilla),
         onclick: () => {
           // Solo se arrastra lo que la plantilla nueva va a mostrar. Conservar
           // todo dejaba texto colgado: el cuerpo de una oferta seguía saliendo
@@ -433,7 +452,7 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
 
     form.append(el('div.campo', {},
       el('label', {}, 'Tipo de plantilla'),
-      el('span.ayuda', {}, PLANTILLAS[p.plantilla].para),
+      explicacion,
       grillaPlantillas
     ))
 

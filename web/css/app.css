@@ -4232,3 +4232,12 @@ html.con-sesion .arranque { display: block; }
 }
 /* El último campo del grupo no necesita su margen: lo pone el recuadro. */
 .campo-grupo > .campo:last-child { margin-bottom: 12px; }
+
+/* La explicación de la plantilla cambia al recorrer los chips, así que su alto
+   tiene que estar reservado: sin esto el formulario entero salta unos píxeles
+   cada vez que el texto pasa de una línea a dos. */
+.ayuda-plantilla {
+  min-height: 2.6em;
+  transition: opacity .12s var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce) { .ayuda-plantilla { transition: none; } }
