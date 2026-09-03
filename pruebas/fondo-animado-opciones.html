@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Alquimia — Opciones de Fondo Animado para Editor de Formato</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,800;1,9..144,400&family=Bebas+Neue&family=Playfair+Display:ital,wght@0,700;1,600&family=Alex+Brush&display=swap" rel="stylesheet">
+
+  <!-- GSAP from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+
+  <style>
+    /* ═══════════════════════════════════════════════
+       RESET & VARIABLES
+    ═══════════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --font-main: 'Plus Jakarta Sans', system-ui, sans-serif;
+      --font-label: 'JetBrains Mono', monospace;
+      --font-serif: 'Fraunces', Georgia, serif;
+      --font-display: 'Bebas Neue', Impact, sans-serif;
+      --font-elegant: 'Playfair Display', Georgia, serif;
+      --font-script: 'Alex Brush', cursive;
+
+      /* Alquimia palette */
+      --color-ink: #1a1a2e;
+      --color-ink-2: #3a3a5c;
+      --color-muted: #7a7a9e;
+      --color-paper: #fafafa;
+      --color-paper-2: #f0f0f5;
+      --color-mint: #6be8a0;
+      --color-cyan: #5cc8e6;
+      --color-coral: #ff7a72;
+      --color-pear: #d4e157;
+      --color-purple: #7c5cfc;
+      --color-rule: rgba(0,0,0,0.08);
+
+      /* Placa brand tints */
+      --tint-panaderia: #8B1A1A;
+      --tint-estudio: #6B4C8A;
+      --tint-contable: #2C4A6E;
+      --tint-vivero: #2D5F2D;
+      --tint-gym: #FF6B35;
+    }
+
+    html { font-size: 16px; }
+    body {
+      font-family: var(--font-main);
+      color: var(--color-ink);
+      background: var(--color-paper);
+      overflow-x: hidden;
+    }
+
+    /* ═══════════════════════════════════════════════
+       SELECTOR DE OPCIONES (FIJO ARRIBA)
+    ═══════════════════════════════════════════════ */
+    .option-selector {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 9999;
+      background: rgba(26,26,46,0.95);
+      backdrop-filter: blur(12px);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .option-selector h3 {
+      color: white;
+      font-size: 0.85rem;
+      font-weight: 600;
+      white-space: nowrap;
+      letter-spacing: 0.05em;
+    }
+    .option-selector .btns {
+      display: flex; gap: 8px; flex-wrap: wrap;
+    }
+    .option-selector button {
+      font-family: var(--font-main);
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 8px 18px;
+      border-radius: 8px;
+      border: 2px solid rgba(255,255,255,0.2);
+      background: transparent;
+      color: rgba(255,255,255,0.7);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .option-selector button:hover {
+      border-color: var(--color-mint);
+      color: var(--color-mint);
+    }
+    .option-selector button.active {
+      background: var(--color-mint);
+      border-color: var(--color-mint);
+      color: var(--color-ink);
+    }
+    .option-selector .desc {
+      color: rgba(255,255,255,0.5);
+      font-size: 0.75rem;
+      margin-left: auto;
+      font-family: var(--font-label);
+    }
+
+    /* ═══════════════════════════════════════════════
+       PANTALLA PRINCIPAL (CADA OPCIÓN)
+    ═══════════════════════════════════════════════ */
+    .option-screen {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      display: none;
+      overflow: hidden;
+    }
+    .option-screen.active { display: block; }
+
+    /* ═══════════════════════════════════════════════
+       FONDO ANIMADO — CAPA DE PLACAS
+    ═══════════════════════════════════════════════ */
+    .bg-placas {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    /* ─── PLACA GENÉRICA (la mini-tarjeta que flota) ─── */
+    .placa-card {
+      position: absolute;
+      width: 220px;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
+      will-change: transform;
+      pointer-events: none;
+      font-family: var(--font-main);
+    }
+    .placa-card .placa-inner {
+      padding: 18px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 280px;
+    }
+    .placa-card .placa-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+    .placa-card .placa-brand .brand-dot {
+      width: 24px; height: 24px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.55rem;
+      font-weight: 800;
+      color: white;
+    }
+    .placa-card .placa-kick {
+      margin-top: auto;
+      font-family: var(--font-label);
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      opacity: 0.7;
+    }
+    .placa-card .placa-kick::before {
+      content: '—— ';
+    }
+    .placa-card .placa-headline {
+      font-size: 1.15rem;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+    .placa-card .placa-headline em {
+      font-style: normal;
+    }
+    .placa-card .placa-body {
+      font-size: 0.68rem;
+      line-height: 1.5;
+      opacity: 0.75;
+    }
+    .placa-card .placa-foot {
+      font-family: var(--font-label);
+      font-size: 0.55rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      opacity: 0.5;
+      margin-top: auto;
+    }
+
+    /* ─── Variantes de tema ─── */
+    .placa-card.theme-dark {
+      background: linear-gradient(145deg, #1a1a2e, #2d2d54);
+      color: #e8e8f0;
+    }
+    .placa-card.theme-dark .placa-headline em { color: var(--color-mint); }
+
+    .placa-card.theme-light {
+      background: #faf9f7;
+      color: var(--color-ink);
+      border: 1px solid var(--color-rule);
+    }
+    .placa-card.theme-light .placa-headline em { color: var(--tint-panaderia); }
+
+    .placa-card.theme-wine {
+      background: linear-gradient(145deg, #2a0a1e, #4a1a3e);
+      color: #f0dde8;
+    }
+    .placa-card.theme-wine .placa-headline em { color: var(--color-coral); }
+
+    .placa-card.theme-nature {
+      background: linear-gradient(145deg, #f0f7e8, #e8f2d8);
+      color: #1a2e1a;
+      border: 1px solid rgba(45,95,45,0.15);
+    }
+    .placa-card.theme-nature .placa-headline em { color: var(--tint-vivero); }
+
+    .placa-card.theme-blue {
+      background: linear-gradient(145deg, #eef4fa, #dde8f4);
+      color: var(--tint-contable);
+      border: 1px solid rgba(44,74,110,0.12);
+    }
+    .placa-card.theme-blue .placa-headline em { color: var(--color-cyan); }
+
+    .placa-card.theme-purple {
+      background: linear-gradient(145deg, #1e0a3e, #3a1a6e);
+      color: #d8ccf0;
+    }
+    .placa-card.theme-purple .placa-headline em { color: #b68aff; }
+
+    .placa-card.theme-warm {
+      background: linear-gradient(145deg, #fdf0e8, #fce4d0);
+      color: #4a2a10;
+      border: 1px solid rgba(255,107,53,0.15);
+    }
+    .placa-card.theme-warm .placa-headline em { color: var(--tint-gym); }
+
+    .placa-card.theme-mint {
+      background: linear-gradient(145deg, #e8faf0, #d0f2e0);
+      color: #1a3e2a;
+      border: 1px solid rgba(107,232,160,0.2);
+    }
+    .placa-card.theme-mint .placa-headline em { color: #2a8a4a; }
+
+    /* ═══════════════════════════════════════════════
+       OVERLAY CONTENIDO CENTRAL (EDITOR)
+    ═══════════════════════════════════════════════ */
+    .editor-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding-top: 56px;
+    }
+    .editor-panel {
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(24px) saturate(1.6);
+      border-radius: 24px;
+      border: 1px solid rgba(0,0,0,0.08);
+      box-shadow: 0 24px 80px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06);
+      padding: 48px 56px;
+      max-width: 620px;
+      width: 90%;
+      text-align: center;
+    }
+    .editor-panel .eyebrow {
+      font-family: var(--font-label);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--color-muted);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .editor-panel .eyebrow .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--color-mint);
+      display: inline-block;
+    }
+    .editor-panel h2 {
+      font-size: 1.9rem;
+      font-weight: 800;
+      color: var(--color-ink);
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+    .editor-panel h2 em {
+      font-style: normal;
+      color: var(--color-purple);
+    }
+    .editor-panel p {
+      font-size: 1rem;
+      color: var(--color-ink-2);
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+
+    .formato-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+    .formato-card {
+      background: var(--color-paper-2);
+      border-radius: 12px;
+      padding: 20px 12px 14px;
+      text-align: center;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    .formato-card:hover {
+      border-color: var(--color-purple);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(124,92,252,0.15);
+    }
+    .formato-card.selected {
+      border-color: var(--color-purple);
+      background: rgba(124,92,252,0.06);
+    }
+    .formato-card .icon {
+      font-size: 1.8rem;
+      margin-bottom: 6px;
+    }
+    .formato-card .name {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--color-ink);
+    }
+    .formato-card .size {
+      font-family: var(--font-label);
+      font-size: 0.6rem;
+      color: var(--color-muted);
+      margin-top: 2px;
+    }
+
+    .editor-panel .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-main);
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding: 14px 36px;
+      border-radius: 12px;
+      border: none;
+      background: var(--color-ink);
+      color: white;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    .editor-panel .btn:hover {
+      background: var(--color-purple);
+      transform: translateY(-1px);
+    }
+
+    /* Opción label en la esquina */
+    .option-label {
+      position: absolute;
+      bottom: 20px; left: 20px;
+      z-index: 20;
+      background: rgba(26,26,46,0.9);
+      backdrop-filter: blur(8px);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .option-label small {
+      font-family: var(--font-label);
+      font-size: 0.65rem;
+      color: var(--color-mint);
+      letter-spacing: 0.08em;
+    }
+
+    /* ═══════════════════════════════════════════════
+       OPCIÓN-ESPECÍFICAS
+    ═══════════════════════════════════════════════ */
+
+    /* Opción 1: Gradientes suaves de fondo */
+    #opt1 .bg-placas {
+      background: linear-gradient(135deg, #f5f0ff 0%, #e8f8f0 30%, #fdf5ea 60%, #f0f4ff 100%);
+    }
+
+    /* Opción 2: Fondo oscuro con glass */
+    #opt2 .bg-placas {
+      background: linear-gradient(135deg, #0d0d1a 0%, #1a1a3e 40%, #0a1e2e 100%);
+    }
+    #opt2 .editor-panel {
+      background: rgba(20,20,40,0.88);
+      border-color: rgba(255,255,255,0.08);
+      color: white;
+    }
+    #opt2 .editor-panel h2 { color: white; }
+    #opt2 .editor-panel h2 em { color: var(--color-mint); }
+    #opt2 .editor-panel p { color: rgba(255,255,255,0.6); }
+    #opt2 .formato-card {
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(255,255,255,0.08);
+    }
+    #opt2 .formato-card .name { color: white; }
+    #opt2 .formato-card .size { color: rgba(255,255,255,0.4); }
+    #opt2 .formato-card:hover {
+      border-color: var(--color-mint);
+      background: rgba(107,232,160,0.08);
+      box-shadow: 0 4px 16px rgba(107,232,160,0.15);
+    }
+    #opt2 .placa-card { box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 60px rgba(124,92,252,0.05); }
+    #opt2 .editor-panel .btn { background: var(--color-mint); color: var(--color-ink); }
+    #opt2 .editor-panel .eyebrow .dot { background: var(--color-cyan); }
+
+    /* Opción 3: Blur masivo + columnas */
+    #opt3 .bg-placas {
+      background: linear-gradient(170deg, #faf8ff 0%, #f0f8fa 50%, #faf5f0 100%);
+    }
+    #opt3 .placa-card {
+      border-radius: 18px;
+    }
+
+    /* Opción 4: Mosaico inclinado */
+    #opt4 .bg-placas {
+      background: linear-gradient(160deg, #f8f5ff 0%, #eef8f4 40%, #f8f0ea 100%);
+    }
+    #opt4 .placa-card {
+      border-radius: 10px;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- ═══════════════════════════════════════
+     BARRA SELECTORA
+═══════════════════════════════════════ -->
+<div class="option-selector">
+  <h3>🎨 FONDO ANIMADO</h3>
+  <div class="btns">
+    <button class="active" onclick="showOption(1)">Opción 1 · Drift</button>
+    <button onclick="showOption(2)">Opción 2 · Neon Glass</button>
+    <button onclick="showOption(3)">Opción 3 · Cascada</button>
+    <button onclick="showOption(4)">Opción 4 · Mosaico 3D</button>
+  </div>
+  <span class="desc">GSAP × Alquimia</span>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     OPCIÓN 1 — DRIFT SUAVE (Placas flotan lentamente con parallax)
+     Las placas se distribuyen aleatoriamente y flotan con 
+     movimiento orgánico, rotación suave y parallax por capas.
+═══════════════════════════════════════════════════════ -->
+<div id="opt1" class="option-screen active">
+  <div class="bg-placas" id="bg1"></div>
+  <div class="editor-overlay">
+    <div class="editor-panel">
+      <div class="eyebrow"><span class="dot"></span> 3.0 · FORMATO DE PUBLICACIÓN</div>
+      <h2>Elegí el <em>formato</em> de tu placa</h2>
+      <p>Cada formato está optimizado para su uso en Instagram. Elegí uno y nosotros armamos la placa con tu marca.</p>
+      <div class="formato-grid">
+        <div class="formato-card selected">
+          <div class="icon">📐</div>
+          <div class="name">Feed</div>
+          <div class="size">1080×1350</div>
+        </div>
+        <div class="formato-card">
+          <div class="icon">📱</div>
+          <div class="name">Historia</div>
+          <div class="size">1080×1920</div>
+        </div>
+        <div class="formato-card">
+          <div class="icon">🎠</div>
+          <div class="name">Carrusel</div>
+          <div class="size">1080×1350 ×7</div>
+        </div>
+      </div>
+      <button class="btn">Continuar <span>→</span></button>
+    </div>
+  </div>
+  <div class="option-label">
+    <small>OPCIÓN 1</small>
+    Drift Suave — Placas flotando con parallax orgánico
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     OPCIÓN 2 — NEON GLASS (Fondo oscuro, placas con glow)
+     Las placas aparecen sobre fondo oscuro con efecto glass 
+     y sutil glow neón. Se mueven en diagonal lentamente.
+═══════════════════════════════════════════════════════ -->
+<div id="opt2" class="option-screen">
+  <div class="bg-placas" id="bg2"></div>
+  <div class="editor-overlay">
+    <div class="editor-panel">
+      <div class="eyebrow"><span class="dot"></span> 3.0 · FORMATO DE PUBLICACIÓN</div>
+      <h2>Elegí el <em>formato</em> de tu placa</h2>
+      <p>Cada formato está optimizado para su uso en Instagram. Elegí uno y nosotros armamos la placa con tu marca.</p>
+      <div class="formato-grid">
+        <div class="formato-card selected">
+          <div class="icon">📐</div>
+          <div class="name">Feed</div>
+          <div class="size">1080×1350</div>
+        </div>
+        <div class="formato-card">
+          <div class="icon">📱</div>
+          <div class="name">Historia</div>
+          <div class="size">1080×1920</div>
+        </div>
+        <div class="formato-card">
+          <div class="icon">🎠</div>
+          <div class="name">Carrusel</div>
+          <div class="size">1080×1350 ×7</div>
+        </div>
+      </div>
+      <button class="btn">Continuar <span>→</span></button>
+    </div>
+  </div>
+  <div class="option-label">
+    <small>OPCIÓN 2</small>
+    Neon Glass — Fondo oscuro con glow sutil
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     OPCIÓN 3 — CASCADA (Columnas verticales tipo marquee)
+     Placas organizadas en columnas que se desplazan verticalmente 
+     a distintas velocidades, como un marquee infinito.
+═══════════════════════════════════════════════════════ -->
+<div id="opt3" class="option-screen">
+  <div class="bg-placas" id="bg3"></div>
+  <div class="editor-overlay">
+    <div class="editor-panel">
+      <div class="eyebrow"><span class="dot"></span> 3.0 · FORMATO DE PUBLICACIÓN</div>
+      <h2>Elegí el <em>formato</em> de tu placa</h2>
+      <p>Cada formato está optimizado para su uso en Instagram. Elegí uno y nosotros armamos la placa con tu marca.</p>
+      <div class="formato-grid">
+        <div class="formato-card selected">
+          <div class="icon">📐</div>
+          <div class="name">Feed</div>
+          <div class="size">1080×1350</div>
+        </div>
+        <div class="formato-card">
+          <div class="icon">📱</div>
+          <div class="name">Historia</div>
+          <div class="size">1080×1920</div>
+        </div>
+        <div class="formato-card">
+          <div class="icon">🎠</div>
+          <div class="name">Carrusel</div>
+          <div class="size">1080×1350 ×7</div>
+        </div>
+      </div>
+      <button class="btn">Continuar <span>→</span></button>
+    </div>
+  </div>
+  <div class="option-label">
+    <small>OPCIÓN 3</small>
+    Cascada — Columnas marquee a distintas velocidades
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     OPCIÓN 4 — MOSAICO 3D (Grilla con perspectiva)
+     Las placas están en una grilla inclinada con perspectiva 3D
+     y se desplazan diagonalmente. Efecto tipo "muro de contenido".
+═══════════════════════════════════════════════════════ -->
+<div id="opt4" class="option-screen">
+  <div class="bg-placas" id="bg4"></div>
+  <div class="editor-overlay">
+    <div class="editor-panel">
+      <div class="eyebrow"><span class="dot"></span> 3.0 · FORMATO DE PUBLICACIÓN</div>
+      <h2>Elegí el <em>formato</em> de tu placa</h2>
+      <p>Cada formato está optimizado para su uso en Instagram. Elegí uno y nosotros armamos la placa con tu marca.</p>
+      <div class="formato-grid">
+        <div class="formato-card selected">
+          <div class="icon">📐</div>
+          <div class="name">Feed</div>
+          <div class="size">1080×1350</div>
+        </div>
+        <div class="formato-card">
+          <div class="icon">📱</div>
+          <div class="name">Historia</div>
+          <div class="size">1080×1920</div>
+        </div>
+        <div class="formato-card">
+          <div class="icon">🎠</div>
+          <div class="name">Carrusel</div>
+          <div class="size">1080×1350 ×7</div>
+        </div>
+      </div>
+      <button class="btn">Continuar <span>→</span></button>
+    </div>
+  </div>
+  <div class="option-label">
+    <small>OPCIÓN 4</small>
+    Mosaico 3D — Grilla en perspectiva con desplazamiento diagonal
+  </div>
+</div>
+
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   DATOS DE PLACAS — Variedad de negocios y estilos
+═══════════════════════════════════════════════════════ */
+const PLACAS = [
+  {
+    theme: 'theme-dark',
+    brand: 'tumarca',
+    brandColor: '#7c5cfc',
+    brandInitials: '?',
+    kick: 'TEMPLATE · COVER',
+    headline: 'La <em>portada</em> del carrusel',
+    body: 'Fondo oscuro, título grande y una línea de fuentes opcional abajo.',
+    foot: 'TUMARCA.COM'
+  },
+  {
+    theme: 'theme-light',
+    brand: 'Panadería Mendieta',
+    brandColor: '#8B1A1A',
+    brandInitials: 'PM',
+    kick: 'MASA MADRE',
+    headline: 'Tres días para <em>un pan</em>',
+    body: 'El cuerpo es el mismo en las cinco a propósito: lo único que cambia es la marca.',
+    foot: 'INSTAGRAM.COM/PANADERIAMENDIETA'
+  },
+  {
+    theme: 'theme-nature',
+    brand: 'Vivero Las Acacias',
+    brandColor: '#2D5F2D',
+    brandInitials: '🌿',
+    kick: 'ANTES DE COMPRAR',
+    headline: 'Tres cosas que <em>hay que mirar</em>',
+    body: 'No todas las plantas que se ven lindas en el vivero aguantan tu casa.',
+    foot: 'INSTAGRAM.COM/VIVEROLASACACIAS'
+  },
+  {
+    theme: 'theme-blue',
+    brand: 'Estudio Ravenna',
+    brandColor: '#2C4A6E',
+    brandInitials: 'ER',
+    kick: 'IMPUESTOS',
+    headline: 'Lo que cambia en <em>el monotributo</em>',
+    body: 'El cuerpo es el mismo en las cinco a propósito: lo único que cambia es la marca.',
+    foot: 'INSTAGRAM.COM/ESTUDIORAVENNA'
+  },
+  {
+    theme: 'theme-wine',
+    brand: 'Clínica Sonrisas',
+    brandColor: '#E74C3C',
+    brandInitials: '🦷',
+    kick: 'MEDICINA PREVENTIVA',
+    headline: 'Una sonrisa sana <em>no debería doler</em>',
+    body: 'Diseño digital y blanqueamiento sin sensibilidad.',
+    foot: '@CLINICASONRISAS'
+  },
+  {
+    theme: 'theme-purple',
+    brand: 'Lic. Martín Ramos',
+    brandColor: '#7c5cfc',
+    brandInitials: '🧠',
+    kick: 'SALUD MENTAL · BIENESTAR',
+    headline: '3 señales de que tu cuerpo <em>te pide un freno</em>',
+    body: 'Tensión, procrastinación, dificultad para dormir.',
+    foot: 'SESIONES ONLINE'
+  },
+  {
+    theme: 'theme-warm',
+    brand: 'Taller Carlos',
+    brandColor: '#FF6B35',
+    brandInitials: '🔧',
+    kick: 'SERVICIO EXPRESS',
+    headline: 'Chequeo de <em>seguridad</em>',
+    body: 'Frenos, fluidos y suspensión. Diagnóstico computarizado en 40 min.',
+    foot: 'TURNOS POR WHATSAPP'
+  },
+  {
+    theme: 'theme-light',
+    brand: 'Bruma Estudio',
+    brandColor: '#6B4C8A',
+    brandInitials: 'BE',
+    kick: 'TURNOS DE AGOSTO',
+    headline: 'Color sin <em>arruinar el pelo</em>',
+    body: 'El cuerpo es el mismo en las cinco a propósito: lo único que cambia es la marca.',
+    foot: 'INSTAGRAM.COM/BRUMAESTUDIO'
+  },
+  {
+    theme: 'theme-mint',
+    brand: 'Verdulería Mendoza',
+    brandColor: '#2D5F2D',
+    brandInitials: 'VM',
+    kick: 'ENTRÓ HOY',
+    headline: 'Tomates de <em>quinta</em>',
+    body: 'El cuerpo es el mismo en las cinco a propósito: lo único que cambia es la marca.',
+    foot: 'INSTAGRAM.COM/VERDULERAMENDOZA'
+  },
+  {
+    theme: 'theme-dark',
+    brand: 'Fitness Pro',
+    brandColor: '#FF6B35',
+    brandInitials: 'FP',
+    kick: 'RUTINA SEMANAL',
+    headline: '5 ejercicios para <em>empezar hoy</em>',
+    body: 'Sin pesas, sin excusas. Rutina de 20 min para hacer en casa.',
+    foot: '@FITNESSPRO.AR'
+  },
+  {
+    theme: 'theme-blue',
+    brand: 'Café Central',
+    brandColor: '#4A2C10',
+    brandInitials: '☕',
+    kick: 'BLEND DEL MES',
+    headline: 'De Etiopía <em>a tu taza</em>',
+    body: 'Notas a frutos rojos con final cítrico. Tostado medio.',
+    foot: 'CAFÉ DE ESPECIALIDAD'
+  },
+  {
+    theme: 'theme-nature',
+    brand: 'Huerta Urbana',
+    brandColor: '#1a5a1a',
+    brandInitials: '🌱',
+    kick: 'GUÍA RÁPIDA',
+    headline: 'Qué plantar <em>en septiembre</em>',
+    body: 'Tomates, albahaca, pimientos. Todo en maceta o cantero.',
+    foot: 'HUERTAURBANA.COM'
+  },
+];
+
+/* ─── Crear HTML de una placa ─── */
+function createPlacaHTML(data) {
+  return `
+    <div class="placa-inner">
+      <div class="placa-brand">
+        <span class="brand-dot" style="background:${data.brandColor}">${data.brandInitials}</span>
+        ${data.brand}
+      </div>
+      <div class="placa-kick">${data.kick}</div>
+      <div class="placa-headline">${data.headline}</div>
+      <div class="placa-body">${data.body}</div>
+      <div class="placa-foot">${data.foot}</div>
+    </div>
+  `;
+}
+
+/* ─── Shuffle helper ─── */
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/* ═══════════════════════════════════════════════════════
+   OPCIÓN 1 — DRIFT SUAVE
+   Placas distribuidas aleatoriamente, flotan con 
+   movimiento browniano suave y rotación orgánica.
+═══════════════════════════════════════════════════════ */
+function initOption1() {
+  const container = document.getElementById('bg1');
+  container.innerHTML = '';
+  const cards = shuffle(PLACAS).concat(shuffle(PLACAS)); // Duplicar para llenar
+  const count = Math.min(cards.length, 16);
+
+  for (let i = 0; i < count; i++) {
+    const data = cards[i % PLACAS.length];
+    const card = document.createElement('div');
+    card.className = `placa-card ${data.theme}`;
+    card.innerHTML = createPlacaHTML(data);
+
+    // Escala variada
+    const scale = 0.6 + Math.random() * 0.45;
+    card.style.width = (200 + Math.random() * 60) + 'px';
+    card.style.opacity = 0.3 + Math.random() * 0.45;
+
+    container.appendChild(card);
+
+    // Posición aleatoria
+    const startX = -10 + Math.random() * 110;
+    const startY = -10 + Math.random() * 110;
+
+    gsap.set(card, {
+      xPercent: -50, yPercent: -50,
+      left: startX + '%',
+      top: startY + '%',
+      rotation: -15 + Math.random() * 30,
+      scale: scale,
+    });
+
+    // Animación: drift orgánico infinito
+    const dur = 20 + Math.random() * 25;
+    gsap.to(card, {
+      x: () => `+=${-80 + Math.random() * 160}`,
+      y: () => `+=${-60 + Math.random() * 120}`,
+      rotation: `+=${-10 + Math.random() * 20}`,
+      duration: dur,
+      ease: 'none',
+      repeat: -1,
+      yoyo: true,
+    });
+
+    // Entrada escalonada
+    gsap.from(card, {
+      opacity: 0,
+      scale: scale * 0.5,
+      duration: 1.2,
+      delay: i * 0.12,
+      ease: 'power2.out',
+    });
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   OPCIÓN 2 — NEON GLASS
+   Fondo oscuro. Placas se mueven en diagonal 
+   con glow sutil, efecto glass morphism.
+═══════════════════════════════════════════════════════ */
+function initOption2() {
+  const container = document.getElementById('bg2');
+  container.innerHTML = '';
+
+  // Blobs de color de fondo
+  const blobColors = ['rgba(124,92,252,0.15)', 'rgba(92,200,230,0.1)', 'rgba(107,232,160,0.08)', 'rgba(255,122,114,0.08)'];
+  for (let b = 0; b < 4; b++) {
+    const blob = document.createElement('div');
+    blob.style.cssText = `
+      position: absolute;
+      width: ${300 + Math.random() * 400}px;
+      height: ${300 + Math.random() * 400}px;
+      border-radius: 50%;
+      background: ${blobColors[b]};
+      filter: blur(80px);
+      left: ${Math.random() * 100}%;
+      top: ${Math.random() * 100}%;
+      pointer-events: none;
+    `;
+    container.appendChild(blob);
+    gsap.to(blob, {
+      x: -100 + Math.random() * 200,
+      y: -100 + Math.random() * 200,
+      duration: 30 + Math.random() * 20,
+      ease: 'none',
+      repeat: -1,
+      yoyo: true,
+    });
+  }
+
+  // Placas con glow
+  const cards = shuffle(PLACAS).concat(shuffle(PLACAS));
+  const count = Math.min(cards.length, 14);
+
+  for (let i = 0; i < count; i++) {
+    const data = cards[i % PLACAS.length];
+    const card = document.createElement('div');
+    // Usar temas oscuros para el fondo oscuro
+    const darkThemes = ['theme-dark', 'theme-wine', 'theme-purple'];
+    const theme = darkThemes[i % darkThemes.length];
+    card.className = `placa-card ${theme}`;
+    card.innerHTML = createPlacaHTML(data);
+
+    const scale = 0.55 + Math.random() * 0.4;
+    card.style.opacity = 0.2 + Math.random() * 0.4;
+    card.style.boxShadow = `0 8px 40px rgba(0,0,0,0.5), 0 0 40px rgba(124,92,252,${0.03 + Math.random() * 0.06})`;
+
+    container.appendChild(card);
+
+    // Posición diagonal
+    const startX = -15 + Math.random() * 130;
+    const startY = -15 + Math.random() * 130;
+
+    gsap.set(card, {
+      xPercent: -50, yPercent: -50,
+      left: startX + '%',
+      top: startY + '%',
+      rotation: -8 + Math.random() * 16,
+      scale: scale,
+    });
+
+    // Movimiento diagonal constante
+    const dur = 35 + Math.random() * 30;
+    gsap.to(card, {
+      x: `+=${60 + Math.random() * 80}`,
+      y: `+=${-40 - Math.random() * 60}`,
+      rotation: `+=${-5 + Math.random() * 10}`,
+      duration: dur,
+      ease: 'none',
+      repeat: -1,
+      yoyo: true,
+    });
+
+    // Pulso suave de opacidad
+    gsap.to(card, {
+      opacity: parseFloat(card.style.opacity) + 0.1,
+      duration: 4 + Math.random() * 4,
+      repeat: -1,
+      yoyo: true,
+      ease: 'sine.inOut',
+    });
+
+    // Entrada
+    gsap.from(card, {
+      opacity: 0,
+      scale: 0,
+      duration: 0.8,
+      delay: i * 0.1,
+      ease: 'back.out(1.4)',
+    });
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   OPCIÓN 3 — CASCADA
+   Columnas verticales tipo marquee infinito.
+   Cada columna se desplaza a distinta velocidad.
+═══════════════════════════════════════════════════════ */
+function initOption3() {
+  const container = document.getElementById('bg3');
+  container.innerHTML = '';
+
+  const colCount = 7;
+  const containerW = window.innerWidth;
+  const colWidth = containerW / colCount;
+
+  for (let col = 0; col < colCount; col++) {
+    const column = document.createElement('div');
+    column.style.cssText = `
+      position: absolute;
+      left: ${col * colWidth}px;
+      top: 0;
+      width: ${colWidth}px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 8px;
+      will-change: transform;
+    `;
+
+    // Placas por columna (suficientes para llenar altura × 2)
+    const placasPerCol = 6;
+    const shuffled = shuffle(PLACAS);
+
+    for (let p = 0; p < placasPerCol; p++) {
+      const data = shuffled[p % PLACAS.length];
+      const card = document.createElement('div');
+      card.className = `placa-card ${data.theme}`;
+      card.style.position = 'relative';
+      card.style.width = '100%';
+      card.style.opacity = col === 0 || col === colCount - 1 ? 0.2 : (col === 1 || col === colCount - 2 ? 0.35 : 0.5);
+      card.style.transform = `scale(${0.85 + Math.random() * 0.1})`;
+      card.innerHTML = createPlacaHTML(data);
+      column.appendChild(card);
+    }
+
+    container.appendChild(column);
+
+    // Obtener la altura real de la columna
+    const colHeight = column.scrollHeight;
+
+    // Duplicar contenido para loop seamless
+    const children = Array.from(column.children);
+    children.forEach(child => {
+      const clone = child.cloneNode(true);
+      column.appendChild(clone);
+    });
+
+    // Animación marquee vertical
+    const direction = col % 2 === 0 ? -1 : 1;
+    const speed = 25 + Math.random() * 30;
+    const startY = direction === -1 ? 0 : -colHeight;
+
+    gsap.set(column, { y: startY });
+    gsap.to(column, {
+      y: direction === -1 ? -colHeight : 0,
+      duration: speed,
+      ease: 'none',
+      repeat: -1,
+      modifiers: {
+        y: gsap.utils.unitize(y => {
+          return direction === -1
+            ? parseFloat(y) % colHeight
+            : -(colHeight - (parseFloat(y) % colHeight));
+        })
+      }
+    });
+
+    // Entrance
+    gsap.from(column, {
+      opacity: 0,
+      x: (col % 2 === 0 ? -30 : 30),
+      duration: 1,
+      delay: col * 0.15,
+      ease: 'power2.out',
+    });
+  }
+
+  // Añadir overlay difuminado central
+  const vignette = document.createElement('div');
+  vignette.style.cssText = `
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 50% 50% at 50% 50%, 
+      rgba(250,248,255,0.85) 0%,
+      rgba(250,248,255,0.4) 50%,
+      transparent 100%
+    );
+    pointer-events: none; z-index: 5;
+  `;
+  container.appendChild(vignette);
+}
+
+/* ═══════════════════════════════════════════════════════
+   OPCIÓN 4 — MOSAICO 3D
+   Grilla en perspectiva isométrica. Se desplaza 
+   diagonalmente como un muro infinito de contenido.
+═══════════════════════════════════════════════════════ */
+function initOption4() {
+  const container = document.getElementById('bg4');
+  container.innerHTML = '';
+
+  // Wrapper con perspectiva
+  const perspective = document.createElement('div');
+  perspective.style.cssText = `
+    position: absolute; inset: -40% -30%;
+    transform: perspective(1200px) rotateX(30deg) rotateZ(-15deg);
+    transform-origin: center center;
+    display: grid;
+    grid-template-columns: repeat(5, 240px);
+    grid-auto-rows: auto;
+    gap: 18px;
+    padding: 20px;
+    will-change: transform;
+  `;
+
+  const shuffled = shuffle(PLACAS).concat(shuffle(PLACAS)).concat(shuffle(PLACAS));
+  const count = 30;
+
+  for (let i = 0; i < count; i++) {
+    const data = shuffled[i % PLACAS.length];
+    const card = document.createElement('div');
+    card.className = `placa-card ${data.theme}`;
+    card.style.position = 'relative';
+    card.style.width = '240px';
+    card.style.opacity = 0.45 + Math.random() * 0.3;
+    card.innerHTML = createPlacaHTML(data);
+    perspective.appendChild(card);
+  }
+
+  container.appendChild(perspective);
+
+  // Animación: desplazamiento diagonal infinito
+  gsap.to(perspective, {
+    x: -300,
+    y: -250,
+    duration: 40,
+    ease: 'none',
+    repeat: -1,
+    yoyo: true,
+  });
+
+  // Hover individual subtle
+  perspective.querySelectorAll('.placa-card').forEach((card, idx) => {
+    gsap.to(card, {
+      y: -5 + Math.random() * 10,
+      duration: 3 + Math.random() * 3,
+      ease: 'sine.inOut',
+      repeat: -1,
+      yoyo: true,
+      delay: idx * 0.2,
+    });
+
+    // Entrada escalonada
+    gsap.from(card, {
+      opacity: 0,
+      scale: 0.7,
+      rotateY: 20,
+      duration: 0.6,
+      delay: idx * 0.05,
+      ease: 'power2.out',
+    });
+  });
+
+  // Vignette
+  const vignette = document.createElement('div');
+  vignette.style.cssText = `
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 55% 55% at 50% 50%, 
+      rgba(248,245,255,0.9) 0%,
+      rgba(248,245,255,0.5) 45%,
+      rgba(248,245,255,0.15) 100%
+    );
+    pointer-events: none; z-index: 5;
+  `;
+  container.appendChild(vignette);
+}
+
+
+/* ═══════════════════════════════════════════════════════
+   CONTROL DE OPCIONES
+═══════════════════════════════════════════════════════ */
+const inited = {};
+
+function showOption(n) {
+  // Actualizar botones
+  document.querySelectorAll('.option-selector button').forEach((btn, i) => {
+    btn.classList.toggle('active', i === n - 1);
+  });
+
+  // Mostrar/ocultar pantallas
+  document.querySelectorAll('.option-screen').forEach((screen, i) => {
+    screen.classList.toggle('active', i === n - 1);
+  });
+
+  // Inicializar si es primera vez
+  if (!inited[n]) {
+    inited[n] = true;
+    switch (n) {
+      case 1: initOption1(); break;
+      case 2: initOption2(); break;
+      case 3: initOption3(); break;
+      case 4: initOption4(); break;
+    }
+  }
+}
+
+// Formato card interacción
+document.querySelectorAll('.formato-card').forEach(card => {
+  card.addEventListener('click', () => {
+    const parent = card.closest('.formato-grid');
+    parent.querySelectorAll('.formato-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    gsap.fromTo(card, { scale: 0.95 }, { scale: 1, duration: 0.3, ease: 'back.out(2)' });
+  });
+});
+
+// Iniciar opción 1 por defecto
+gsap.registerPlugin();
+showOption(1);
+</script>
+
+</body>
+</html>

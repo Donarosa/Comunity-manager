@@ -692,6 +692,11 @@ nav a.apunte:hover, .nav__links a:hover {
 #app-cuerpo:has(.editor) {
   max-width: 1320px;
 }
+#app-cuerpo:has(.formato-cascada-screen) {
+  max-width: 100%;
+  padding: 0;
+  margin: 0;
+}
 
 .card, .panel {
   background: #fff;
@@ -4341,3 +4346,256 @@ html.con-sesion .arranque { display: block; }
   .resultado-placa { max-width: 320px; margin: 0 auto; }
 }
 @media (prefers-reduced-motion: reduce) { .resultado-placa { transition: none; } }
+
+/* ══════════════════════════════════════════════════════════
+ * FONDO ANIMADO CASCADA — SELECCIÓN DE FORMATO (#editor-formato)
+ * ══════════════════════════════════════════════════════════ */
+.formato-cascada-screen {
+  position: relative;
+  min-height: calc(100vh - var(--bar-h, 70px) - 40px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 16px 60px;
+}
+
+.formato-cascada-bg {
+  position: fixed;
+  inset: 0;
+  top: var(--bar-h, 70px);
+  overflow: hidden;
+  z-index: 0;
+  background: var(--color-paper);
+  pointer-events: none;
+}
+
+.formato-cascada-vignette {
+  position: fixed;
+  inset: 0;
+  top: var(--bar-h, 70px);
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 54% 52% at 50% 50%,
+    oklch(97% 0.012 95 / 0.90) 0%,
+    oklch(97% 0.012 95 / 0.55) 45%,
+    oklch(97% 0.012 95 / 0.12) 75%,
+    transparent 100%
+  );
+}
+
+.cascada-col {
+  position: absolute;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  will-change: transform;
+}
+
+.cascada-placa {
+  position: relative;
+  border-radius: var(--r-card, 20px);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  will-change: transform;
+  pointer-events: none;
+  font-family: var(--font-body);
+  width: 100%;
+  margin-bottom: 14px;
+}
+
+.cascada-placa-inner {
+  padding: 20px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 260px;
+  position: relative;
+  z-index: 1;
+}
+
+.cascada-brand-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.cascada-brand-dot {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.58rem;
+  font-weight: 800;
+  color: white;
+  flex-shrink: 0;
+}
+
+.cascada-kick {
+  margin-top: auto;
+  font-family: var(--font-label);
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  opacity: 0.65;
+}
+.cascada-kick::before { content: '—— '; }
+
+.cascada-headline {
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1.18;
+  letter-spacing: -0.02em;
+}
+.cascada-headline em { font-style: normal; }
+
+.cascada-body {
+  font-size: 0.7rem;
+  line-height: 1.5;
+  opacity: 0.72;
+}
+
+.cascada-foot {
+  font-family: var(--font-label);
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0.45;
+  margin-top: auto;
+}
+
+/* Variantes de placas */
+.cascada-placa.t-cream {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  border: 1px solid var(--color-rule);
+}
+.cascada-placa.t-cream .cascada-headline em { color: oklch(58% 0.26 18); }
+
+.cascada-placa.t-paper {
+  background: var(--color-paper-2);
+  color: var(--color-ink);
+  border: 1px solid var(--color-rule);
+}
+.cascada-placa.t-paper .cascada-headline em { color: oklch(70% 0.18 150); }
+
+.cascada-placa.t-ink {
+  background: oklch(20% 0.012 250);
+  color: oklch(92% 0.01 95);
+}
+.cascada-placa.t-ink .cascada-headline em { color: var(--color-mint); }
+
+.cascada-placa.t-ink-deep {
+  background: oklch(16% 0.025 260);
+  color: oklch(88% 0.014 250);
+}
+.cascada-placa.t-ink-deep .cascada-headline em { color: oklch(74% 0.16 305); }
+
+.cascada-placa.t-mint {
+  background: oklch(94% 0.04 150);
+  color: oklch(25% 0.04 150);
+  border: 1px solid oklch(80% 0.16 150 / 0.2);
+}
+.cascada-placa.t-mint .cascada-headline em { color: oklch(50% 0.14 150); }
+
+.cascada-placa.t-cyan {
+  background: oklch(94% 0.03 235);
+  color: oklch(25% 0.04 235);
+  border: 1px solid oklch(66% 0.18 235 / 0.18);
+}
+.cascada-placa.t-cyan .cascada-headline em { color: oklch(50% 0.16 235); }
+
+.cascada-placa.t-coral {
+  background: oklch(94% 0.03 18);
+  color: oklch(28% 0.04 18);
+  border: 1px solid oklch(68% 0.24 18 / 0.15);
+}
+.cascada-placa.t-coral .cascada-headline em { color: oklch(55% 0.22 18); }
+
+.cascada-placa.t-pear {
+  background: oklch(95% 0.04 95);
+  color: oklch(30% 0.04 95);
+  border: 1px solid oklch(86% 0.18 95 / 0.25);
+}
+.cascada-placa.t-pear .cascada-headline em { color: oklch(55% 0.18 95); }
+
+.cascada-placa.t-lavender {
+  background: oklch(93% 0.04 305);
+  color: oklch(25% 0.04 305);
+  border: 1px solid oklch(74% 0.16 305 / 0.18);
+}
+.cascada-placa.t-lavender .cascada-headline em { color: oklch(55% 0.14 305); }
+
+/* Placas con fondo de fotografía */
+.cascada-placa.t-foto {
+  color: white;
+  border: none;
+}
+.cascada-placa.t-foto .cascada-placa-inner { min-height: 290px; }
+.cascada-foto-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+}
+.cascada-foto-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.cascada-placa.t-foto .cascada-headline em { color: var(--color-mint); }
+.cascada-placa.t-foto .cascada-kick { opacity: 0.85; }
+.cascada-placa.t-foto .cascada-foot { opacity: 0.65; }
+.cascada-placa.t-foto .cascada-body { opacity: 0.9; }
+.cascada-placa.t-foto .cascada-brand-row { text-shadow: 0 1px 6px rgba(0,0,0,0.35); }
+
+/* Panel central en el editor */
+.formato-panel-central {
+  position: relative;
+  z-index: 2;
+  background: oklch(97% 0.012 95 / 0.94);
+  backdrop-filter: blur(28px) saturate(1.5);
+  -webkit-backdrop-filter: blur(28px) saturate(1.5);
+  border-radius: 24px;
+  border: 1.5px solid var(--color-rule);
+  box-shadow: 0 32px 80px oklch(20% 0.012 250 / 0.14),
+              0 4px 14px oklch(20% 0.012 250 / 0.06);
+  padding: 44px 50px;
+  max-width: 740px;
+  width: 100%;
+  margin: 0 auto;
+}
+.formato-panel-central h2 {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: var(--color-ink);
+  line-height: 1.18;
+  letter-spacing: -0.025em;
+  margin: 6px 0 10px;
+}
+.formato-panel-central h2 em {
+  font-style: normal;
+  color: var(--color-mint-deep);
+}
+.formato-panel-central p.intro {
+  font-size: 0.95rem;
+  color: var(--color-ink-2);
+  line-height: 1.55;
+  margin-bottom: 26px;
+}
+.formato-panel-central .opciones {
+  margin-bottom: 24px;
+}
+@media (max-width: 640px) {
+  .formato-panel-central {
+    padding: 28px 20px;
+  }
+}
+

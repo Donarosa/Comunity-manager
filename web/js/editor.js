@@ -11,6 +11,7 @@
 import { api } from './api.js'
 import { el, $$, vaciar, aviso, elegirEnGrupo, demorar } from './ui.js'
 import { selectorDeImagen } from './imagenes.js'
+import { montarFondoCascada } from './cascada-fondo.js'
 // Qué campos tiene cada plantilla lo dice el núcleo, que es el mismo que
 // después arma el spec. Con la lista duplicada acá, las dos se despegaban y el
 // formulario terminaba mandando campos que el render no dibuja —o al revés.
@@ -97,6 +98,7 @@ const FORMATOS = {
 
 export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambiarCuota, alPaso }) {
   const st = { canal: null, tipo: null, placas: [], activa: 0 }
+  let fondoCascada = null
 
   /* En qué paso está y cómo se sale de él.
    *
@@ -117,12 +119,16 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
    * —el editor usado fuera de la aplicación— no hay historial que mover y se
    * llama a la acción directa. */
   const irAtras = () => {
+    fondoCascada?.destruir()
+    fondoCascada = null
     const [, volver] = pasoActual()
     if (alPaso) history.back()
     else volver?.()
   }
 
   const pintar = () => {
+    fondoCascada?.destruir()
+    fondoCascada = null
     vaciar(contenedor)
     if (!st.canal) elegirFormato()
     else editar()
@@ -133,27 +139,22 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
   /* ── 1. qué vas a publicar ─────────────────────────────── */
 
   function elegirFormato() {
-    const cont = el('div', { style: 'padding:40px 0 80px;max-width:760px' })
+    fondoCascada?.destruir()
 
-    // Todo en columna. Con el título y la descripción como dos spans en línea
-    // salía "FeedEl posteo que queda en tu perfil.", y con la medida al costado
-    // el texto quedaba en una columna de cuatro palabras de ancho.
+    const screen = el('div.formato-cascada-screen')
+    fondoCascada = montarFondoCascada(screen)
+
+    const cont = el('div.formato-panel-central')
+
     const opcion = (titulo, detalle, medidas, onClick) =>
       el('button.opcion', { onclick: onClick, style: 'display:flex;flex-direction:column;align-items:flex-start;gap:6px' },
         el('b', {}, titulo),
         el('span', { style: 'flex:1' }, detalle),
         el('span.rotulo', { style: 'margin-top:4px' }, medidas))
 
-    /* Las cuatro juntas.
-     *
-     * Eran dos pantallas: primero dónde va y después, solo para feed, si es una
-     * placa o varias. Esa segunda existía para un caso de tres, así que en
-     * historia y en cuadrada era un paso que no preguntaba nada; y para quien
-     * elegía feed eran dos clics para algo que entra en una lista de cuatro.
-     *
-     * El aviso sobre el recorte de Instagram bajaba a la primera pantalla y se
-     * conserva acá arriba: se lee igual y ya no cuesta un paso. */
     const arrancar = (canal, tipo, placas) => () => {
+      fondoCascada?.destruir()
+      fondoCascada = null
       st.canal = canal
       st.tipo = tipo
       st.placas = placas
@@ -162,13 +163,11 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
 
     cont.append(
       el('span.rotulo', {}, 'Nueva publicación'),
-      el('h2', { style: 'margin:6px 0 8px' }, '¿Qué vas a armar?'),
+      el('h2', {}, '¿Qué vas a ', el('em', {}, 'armar'), '?'),
       el('p.intro', {}, 'Cada formato cambia el tamaño del lienzo y cómo se acomoda el texto. Instagram te deja recortar antes de publicar, pero recorta por los costados y podés perder texto: conviene armarla en el formato en el que la vas a subir.'),
       el('div.opciones', {},
         opcion('Post de feed', 'Una placa sola, la que queda en tu perfil.', '1080×1350',
           arrancar('feed', 'post', [vacia('texto')])),
-        // Las tres arrancan iguales: la primera se dibuja como portada y la
-        // última como cierre por estar donde están, no por elección.
         opcion('Carrusel', 'Varias que se deslizan: empieza con una portada y termina pidiendo la acción.', 'hasta 6',
           arrancar('feed', 'carrusel', [vacia('texto'), vacia('texto'), vacia('texto')])),
         opcion('Historia', 'Se ve 24 horas, a pantalla completa. También sirve de portada de reel.', '1080×1920',
@@ -176,11 +175,11 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
         opcion('Cuadrada', 'La clásica. Entra bien en el perfil y sirve para reutilizar en otras redes.', '1080×1080',
           arrancar('cuadrado', null, [vacia('texto')]))
       ),
-      // De la primera pantalla se vuelve al inicio. Antes no había salida a la
-      // vista acá: se dependía de la cabecera.
       el('div.acciones-paso', {}, el('button.btn.texto', { onclick: irAtras }, '← Volver'))
     )
-    contenedor.append(cont)
+
+    screen.append(cont)
+    contenedor.append(screen)
   }
 
   /* ── 2. el editor ──────────────────────────────────────── */

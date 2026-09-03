@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Alquimia — Fondo Animado Cascada</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=JetBrains+Mono:wght@400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,800;1,9..144,400&family=Alex+Brush&family=Cinzel:wght@600;800&family=Syne:wght@700;800&family=Playfair+Display:ital,wght@0,700;1,600&family=Bebas+Neue&display=swap" rel="stylesheet">
+
+  <!-- GSAP from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+
+  <style>
+    /* ══════════════════════════════════════════════════════════
+     * RESET & TOKENS — Paleta real de Alquimia (Hum/Bubble)
+     * Colores en oklch(), mismo sistema de la app.
+     * ══════════════════════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      /* ── Fuentes ── */
+      --font-body:    'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      --font-label:   'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+      --font-serif:   'Fraunces', Georgia, serif;
+      --font-display: 'Bebas Neue', Impact, sans-serif;
+      --font-elegant: 'Playfair Display', Georgia, serif;
+      --font-script:  'Alex Brush', cursive;
+
+      /* ── Paleta Base (Cream Paper) ── */
+      --color-paper:    oklch(97% 0.012 95);
+      --color-paper-2:  oklch(94% 0.016 95);
+      --color-paper-3:  oklch(91% 0.020 95);
+      --color-rule:     oklch(86% 0.014 90);
+      --color-rule-2:   oklch(70% 0.018 85);
+      --color-muted:    oklch(52% 0.014 90);
+      --color-neutral:  oklch(38% 0.014 100);
+      --color-ink-2:    oklch(28% 0.014 250);
+      --color-ink:      oklch(20% 0.012 250);
+
+      /* ── Acentos Multi-Color ── */
+      --color-mint:         oklch(80% 0.16 150);
+      --color-mint-deep:    oklch(70% 0.18 150);
+      --color-accent:       oklch(86% 0.18 95);      /* Pear */
+      --color-accent-deep:  oklch(76% 0.20 95);
+      --color-accent-2:     oklch(66% 0.18 235);     /* Cyan */
+      --color-accent-2-deep:oklch(56% 0.20 235);
+      --color-accent-3:     oklch(68% 0.24 18);      /* Coral */
+      --color-accent-3-deep:oklch(58% 0.26 18);
+      --color-lavender:     oklch(74% 0.16 305);
+      --color-lavender-deep:oklch(64% 0.18 305);
+
+      /* ── Tint Surfaces ── */
+      --tint-mint:     oklch(80% 0.16 150 / 0.16);
+      --tint-pear:     oklch(86% 0.18 95 / 0.16);
+      --tint-cyan:     oklch(66% 0.18 235 / 0.14);
+      --tint-coral:    oklch(68% 0.24 18 / 0.12);
+      --tint-lavender: oklch(74% 0.16 305 / 0.14);
+
+      /* ── Geometría ── */
+      --r: 16px;
+      --r-card: 20px;
+      --r-pill: 999px;
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-soft: cubic-bezier(0.22, 0.61, 0.36, 1);
+      --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+      --shadow-card: 0 12px 32px -16px oklch(20% 0.012 250 / 0.12),
+                     0 1px 3px oklch(20% 0.012 250 / 0.05);
+      --shadow-card-hover: 0 22px 48px -18px oklch(20% 0.012 250 / 0.16),
+                           0 2px 6px oklch(20% 0.012 250 / 0.08);
+    }
+
+    html { font-size: 16px; }
+    body {
+      font-family: var(--font-body);
+      color: var(--color-ink);
+      background: var(--color-paper);
+      overflow: hidden;
+      height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    /* ══════════════════════════════════════════════════════════
+     * FONDO ANIMADO — CASCADA DE PLACAS
+     * ══════════════════════════════════════════════════════════ */
+    .bg-cascada {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      z-index: 0;
+      background: var(--color-paper);
+    }
+
+    /* ── PLACA GENÉRICA ── */
+    .placa {
+      position: relative;
+      border-radius: var(--r-card);
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+      will-change: transform;
+      pointer-events: none;
+      font-family: var(--font-body);
+      width: 100%;
+      margin-bottom: 14px;
+    }
+    .placa-inner {
+      padding: 20px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 260px;
+      position: relative;
+      z-index: 1;
+    }
+    .placa .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+    .placa .brand-dot {
+      width: 26px; height: 26px;
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.58rem;
+      font-weight: 800;
+      color: white;
+      flex-shrink: 0;
+    }
+    .placa .kick {
+      margin-top: auto;
+      font-family: var(--font-label);
+      font-size: 0.58rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      opacity: 0.65;
+    }
+    .placa .kick::before { content: '—— '; }
+    .placa .headline {
+      font-size: 1.15rem;
+      font-weight: 800;
+      line-height: 1.18;
+      letter-spacing: -0.02em;
+    }
+    .placa .headline em { font-style: normal; }
+    .placa .body-text {
+      font-size: 0.7rem;
+      line-height: 1.5;
+      opacity: 0.72;
+    }
+    .placa .foot {
+      font-family: var(--font-label);
+      font-size: 0.55rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      opacity: 0.45;
+      margin-top: auto;
+    }
+
+    /* ── Variantes de fondo de placa ── */
+
+    /* Cream (default, light) */
+    .placa.t-cream {
+      background: var(--color-paper);
+      color: var(--color-ink);
+      border: 1px solid var(--color-rule);
+    }
+    .placa.t-cream .headline em { color: oklch(58% 0.26 18); }
+
+    /* Paper-2 (ligeramente más oscuro) */
+    .placa.t-paper {
+      background: var(--color-paper-2);
+      color: var(--color-ink);
+      border: 1px solid var(--color-rule);
+    }
+    .placa.t-paper .headline em { color: oklch(70% 0.18 150); }
+
+    /* Ink oscuro */
+    .placa.t-ink {
+      background: oklch(20% 0.012 250);
+      color: oklch(92% 0.01 95);
+    }
+    .placa.t-ink .headline em { color: var(--color-mint); }
+
+    /* Ink profundo (más azulado) */
+    .placa.t-ink-deep {
+      background: oklch(16% 0.025 260);
+      color: oklch(88% 0.014 250);
+    }
+    .placa.t-ink-deep .headline em { color: oklch(74% 0.16 305); }
+
+    /* Tint mint */
+    .placa.t-mint {
+      background: oklch(94% 0.04 150);
+      color: oklch(25% 0.04 150);
+      border: 1px solid oklch(80% 0.16 150 / 0.2);
+    }
+    .placa.t-mint .headline em { color: oklch(50% 0.14 150); }
+
+    /* Tint cyan */
+    .placa.t-cyan {
+      background: oklch(94% 0.03 235);
+      color: oklch(25% 0.04 235);
+      border: 1px solid oklch(66% 0.18 235 / 0.18);
+    }
+    .placa.t-cyan .headline em { color: oklch(50% 0.16 235); }
+
+    /* Tint coral */
+    .placa.t-coral {
+      background: oklch(94% 0.03 18);
+      color: oklch(28% 0.04 18);
+      border: 1px solid oklch(68% 0.24 18 / 0.15);
+    }
+    .placa.t-coral .headline em { color: oklch(55% 0.22 18); }
+
+    /* Tint pear */
+    .placa.t-pear {
+      background: oklch(95% 0.04 95);
+      color: oklch(30% 0.04 95);
+      border: 1px solid oklch(86% 0.18 95 / 0.25);
+    }
+    .placa.t-pear .headline em { color: oklch(55% 0.18 95); }
+
+    /* Tint lavender */
+    .placa.t-lavender {
+      background: oklch(93% 0.04 305);
+      color: oklch(25% 0.04 305);
+      border: 1px solid oklch(74% 0.16 305 / 0.18);
+    }
+    .placa.t-lavender .headline em { color: oklch(55% 0.14 305); }
+
+    /* ── Placas con fondo de IMAGEN ── */
+    .placa.t-foto {
+      color: white;
+      border: none;
+      min-height: 300px;
+    }
+    .placa.t-foto .placa-inner {
+      min-height: 300px;
+    }
+    .placa.t-foto .foto-bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      background-size: cover;
+      background-position: center;
+    }
+    .placa.t-foto .foto-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+    }
+    .placa.t-foto .headline em { color: var(--color-mint); }
+    .placa.t-foto .kick { opacity: 0.8; }
+    .placa.t-foto .foot { opacity: 0.6; }
+    .placa.t-foto .body-text { opacity: 0.85; }
+    .placa.t-foto .brand-row { text-shadow: 0 1px 6px rgba(0,0,0,0.3); }
+
+    /* ══════════════════════════════════════════════════════════
+     * PANEL CENTRAL — EDITOR DE FORMATO
+     * ══════════════════════════════════════════════════════════ */
+    .editor-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .editor-panel {
+      background: oklch(97% 0.012 95 / 0.92);
+      backdrop-filter: blur(28px) saturate(1.5);
+      border-radius: 24px;
+      border: 1px solid var(--color-rule);
+      box-shadow: 0 32px 80px oklch(20% 0.012 250 / 0.14),
+                  0 4px 14px oklch(20% 0.012 250 / 0.06),
+                  0 0 0 1px oklch(20% 0.012 250 / 0.03);
+      padding: 48px 56px;
+      max-width: 640px;
+      width: 90%;
+      text-align: center;
+    }
+
+    .editor-panel .eyebrow {
+      font-family: var(--font-label);
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--color-muted);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .editor-panel .eyebrow .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--color-mint);
+      display: inline-block;
+    }
+
+    .editor-panel h2 {
+      font-size: 1.85rem;
+      font-weight: 800;
+      color: var(--color-ink);
+      line-height: 1.18;
+      letter-spacing: -0.025em;
+      margin-bottom: 10px;
+    }
+    .editor-panel h2 em {
+      font-style: normal;
+      color: var(--color-mint-deep);
+    }
+    .editor-panel p {
+      font-size: 0.95rem;
+      color: var(--color-ink-2);
+      line-height: 1.55;
+      margin-bottom: 30px;
+    }
+
+    /* ── Opciones de formato ── */
+    .opciones {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-bottom: 26px;
+    }
+    .opcion {
+      background: white;
+      border: 1.5px solid var(--color-rule);
+      border-radius: 14px;
+      padding: 20px 14px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s var(--ease-out);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .opcion:hover {
+      border-color: var(--color-mint-deep);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-card);
+    }
+    .opcion.elegida {
+      background: var(--tint-mint);
+      border-color: var(--color-mint-deep);
+      box-shadow: 0 0 0 2px var(--color-mint-deep);
+    }
+    .opcion .icon {
+      font-size: 1.7rem;
+      margin-bottom: 2px;
+    }
+    .opcion b {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--color-ink);
+    }
+    .opcion .rotulo {
+      font-family: var(--font-label);
+      font-size: 0.6rem;
+      color: var(--color-muted);
+      letter-spacing: 0.06em;
+    }
+
+    /* ── Botón principal ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding: 14px 36px;
+      border-radius: 14px;
+      border: none;
+      /* Botón 3D canónico como en el sistema */
+      background: var(--color-ink);
+      color: var(--color-paper);
+      cursor: pointer;
+      transition: all 0.25s var(--ease-out);
+      box-shadow: 0 4px 0 oklch(12% 0.012 250),
+                  0 6px 16px oklch(20% 0.012 250 / 0.2);
+    }
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 5px 0 oklch(12% 0.012 250),
+                  0 8px 20px oklch(20% 0.012 250 / 0.25);
+    }
+    .btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 oklch(12% 0.012 250),
+                  0 2px 8px oklch(20% 0.012 250 / 0.15);
+    }
+
+    /* ── Vignette central ── */
+    .vignette {
+      position: fixed;
+      inset: 0;
+      z-index: 5;
+      pointer-events: none;
+      background: radial-gradient(
+        ellipse 52% 50% at 50% 50%,
+        oklch(97% 0.012 95 / 0.88) 0%,
+        oklch(97% 0.012 95 / 0.45) 45%,
+        oklch(97% 0.012 95 / 0.08) 75%,
+        transparent 100%
+      );
+    }
+
+    /* ── Columna del cascada ── */
+    .cascada-col {
+      position: absolute;
+      top: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 6px;
+      will-change: transform;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════
+     FONDO CASCADA — Columnas de placas
+═══════════════════════════════════════ -->
+<div class="bg-cascada" id="cascada"></div>
+
+<!-- VIGNETTE CENTRAL — Enfoca la atención en el panel -->
+<div class="vignette"></div>
+
+<!-- ═══════════════════════════════════════
+     PANEL EDITOR DE FORMATO
+═══════════════════════════════════════ -->
+<div class="editor-overlay">
+  <div class="editor-panel">
+    <div class="eyebrow"><span class="dot"></span> NUEVA PUBLICACIÓN</div>
+    <h2>¿Qué vas a <em>armar</em>?</h2>
+    <p>Cada formato cambia el tamaño del lienzo y cómo se acomoda el texto. Elegí en qué formato la vas a subir.</p>
+    <div class="opciones">
+      <div class="opcion elegida" data-formato="feed">
+        <span class="icon">📐</span>
+        <b>Post de feed</b>
+        <span class="rotulo">1080×1350</span>
+      </div>
+      <div class="opcion" data-formato="carrusel">
+        <span class="icon">🎠</span>
+        <b>Carrusel</b>
+        <span class="rotulo">hasta 6</span>
+      </div>
+      <div class="opcion" data-formato="historia">
+        <span class="icon">📱</span>
+        <b>Historia</b>
+        <span class="rotulo">1080×1920</span>
+      </div>
+      <div class="opcion" data-formato="cuadrado">
+        <span class="icon">⬜</span>
+        <b>Cuadrada</b>
+        <span class="rotulo">1080×1080</span>
+      </div>
+    </div>
+    <button class="btn">Continuar <span>→</span></button>
+  </div>
+</div>
+
+
+<script>
+/* ══════════════════════════════════════════════════════════════════
+   DATOS DE PLACAS — Variedad de negocios, temas y fondos
+   ────────────────────────────────────────────────────────────────
+   Incluye placas con fondo sólido y placas con fondo de imagen
+   usando fotos de Unsplash con overlay de color.
+   ══════════════════════════════════════════════════════════════════ */
+const PLACAS = [
+  // ── Placas con fondo sólido ──
+  {
+    theme: 't-cream',
+    brand: 'Panadería Mendieta', brandColor: 'oklch(45% 0.18 25)', brandInitials: 'PM',
+    kick: 'MASA MADRE',
+    headline: 'Tres días para <em>un pan</em>',
+    body: 'El proceso de fermentación lenta que hace la diferencia en cada hogaza.',
+    foot: '@PANADERIAMENDIETA',
+  },
+  {
+    theme: 't-ink',
+    brand: 'tumarca', brandColor: 'oklch(64% 0.18 305)', brandInitials: '?',
+    kick: 'TEMPLATE · COVER',
+    headline: 'La <em>portada</em> del carrusel',
+    body: 'Fondo oscuro, título grande y una línea de fuentes opcional abajo.',
+    foot: 'TUMARCA.COM',
+  },
+  {
+    theme: 't-mint',
+    brand: 'Vivero Las Acacias', brandColor: 'oklch(45% 0.14 150)', brandInitials: '🌿',
+    kick: 'ANTES DE COMPRAR',
+    headline: 'Tres cosas que <em>hay que mirar</em>',
+    body: 'No todas las plantas que se ven lindas en el vivero aguantan tu casa.',
+    foot: '@VIVEROLASACACIAS',
+  },
+  {
+    theme: 't-cyan',
+    brand: 'Estudio Ravenna', brandColor: 'oklch(45% 0.14 235)', brandInitials: 'ER',
+    kick: 'IMPUESTOS',
+    headline: 'Lo que cambia en <em>el monotributo</em>',
+    body: 'Las nuevas escalas, topes de facturación y fechas límite que tenés que conocer.',
+    foot: '@ESTUDIORAVENNA',
+  },
+  {
+    theme: 't-ink-deep',
+    brand: 'Clínica Sonrisas', brandColor: 'oklch(65% 0.22 18)', brandInitials: '🦷',
+    kick: 'MEDICINA PREVENTIVA',
+    headline: 'Una sonrisa sana <em>no debería doler</em>',
+    body: 'Diseño digital y blanqueamiento sin sensibilidad.',
+    foot: '@CLINICASONRISAS',
+  },
+  {
+    theme: 't-lavender',
+    brand: 'Lic. Martín Ramos', brandColor: 'oklch(50% 0.14 305)', brandInitials: '🧠',
+    kick: 'SALUD MENTAL',
+    headline: '3 señales de que <em>necesitás un freno</em>',
+    body: 'Tensión, procrastinación, dificultad para dormir.',
+    foot: 'SESIONES ONLINE',
+  },
+  {
+    theme: 't-coral',
+    brand: 'Taller Carlos', brandColor: 'oklch(55% 0.22 40)', brandInitials: '🔧',
+    kick: 'SERVICIO EXPRESS',
+    headline: 'Chequeo de <em>seguridad</em>',
+    body: 'Frenos, fluidos y suspensión. Diagnóstico computarizado en 40 min.',
+    foot: 'TURNOS POR WHATSAPP',
+  },
+  {
+    theme: 't-paper',
+    brand: 'Bruma Estudio', brandColor: 'oklch(50% 0.16 305)', brandInitials: 'BE',
+    kick: 'TURNOS DE AGOSTO',
+    headline: 'Color sin <em>arruinar el pelo</em>',
+    body: 'Técnica balayage con productos sin amoníaco para un resultado natural.',
+    foot: '@BRUMAESTUDIO',
+  },
+  {
+    theme: 't-pear',
+    brand: 'Verdulería Mendoza', brandColor: 'oklch(48% 0.16 95)', brandInitials: 'VM',
+    kick: 'ENTRÓ HOY',
+    headline: 'Tomates de <em>quinta</em>',
+    body: 'Directos del productor. Sin cámara, sin maduración artificial.',
+    foot: '@VERDULERAMENDOZA',
+  },
+  {
+    theme: 't-ink',
+    brand: 'Fitness Pro', brandColor: 'oklch(65% 0.22 18)', brandInitials: 'FP',
+    kick: 'RUTINA SEMANAL',
+    headline: '5 ejercicios para <em>empezar hoy</em>',
+    body: 'Sin pesas, sin excusas. Rutina de 20 min para hacer en casa.',
+    foot: '@FITNESSPRO.AR',
+  },
+  {
+    theme: 't-cream',
+    brand: 'Taller Sur', brandColor: 'oklch(50% 0.14 55)', brandInitials: 'TS',
+    kick: 'SERVICE',
+    headline: 'Cuándo tocan <em>las pastillas</em>',
+    body: 'El cuerpo es el mismo en las cinco a propósito: lo único que cambia es la marca.',
+    foot: '@TALLERSUR',
+  },
+  {
+    theme: 't-cyan',
+    brand: 'Café Central', brandColor: 'oklch(42% 0.12 55)', brandInitials: '☕',
+    kick: 'BLEND DEL MES',
+    headline: 'De Etiopía <em>a tu taza</em>',
+    body: 'Notas a frutos rojos con final cítrico. Tostado medio.',
+    foot: 'CAFÉ DE ESPECIALIDAD',
+  },
+  {
+    theme: 't-mint',
+    brand: 'Huerta Urbana', brandColor: 'oklch(40% 0.14 150)', brandInitials: '🌱',
+    kick: 'GUÍA RÁPIDA',
+    headline: 'Qué plantar <em>en septiembre</em>',
+    body: 'Tomates, albahaca, pimientos. Todo en maceta o cantero.',
+    foot: 'HUERTAURBANA.COM',
+  },
+  {
+    theme: 't-paper',
+    brand: 'Cervecería Fondo', brandColor: 'oklch(52% 0.14 75)', brandInitials: 'CF',
+    kick: 'TIRADA NUEVA',
+    headline: 'Una IPA que <em>no amarga de más</em>',
+    body: 'El cuerpo es el mismo en las cinco a propósito: lo único que cambia es la marca.',
+    foot: '@CERVECERAFONDO',
+  },
+  {
+    theme: 't-lavender',
+    brand: 'Librería Otoño', brandColor: 'oklch(42% 0.08 150)', brandInitials: 'L',
+    kick: 'LLEGÓ',
+    headline: 'Lo nuevo de <em>Mariana Enriquez</em>',
+    body: 'El cuerpo es el mismo en las cinco a propósito: lo único que cambia es la marca.',
+    foot: '@LIBRERAOTOO',
+  },
+  {
+    theme: 't-ink-deep',
+    brand: 'tumarca', brandColor: 'oklch(64% 0.18 305)', brandInitials: '?',
+    kick: 'TEMPLATE · VECTOR',
+    headline: 'Para la frase que <em>no necesita explicación.</em>',
+    body: '',
+    foot: '@TUMARCA',
+  },
+  {
+    theme: 't-coral',
+    brand: 'Joyería Aldana', brandColor: 'oklch(52% 0.12 85)', brandInitials: 'JA',
+    kick: 'HECHO ACÁ',
+    headline: 'Plata que <em>no se pone negra</em>',
+    body: 'El cuerpo es el mismo en las cinco a propósito: lo único que cambia es la marca.',
+    foot: '@JOYERAALDANA',
+  },
+
+  // ── Placas con FONDO DE IMAGEN ──
+  {
+    theme: 't-foto',
+    fotoUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=500&fit=crop',
+    fotoOverlay: 'linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 50%, rgba(0,0,0,0.85) 100%)',
+    brand: 'Panadería Mendieta', brandColor: 'oklch(55% 0.18 25)', brandInitials: 'PM',
+    kick: 'NUEVA HORNADA',
+    headline: 'Pan de campo <em>como el de antes</em>',
+    body: 'Harina orgánica, fermentación de 48 horas.',
+    foot: '@PANADERIAMENDIETA',
+  },
+  {
+    theme: 't-foto',
+    fotoUrl: 'https://images.unsplash.com/photo-1466692476868-aef1dfb1e735?w=400&h=500&fit=crop',
+    fotoOverlay: 'linear-gradient(180deg, rgba(15,40,15,0.2) 0%, rgba(10,30,10,0.6) 45%, rgba(5,20,5,0.9) 100%)',
+    brand: 'Vivero Las Acacias', brandColor: 'oklch(70% 0.16 150)', brandInitials: '🌿',
+    kick: 'TEMPORADA',
+    headline: 'Suculentas que <em>no necesitan sol</em>',
+    body: 'Ideales para interiores con poca luz natural.',
+    foot: '@VIVEROLASACACIAS',
+  },
+  {
+    theme: 't-foto',
+    fotoUrl: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400&h=500&fit=crop',
+    fotoOverlay: 'linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.5) 45%, rgba(0,0,0,0.88) 100%)',
+    brand: 'Fitness Pro', brandColor: 'oklch(68% 0.24 18)', brandInitials: 'FP',
+    kick: 'CHALLENGE',
+    headline: '30 días de <em>sentadillas</em>',
+    body: 'Empezá con 20 y llegá a 100. Sin equipamiento.',
+    foot: '@FITNESSPRO.AR',
+  },
+  {
+    theme: 't-foto',
+    fotoUrl: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&h=500&fit=crop',
+    fotoOverlay: 'linear-gradient(180deg, rgba(40,20,5,0.15) 0%, rgba(30,15,5,0.55) 45%, rgba(20,10,2,0.9) 100%)',
+    brand: 'Café Central', brandColor: 'oklch(76% 0.18 95)', brandInitials: '☕',
+    kick: 'RECIÉN MOLIDO',
+    headline: 'Latte art <em>en tu mesa</em>',
+    body: 'Taller abierto los sábados. Cupos limitados.',
+    foot: 'CAFÉ DE ESPECIALIDAD',
+  },
+  {
+    theme: 't-foto',
+    fotoUrl: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=400&h=500&fit=crop',
+    fotoOverlay: 'linear-gradient(180deg, rgba(50,20,60,0.2) 0%, rgba(40,10,50,0.55) 45%, rgba(30,5,40,0.9) 100%)',
+    brand: 'Bruma Estudio', brandColor: 'oklch(74% 0.16 305)', brandInitials: 'BE',
+    kick: 'TRANSFORMACIÓN',
+    headline: 'De rubio a <em>cobrizo</em>',
+    body: 'El proceso completo en una sola sesión.',
+    foot: '@BRUMAESTUDIO',
+  },
+  {
+    theme: 't-foto',
+    fotoUrl: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400&h=500&fit=crop',
+    fotoOverlay: 'linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.45) 40%, rgba(0,0,0,0.85) 100%)',
+    brand: 'Joyería Aldana', brandColor: 'oklch(80% 0.16 95)', brandInitials: 'JA',
+    kick: 'COLECCIÓN NUEVA',
+    headline: 'Aros que <em>no pesan</em>',
+    body: 'Plata 925 con baño de oro. Hipoalergénicos.',
+    foot: '@JOYERAALDANA',
+  },
+];
+
+/* ─── Crear HTML de una placa ─── */
+function buildPlaca(data) {
+  const card = document.createElement('div');
+  card.className = `placa ${data.theme}`;
+
+  let bgHTML = '';
+  if (data.fotoUrl) {
+    bgHTML = `
+      <div class="foto-bg" style="background-image:url('${data.fotoUrl}')"></div>
+      <div class="foto-overlay" style="background:${data.fotoOverlay}"></div>
+    `;
+  }
+
+  card.innerHTML = `
+    ${bgHTML}
+    <div class="placa-inner">
+      <div class="brand-row">
+        <span class="brand-dot" style="background:${data.brandColor}">${data.brandInitials}</span>
+        ${data.brand}
+      </div>
+      <div class="kick">${data.kick}</div>
+      <div class="headline">${data.headline}</div>
+      ${data.body ? `<div class="body-text">${data.body}</div>` : ''}
+      <div class="foot">${data.foot}</div>
+    </div>
+  `;
+  return card;
+}
+
+/* ─── Shuffle ─── */
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   CASCADA — Columnas verticales marquee infinito
+   ══════════════════════════════════════════════════════════════════ */
+function initCascada() {
+  const container = document.getElementById('cascada');
+  container.innerHTML = '';
+
+  const vw = window.innerWidth;
+  // Columnas responsivas: más en desktop, menos en mobile
+  const colCount = vw > 1400 ? 8 : vw > 1000 ? 7 : vw > 700 ? 5 : 4;
+  const colWidth = vw / colCount;
+
+  for (let col = 0; col < colCount; col++) {
+    const column = document.createElement('div');
+    column.className = 'cascada-col';
+    column.style.left = (col * colWidth) + 'px';
+    column.style.width = colWidth + 'px';
+
+    // Calcular opacidad — más transparente en los bordes
+    const distFromCenter = Math.abs(col - (colCount - 1) / 2) / ((colCount - 1) / 2);
+    const baseOpacity = col === 0 || col === colCount - 1
+      ? 0.18
+      : col === 1 || col === colCount - 2
+        ? 0.32
+        : 0.5 - distFromCenter * 0.15;
+
+    // Repartir placas shuffleadas por columna
+    const shuffled = shuffle(PLACAS);
+    const placasPerCol = 5;
+
+    for (let p = 0; p < placasPerCol; p++) {
+      const data = shuffled[p % PLACAS.length];
+      const card = buildPlaca(data);
+      card.style.opacity = baseOpacity;
+      column.appendChild(card);
+    }
+
+    container.appendChild(column);
+
+    // Medir la altura real de la columna
+    const colHeight = column.scrollHeight;
+
+    // Duplicar para seamless loop
+    const children = Array.from(column.children);
+    children.forEach(child => {
+      const clone = child.cloneNode(true);
+      column.appendChild(clone);
+    });
+
+    // Dirección: columnas pares bajan, impares suben
+    const direction = col % 2 === 0 ? -1 : 1;
+    const speed = 28 + Math.random() * 22; // 28-50s
+    const startY = direction === -1 ? 0 : -colHeight;
+
+    gsap.set(column, { y: startY });
+
+    gsap.to(column, {
+      y: direction === -1 ? -colHeight : 0,
+      duration: speed,
+      ease: 'none',
+      repeat: -1,
+      modifiers: {
+        y: gsap.utils.unitize(val => {
+          const v = parseFloat(val);
+          if (direction === -1) {
+            return ((v % colHeight) + colHeight) % colHeight === 0 ? 0 : v % colHeight;
+          } else {
+            const m = v % colHeight;
+            return m === 0 ? 0 : m - colHeight;
+          }
+        })
+      }
+    });
+
+    // Entrada escalonada sutil
+    gsap.from(column, {
+      opacity: 0,
+      x: col % 2 === 0 ? -20 : 20,
+      duration: 0.8,
+      delay: col * 0.12,
+      ease: 'power2.out',
+    });
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   INTERACCIONES
+   ══════════════════════════════════════════════════════════════════ */
+document.querySelectorAll('.opcion').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.opcion').forEach(c => c.classList.remove('elegida'));
+    card.classList.add('elegida');
+    gsap.fromTo(card, { scale: 0.95 }, { scale: 1, duration: 0.3, ease: 'back.out(2)' });
+  });
+});
+
+/* ── Iniciar ── */
+initCascada();
+
+/* ── Reiniciar en resize ── */
+let resizeTimeout;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(() => {
+    gsap.killTweensOf('.cascada-col');
+    initCascada();
+  }, 300);
+});
+</script>
+</body>
+</html>
