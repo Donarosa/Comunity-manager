@@ -244,7 +244,6 @@ function renderizarHome({
   const pestaniasHome = el('div.dash-tabs-home-wrap', {},
     el('div.dash-tabs', {},
       el('button.dash-tab-btn.activo', { onclick: () => onAbrirDashboard('pubs') }, `Mis Placas (${publicaciones.length})`),
-      el('button.dash-tab-btn', { onclick: () => onAbrirDashboard('planes') }, `Planes (${planes.length})`),
       el('button.dash-tab-btn', { onclick: () => onAbrirDashboard('stats') }, `Actividad (${estadisticas.length})`)
     ),
     el('button.btn.chico.btn--mint.dash-cta-btn', {
@@ -336,7 +335,7 @@ function renderizarDashboardView({
         el('h1', { style: 'font-size:1.6rem;margin:0;font-weight:800;' }, 'Dashboard de Placas')
       ),
       el('p.apunte', { style: 'margin:4px 0 0;' },
-        `${publicaciones.length} publicaciones · ${planes.length} planes · ${marca?.nombre || cuenta.nombre}`
+        `${publicaciones.length} publicaciones · ${marca?.nombre || cuenta.nombre}`
       )
     ),
     el('div.dash-acciones-top', { style: 'display:flex;gap:8px;' },
@@ -345,12 +344,11 @@ function renderizarDashboardView({
     )
   )
 
-  /* ── Pestañas: Publicaciones, Planes, Actividad ── */
+  /* ── Pestañas: Publicaciones, Actividad ── */
   const pestanias = el('div.dash-tabs', {})
   const tabPubs = el('button.dash-tab-btn' + (tabInicial === 'pubs' ? '.activo' : ''), {}, `Mis Placas (${publicaciones.length})`)
-  const tabPlanes = el('button.dash-tab-btn' + (tabInicial === 'planes' ? '.activo' : ''), {}, `Planes (${planes.length})`)
   const tabStats = el('button.dash-tab-btn' + (tabInicial === 'stats' ? '.activo' : ''), {}, `Actividad (${estadisticas.length})`)
-  pestanias.append(tabPubs, tabPlanes, tabStats)
+  pestanias.append(tabPubs, tabStats)
 
   const cuerpoTab = el('div.dash-tab-cuerpo', { style: 'margin-top:16px;' })
 
@@ -388,43 +386,6 @@ function renderizarDashboardView({
     cuerpoTab.append(grilla)
   }
 
-  function renderPlanes() {
-    vaciar(cuerpoTab)
-    if (planes.length === 0) {
-      cuerpoTab.append(
-        el('div.dash-vacio', {},
-          el('h4', {}, 'No tenés planes de contenido guardados.'),
-          el('p.apunte', { style: 'margin:6px 0 16px;' }, 'La IA puede redactar tus copys, hashtags y armar el calendario de la semana.'),
-          el('button.btn.chico', { onclick: onAbrirPlan }, 'Armar un plan semanal')
-        )
-      )
-      return
-    }
-
-    for (const pl of planes) {
-      const fechaTxt = pl.fecha ? new Date(pl.fecha).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' }) : ''
-      const card = el('div.dash-plan-card', {},
-        el('div.dash-plan-header', {},
-          el('div', {},
-            el('span.rotulo', {}, fechaTxt),
-            el('h3', { style: 'margin:2px 0 6px;' }, pl.resumen || 'Plan de contenido semanal'),
-            el('p.apunte.chico', {}, `${pl.publicaciones?.length || 0} publicaciones generadas`)
-          )
-        ),
-        el('div.dash-plan-pubs-lista', {},
-          (pl.publicaciones || []).map(pub =>
-            el('div.dash-plan-pub-item', {},
-              el('strong', {}, `${pub.dia} · ${pub.canal}`),
-              el('p', { style: 'font-size:0.9rem;margin:4px 0;' }, pub.objetivo),
-              el('p.apunte.chico', { style: 'white-space:pre-wrap;background:var(--papel);padding:8px;border-radius:2px;margin-top:6px;' }, pub.caption)
-            )
-          )
-        )
-      )
-      cuerpoTab.append(card)
-    }
-  }
-
   function renderActividad() {
     vaciar(cuerpoTab)
     if (estadisticas.length === 0) {
@@ -452,17 +413,13 @@ function renderizarDashboardView({
     activarTab(tabPubs)
     renderPublicaciones('todos')
   }
-  tabPlanes.onclick = () => {
-    activarTab(tabPlanes)
-    renderPlanes()
-  }
   tabStats.onclick = () => {
     activarTab(tabStats)
     renderActividad()
   }
 
   function activarTab(btnActivo) {
-    [tabPubs, tabPlanes, tabStats].forEach(b => b.classList.remove('activo'))
+    [tabPubs, tabStats].forEach(b => b.classList.remove('activo'))
     btnActivo.classList.add('activo')
   }
 
@@ -472,10 +429,7 @@ function renderizarDashboardView({
     cuerpoTab
   )
 
-  if (tabInicial === 'planes') {
-    activarTab(tabPlanes)
-    renderPlanes()
-  } else if (tabInicial === 'stats') {
+  if (tabInicial === 'stats') {
     activarTab(tabStats)
     renderActividad()
   } else {
