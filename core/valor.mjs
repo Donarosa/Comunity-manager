@@ -19,7 +19,7 @@
 const num = (v, def) => (Number.isFinite(Number(v)) && Number(v) > 0 ? Number(v) : def)
 
 export const REFERENCIA = {
-  precioPorPlaca: num(process.env.CM_PRECIO_PLACA, 4),
+  precioPorPlaca: num(process.env.CM_PRECIO_PLACA, 10),
   simbolo: process.env.CM_SIMBOLO || 'US$',
   moneda: process.env.CM_MONEDA || 'USD',
   // Qué es ese precio. Va impreso al lado del número, no en un tooltip.

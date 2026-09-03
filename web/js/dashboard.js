@@ -1,58 +1,66 @@
-// Dashboard Personal del Usuario.
-// Muestra el perfil, métricas de ahorro e interacciones, galería de piezas y planes guardados.
+// Dashboard y Pantalla de Inicio del Usuario.
+// Divide la vista de Inicio (resumen, métricas destacadas y marca) del Dashboard de Placas (galería, planes y actividad).
 
 import { api } from './api.js'
 import { el, vaciar, aviso } from './ui.js'
 import { obtenerUsuario, cerrarSesion } from './auth.js'
 
-export async function iniciarDashboard({
+/**
+ * Vista de Inicio (Home):
+ * Muestra el perfil, métricas de ahorro destacadas (10 USD/placa), cuota,
+ * identidad de marca y accesos directos, con CTA al Dashboard de Placas (sin mostrar las imágenes acá).
+ */
+export async function iniciarHome({
   contenedor,
   cuentaId,
   catalogo,
   onAbrirEditor,
   onAbrirWizard,
   onAbrirPlan,
+  onAbrirDashboard,
   alCerrarSesion,
 }) {
   vaciar(contenedor)
-  contenedor.append(el('div.cargando-txt', {}, 'Cargando tu dashboard personal...'))
+  contenedor.append(el('div.cargando-txt', {}, 'Cargando tu espacio...'))
 
   try {
     const data = await api.dashboard(cuentaId)
-    renderizarDashboard({
+    renderizarHome({
       contenedor,
       data,
       catalogo,
       onAbrirEditor,
       onAbrirWizard,
       onAbrirPlan,
+      onAbrirDashboard,
       alCerrarSesion,
     })
   } catch (err) {
     vaciar(contenedor).append(
-      aviso(`Error cargando dashboard: ${err.message}`, 'malo'),
+      aviso(`Error cargando inicio: ${err.message}`, 'malo'),
       el('button.btn.fantasma', {
         style: 'margin-top:14px',
-        onclick: () => iniciarDashboard({ contenedor, cuentaId, catalogo, onAbrirEditor, onAbrirWizard, onAbrirPlan, alCerrarSesion }),
+        onclick: () => iniciarHome({ contenedor, cuentaId, catalogo, onAbrirEditor, onAbrirWizard, onAbrirPlan, onAbrirDashboard, alCerrarSesion }),
       }, 'Reintentar')
     )
   }
 }
 
-function renderizarDashboard({
+function renderizarHome({
   contenedor,
   data,
   catalogo,
   onAbrirEditor,
   onAbrirWizard,
   onAbrirPlan,
+  onAbrirDashboard,
   alCerrarSesion,
 }) {
   vaciar(contenedor)
-  const { cuenta, marca, estado, publicaciones, planes, estadisticas, resumenMetricas } = data
+  const { cuenta, marca, estado, publicaciones = [], resumenMetricas } = data
   const usuarioAuth = obtenerUsuario()
 
-  const panel = el('div.dashboard-usuario', { style: 'padding:32px 0 80px;' })
+  const panel = el('div.dashboard-usuario')
   contenedor.append(panel)
 
   /* ── 1. Cabecera de Usuario ── */
@@ -64,10 +72,7 @@ function renderizarDashboard({
       el('img.dash-avatar', { src: avatarUrl, alt: cuenta.nombre }),
       el('div', {},
         el('div', { style: 'display:flex;align-items:center;gap:10px;flex-wrap:wrap;' },
-          // Si ya cargó su marca, el negocio se llama como su marca. "Mi
-          // Negocio" es el nombre de relleno del alta y deja de ser cierto en
-          // cuanto el usuario escribe el suyo.
-          el('h1', { style: 'font-size:1.8rem;margin:0;' }, marca?.nombre || cuenta.nombre),
+          el('h1', { style: 'font-size:1.65rem;margin:0;font-weight:800;' }, marca?.nombre || cuenta.nombre),
           el('span.badge-estado', {}, `Plan ${cuenta.plan || 'Único'}`)
         ),
         el('p.apunte', { style: 'margin:2px 0 0;' },
@@ -76,7 +81,10 @@ function renderizarDashboard({
         )
       )
     ),
-    el('div.dash-acciones-top', {},
+    el('div.dash-acciones-top', { style: 'display:flex;gap:8px;align-items:center;' },
+      el('button.btn.chico.btn--mint', {
+        onclick: () => onAbrirDashboard('pubs'),
+      }, '🖼 Ir a Dashboard'),
       el('button.btn.fantasma.chico', {
         onclick: async () => {
           if (confirm('¿Deseás cerrar la sesión actual?')) {
@@ -91,29 +99,45 @@ function renderizarDashboard({
   /* ── 2. Tarjetas de Métricas e Interacciones ── */
   const valorObj = estado?.valor
   const ahorroTxt = valorObj
-    ? (valorObj.referencia?.simbolo || '$') + Math.round(valorObj.equivalenteTotal || 0).toLocaleString('es-AR')
-    : '$0'
+    ? (valorObj.referencia?.simbolo || 'US$') + Math.round(valorObj.equivalenteTotal || 0).toLocaleString('es-AR')
+    : 'US$0'
+
+  const totalPubs = resumenMetricas?.totalPublicaciones || publicaciones.length || 0
+  const placasMes = resumenMetricas?.placasEsteMes || 0
+
+  // Tarjeta Publicaciones con contador y CTA claro a Dashboard
+  const cardPublicaciones = el('div.dash-metrica-card.dash-metrica-card--pubs', {},
+    el('span.rotulo', {}, 'Publicaciones'),
+    el('strong.dash-metrica-cifra', {}, String(totalPubs)),
+    el('span.apunte.chico', {}, `${placasMes} placas generadas este mes`),
+    el('button.btn.chico.btn--outline', {
+      style: 'margin-top:10px;width:100%;font-size:0.82rem;padding:6px 10px;',
+      onclick: () => onAbrirDashboard('pubs'),
+    }, 'Ver mis placas en Dashboard →')
+  )
+
+  // Tarjeta Ahorro acumulado DESTACADA a 10 USD/placa
+  const cardAhorro = el('div.dash-metrica-card.dash-metrica-card--ahorro', {},
+    el('div', { style: 'display:flex;justify-content:space-between;align-items:center;' },
+      el('span.rotulo', { style: 'color:#15803d;font-weight:700;' }, 'Ahorro acumulado'),
+      el('span.chip-ahorro-destacado', {}, '💰 US$10 / placa')
+    ),
+    el('strong.dash-metrica-cifra.dash-metrica-cifra--ahorro', {}, ahorroTxt),
+    el('span.apunte.chico.ahorro-aclaracion', {},
+      valorObj?.texto?.aclaracion || 'a US$10 la placa — lo que cobra un diseñador por una placa suelta'
+    ),
+    el('div.ahorro-badge-pill', {}, '✨ Ahorro vs diseñador freelance')
+  )
 
   const metricasGrid = el('div.dash-metricas-grid', {},
-    // El total cuenta publicaciones, no placas: un carrusel de tres es una
-    // publicación. Con el rótulo anterior la tarjeta se contradecía sola
-    // ("Placas generadas: 7" arriba de "9 este mes").
-    tarjetaMetrica('Publicaciones', String(resumenMetricas?.totalPublicaciones || 0), `${resumenMetricas?.placasEsteMes || 0} placas este mes`),
-    tarjetaMetrica('Ahorro acumulado', ahorroTxt, valorObj?.texto?.aclaracion || 'estimado vs agencia'),
-    // La cuota es un límite, y un límite se lee mejor viéndolo llenarse que
-    // como un número suelto: "117 piezas" no dice si es mucho o poco hasta
-    // saber contra qué. Las barras muestran las dos escalas —el mes y el día—
-    // que es lo que define cuánto se puede hacer ahora.
+    cardPublicaciones,
+    cardAhorro,
     tarjetaCuota(estado)
   )
 
   /* ── 3. Panel de Identidad de Marca ── */
   const panelMarca = el('div.dash-marca-box', {})
   if (marca) {
-    // La paleta derivada vive en colors.flat — no hay colors.light ni
-    // colors.dark. Leyendo esas dos, los badges caían al valor de respaldo y el
-    // panel mostraba dos códigos que no eran los de la marca. Es el único lugar
-    // donde el cliente ve su paleta, y probablemente de donde la copia.
     const C = marca.colors?.flat
     const paleta = C ? el('div.dash-paleta-preview', {},
       colorBadge('Fondo claro', C.bg),
@@ -145,33 +169,107 @@ function renderizarDashboard({
     )
   }
 
-  /* ── 4. Botones de Acción Rápida ──
-   *
-   * Sin marca no se puede publicar: las placas se dibujan con el color, la
-   * tipografía y la firma del negocio. Antes las dos acciones estaban igual de
-   * disponibles y el editor dejaba escribir la placa entera; el problema
-   * aparecía recién al generar, con un error del servidor. Mejor pedir la
-   * marca acá, que es una vez, que hacerle perder el texto escrito. */
-  // Las dos acciones viven en un dock flotante: son lo más importante de la
-  // pantalla y el producto se usa desde el mostrador, con el teléfono en la
-  // mano. Ahí abajo quedan siempre bajo el pulgar, sin importar cuánto se haya
-  // scrolleado. Se van solos al cambiar de pantalla porque cuelgan del
-  // contenedor del dashboard.
+  /* ── 4. Acciones directas ── */
   const barraAcciones = marca
     ? el('div.dock-acciones', {},
         el('button.btn', { onclick: onAbrirEditor }, '✎ Escribir yo'),
-        el('button.btn.cyan', { onclick: onAbrirPlan }, '✨ Sugerime'))
+        el('button.btn.cyan', { onclick: onAbrirPlan }, '✨ Sugerime'),
+        el('button.btn.btn--outline', { onclick: () => onAbrirDashboard('pubs') }, '🖼 Dashboard de Placas'))
     : el('div.dock-acciones', {},
         el('button.btn', { onclick: onAbrirWizard }, 'Armar mi marca para empezar'))
 
-  /* ── 5. Pestañas: Publicaciones, Planes, Actividad ── */
+  panel.append(
+    cabecera,
+    metricasGrid,
+    panelMarca,
+    barraAcciones
+  )
+}
+
+/**
+ * Vista de Dashboard de Placas:
+ * Apartado dedicado para ver todas las placas, planes de contenido y actividad.
+ */
+export async function iniciarDashboard({
+  contenedor,
+  cuentaId,
+  catalogo,
+  onAbrirEditor,
+  onAbrirWizard,
+  onAbrirPlan,
+  onVolverHome,
+  alCerrarSesion,
+  tabInicial = 'pubs',
+}) {
+  vaciar(contenedor)
+  contenedor.append(el('div.cargando-txt', {}, 'Cargando tus placas y contenido...'))
+
+  try {
+    const data = await api.dashboard(cuentaId)
+    renderizarDashboardView({
+      contenedor,
+      data,
+      catalogo,
+      onAbrirEditor,
+      onAbrirWizard,
+      onAbrirPlan,
+      onVolverHome,
+      alCerrarSesion,
+      tabInicial,
+    })
+  } catch (err) {
+    vaciar(contenedor).append(
+      aviso(`Error cargando dashboard: ${err.message}`, 'malo'),
+      el('button.btn.fantasma', {
+        style: 'margin-top:14px',
+        onclick: () => iniciarDashboard({ contenedor, cuentaId, catalogo, onAbrirEditor, onAbrirWizard, onAbrirPlan, onVolverHome, alCerrarSesion, tabInicial }),
+      }, 'Reintentar')
+    )
+  }
+}
+
+function renderizarDashboardView({
+  contenedor,
+  data,
+  catalogo,
+  onAbrirEditor,
+  onAbrirWizard,
+  onAbrirPlan,
+  onVolverHome,
+  alCerrarSesion,
+  tabInicial = 'pubs',
+}) {
+  vaciar(contenedor)
+  const { cuenta, marca, estado, publicaciones = [], planes = [], estadisticas = [] } = data
+
+  const panel = el('div.dashboard-usuario.dashboard-galeria')
+  contenedor.append(panel)
+
+  /* ── Cabecera del Dashboard ── */
+  const cabeceraDash = el('div.dash-header', {},
+    el('div', {},
+      el('div', { style: 'display:flex;align-items:center;gap:10px;' },
+        onVolverHome ? el('button.btn.fantasma.chico', { onclick: onVolverHome, style: 'padding:4px 10px;font-size:0.85rem;' }, '← Volver al Inicio') : null,
+        el('h1', { style: 'font-size:1.6rem;margin:0;font-weight:800;' }, 'Dashboard de Placas')
+      ),
+      el('p.apunte', { style: 'margin:4px 0 0;' },
+        `${publicaciones.length} publicaciones · ${planes.length} planes · ${marca?.nombre || cuenta.nombre}`
+      )
+    ),
+    el('div.dash-acciones-top', { style: 'display:flex;gap:8px;' },
+      el('button.btn.chico', { onclick: onAbrirEditor }, '+ Nueva placa'),
+      el('button.btn.cyan.chico', { onclick: onAbrirPlan }, '✨ Sugerir')
+    )
+  )
+
+  /* ── Pestañas: Publicaciones, Planes, Actividad ── */
   const pestanias = el('div.dash-tabs', {})
-  const tabPubs = el('button.dash-tab-btn.activo', {}, `Mis Placas (${publicaciones.length})`)
-  const tabPlanes = el('button.dash-tab-btn', {}, `Planes (${planes.length})`)
-  const tabStats = el('button.dash-tab-btn', {}, `Actividad (${estadisticas.length})`)
+  const tabPubs = el('button.dash-tab-btn' + (tabInicial === 'pubs' ? '.activo' : ''), {}, `Mis Placas (${publicaciones.length})`)
+  const tabPlanes = el('button.dash-tab-btn' + (tabInicial === 'planes' ? '.activo' : ''), {}, `Planes (${planes.length})`)
+  const tabStats = el('button.dash-tab-btn' + (tabInicial === 'stats' ? '.activo' : ''), {}, `Actividad (${estadisticas.length})`)
   pestanias.append(tabPubs, tabPlanes, tabStats)
 
-  const cuerpoTab = el('div.dash-tab-cuerpo', { style: 'margin-top:20px;' })
+  const cuerpoTab = el('div.dash-tab-cuerpo', { style: 'margin-top:16px;' })
 
   function renderPublicaciones(filtro = 'todos') {
     vaciar(cuerpoTab)
@@ -286,16 +384,21 @@ function renderizarDashboard({
   }
 
   panel.append(
-    cabecera,
-    metricasGrid,
-    panelMarca,
-    barraAcciones,
+    cabeceraDash,
     pestanias,
     cuerpoTab
   )
 
-  // Iniciar en la pestaña de publicaciones
-  renderPublicaciones('todos')
+  if (tabInicial === 'planes') {
+    activarTab(tabPlanes)
+    renderPlanes()
+  } else if (tabInicial === 'stats') {
+    activarTab(tabStats)
+    renderActividad()
+  } else {
+    activarTab(tabPubs)
+    renderPublicaciones('todos')
+  }
 }
 
 function tarjetaMetrica(titulo, valor, detalle) {

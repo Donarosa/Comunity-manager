@@ -4,7 +4,7 @@ import { api } from './api.js'
 import { el, $, $$, vaciar, aviso } from './ui.js'
 import { iniciarWizard } from './wizard.js'
 import { iniciarEditor } from './editor.js'
-import { iniciarDashboard } from './dashboard.js'
+import { iniciarHome, iniciarDashboard } from './dashboard.js'
 import { abrirModalAuth } from './modal-auth.js'
 import { enCambioDeAuth, obtenerUsuario, cerrarSesion } from './auth.js'
 
@@ -17,15 +17,18 @@ const btnEntrar = $('#btn-entrar')
 const btnLoginNav = $('#btn-login-nav')
 const usuarioNav = $('#usuario-nav')
 const navAvatar = $('#nav-avatar')
+const navLogo = $('#nav-logo') || $('.logotipo')
 
 let catalogo = null
 let cuenta = null
 let estadoCuota = null
 let usuarioActual = null
+let pantallaActual = 'landing' // 'landing' | 'home' | 'dashboard' | 'editor' | 'wizard' | 'plan'
 
 /* ── navegación ──────────────────────────────────────────── */
 
 function mostrarLanding() {
+  pantallaActual = 'landing'
   app.classList.add('oculto')
   landing.classList.remove('oculto')
   $$('[data-solo-landing]').forEach(n => n.classList.remove('oculto'))
@@ -37,7 +40,6 @@ function mostrarApp(pintar) {
   landing.classList.add('oculto')
   app.classList.remove('oculto')
   $$('[data-solo-landing]').forEach(n => n.classList.add('oculto'))
-  btnEntrar.textContent = 'Dashboard'
   vaciar(cuerpo)
   pintar(cuerpo)
 }
@@ -59,10 +61,10 @@ function actualizarNavUsuario(u) {
       usuarioNav.classList.remove('oculto')
       navAvatar.src = u.foto || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(u.nombre || 'U')}&backgroundColor=A83A1C&textColor=FAF7F0`
       navAvatar.onclick = () => {
-        if (cuenta) abrirDashboard()
+        if (cuenta) abrirHome()
       }
     }
-    btnEntrar.textContent = 'Mi Dashboard'
+    btnEntrar.textContent = pantallaActual === 'dashboard' ? 'Inicio' : 'Dashboard'
   } else {
     if (btnLoginNav) btnLoginNav.classList.remove('oculto')
     if (usuarioNav) usuarioNav.classList.add('oculto')
@@ -84,8 +86,30 @@ async function asegurarCatalogo() {
 
 /* ── pantallas ───────────────────────────────────────────── */
 
-function abrirDashboard() {
+function abrirHome() {
   if (!cuenta) return entrar()
+  pantallaActual = 'home'
+  btnEntrar.textContent = 'Dashboard'
+  mostrarApp(cont => iniciarHome({
+    contenedor: cont,
+    cuentaId: cuenta.id,
+    catalogo,
+    onAbrirEditor: abrirEditor,
+    onAbrirWizard: abrirWizard,
+    onAbrirPlan: vistaSugerir,
+    onAbrirDashboard: (tab) => abrirDashboard(tab),
+    alCerrarSesion: () => {
+      cuenta = null
+      localStorage.removeItem(LLAVE)
+      mostrarLanding()
+    },
+  }))
+}
+
+function abrirDashboard(tabInicial = 'pubs') {
+  if (!cuenta) return entrar()
+  pantallaActual = 'dashboard'
+  btnEntrar.textContent = 'Inicio'
   mostrarApp(cont => iniciarDashboard({
     contenedor: cont,
     cuentaId: cuenta.id,
@@ -93,6 +117,8 @@ function abrirDashboard() {
     onAbrirEditor: abrirEditor,
     onAbrirWizard: abrirWizard,
     onAbrirPlan: vistaSugerir,
+    onVolverHome: abrirHome,
+    tabInicial,
     alCerrarSesion: () => {
       cuenta = null
       localStorage.removeItem(LLAVE)
@@ -103,18 +129,22 @@ function abrirDashboard() {
 
 async function abrirEditor() {
   if (!cuenta) return entrar()
+  pantallaActual = 'editor'
+  btnEntrar.textContent = 'Dashboard'
   await asegurarCatalogo()
   mostrarApp(cont => iniciarEditor({
     contenedor: cont,
     cuenta,
     catalogo,
-    alVolver: abrirDashboard,
+    alVolver: abrirHome,
     alCambiarCuota: actualizarChip,
   }))
 }
 
 async function abrirWizard() {
   if (!cuenta) return entrar()
+  pantallaActual = 'wizard'
+  btnEntrar.textContent = 'Dashboard'
   await asegurarCatalogo()
   mostrarApp(cont => iniciarWizard({
     contenedor: cont,
@@ -124,7 +154,7 @@ async function abrirWizard() {
     modoEdicion: Boolean(cuenta.marca),
     alTerminar: async () => {
       await recargarCuenta()
-      abrirDashboard()
+      abrirHome()
     },
   }))
 }
@@ -463,7 +493,7 @@ async function sincronizarUsuario(usuario) {
     localStorage.setItem(LLAVE, cuenta.id)
     actualizarChip(r.estado)
     if (!cuenta.marca) abrirWizard()
-    else abrirDashboard()
+    else abrirHome()
   } catch (err) {
     console.warn('[Sync] Error sincronizando usuario:', err.message)
     // Fallback: intentar leer cuenta guardada o crearla
@@ -472,7 +502,7 @@ async function sincronizarUsuario(usuario) {
       cuenta = res.cuenta
       actualizarChip(res.estado)
       if (!cuenta.marca) abrirWizard()
-      else abrirDashboard()
+      else abrirHome()
     } catch {
       const nueva = await api.crearCuenta({
         id: usuario.id,
@@ -501,7 +531,7 @@ async function entrar() {
   if (!cuenta) {
     await sincronizarUsuario(u)
   } else {
-    abrirDashboard()
+    abrirHome()
   }
 }
 
@@ -524,9 +554,9 @@ async function arrancar() {
       cuenta = r.cuenta
       actualizarChip(r.estado)
       actualizarNavUsuario(u)
-      // Usuario logueado: ir directo al dashboard (o wizard si no completó la marca)
+      // Usuario logueado: ir directo al inicio (o wizard si no completó la marca)
       if (!cuenta.marca) abrirWizard()
-      else abrirDashboard()
+      else abrirHome()
     } catch {
       // Si la cuenta no existe en el backend, la sincronizamos
       await sincronizarUsuario(u)
@@ -537,11 +567,26 @@ async function arrancar() {
 
   btnEntrar.addEventListener('click', () => {
     if (!app.classList.contains('oculto')) {
-      abrirDashboard()
+      if (pantallaActual === 'dashboard') {
+        abrirHome()
+      } else {
+        abrirDashboard()
+      }
       return
     }
     entrar()
   })
+
+  const navLogoEl = $('#nav-logo') || $('.logotipo')
+  if (navLogoEl) {
+    navLogoEl.addEventListener('click', (e) => {
+      if (cuenta && !app.classList.contains('oculto')) {
+        e.preventDefault()
+        e.stopPropagation()
+        abrirHome()
+      }
+    })
+  }
 
   if (btnLoginNav) {
     btnLoginNav.addEventListener('click', () => {
