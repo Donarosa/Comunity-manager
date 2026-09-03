@@ -27,7 +27,14 @@ let pantallaActual = 'landing' // 'landing' | 'home' | 'dashboard' | 'editor' | 
 
 /* ── navegación ──────────────────────────────────────────── */
 
+/** El esqueleto de arranque deja lugar apenas hay una pantalla de verdad. */
+function apagarArranque() {
+  document.documentElement.classList.remove('con-sesion')
+  $('#arranque')?.remove()
+}
+
 function mostrarLanding() {
+  apagarArranque()
   pantallaActual = 'landing'
   app.classList.add('oculto')
   landing.classList.remove('oculto')
@@ -37,6 +44,7 @@ function mostrarLanding() {
 }
 
 function mostrarApp(pintar) {
+  apagarArranque()
   landing.classList.add('oculto')
   app.classList.remove('oculto')
   $$('[data-solo-landing]').forEach(n => n.classList.add('oculto'))
@@ -536,8 +544,13 @@ async function entrar() {
 }
 
 async function arrancar() {
-  catalogo = await api.catalogo().catch(() => ({ tipografias: [], formatos: [], planes: [] }))
-  // Si vino incompleto, asegurarCatalogo() lo reintenta antes de cada pantalla.
+  // El catálogo sale a buscarse ya, pero sin esperarlo: antes se lo esperaba
+  // acá y la landing quedaba a la vista todo ese viaje aunque la persona ya
+  // estuviera adentro. Quien lo necesita —el wizard y el editor— lo reintenta
+  // por su cuenta con asegurarCatalogo().
+  const catalogoEnCamino = api.catalogo()
+    .then(c => { catalogo = c })
+    .catch(() => { catalogo = { tipografias: [], formatos: [], planes: [] } })
 
   // Suscribirse a cambios en la sesión de Auth
   enCambioDeAuth(u => {
@@ -564,6 +577,8 @@ async function arrancar() {
   } else {
     mostrarLanding()
   }
+
+  await catalogoEnCamino
 
   btnEntrar.addEventListener('click', () => {
     if (!app.classList.contains('oculto')) {

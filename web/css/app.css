@@ -4034,3 +4034,37 @@ body { overflow-x: hidden; }
 }
 .posteo-estado.guardado { color: var(--color-bien); }
 .posteo-estado.falla    { color: var(--color-malo); }
+
+/* ── Arranque con sesión ────────────────────────────────────
+ *
+ * Con sesión guardada la landing no se muestra ni un cuadro: en su lugar queda
+ * el esqueleto, que ocupa el mismo lugar que el tablero y evita que la página
+ * salte cuando termina de cargar. Es preferible un rectángulo quieto a la
+ * página equivocada.
+ */
+html.con-sesion #landing { display: none; }
+html.con-sesion .arranque { display: block; }
+
+.arranque {
+  display: none;
+  max-width: var(--page-max);
+  margin: 40px auto;
+  padding: 0 var(--page-gutter);
+}
+.arranque-bloque {
+  background: var(--linea, #eee);
+  border-radius: var(--r-card, 14px);
+  opacity: 0.5;
+  animation: arranque-latido 1.4s var(--ease-soft, ease-in-out) infinite;
+}
+.arranque-bloque + .arranque-bloque { margin-top: 14px; }
+.arranque-bloque--cab { height: 92px; }
+.arranque-bloque--fila { height: 128px; }
+
+@keyframes arranque-latido {
+  0%, 100% { opacity: 0.35; }
+  50%      { opacity: 0.6; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .arranque-bloque { animation: none; }
+}

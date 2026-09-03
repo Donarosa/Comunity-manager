@@ -10,6 +10,24 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=JetBrains+Mono:wght@400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,800;1,9..144,400&family=Alex+Brush&family=Cinzel:wght@600;800&family=Syne:wght@700;800&family=Playfair+Display:ital,wght@0,700;1,600&family=Bebas+Neue&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/app.css?v=2.1">
+<script>
+// Antes del primer pintado, y a propósito.
+//
+// El módulo de la aplicación corre después de parsear el HTML y todavía tiene
+// que ir a buscar el catálogo y la cuenta antes de saber a dónde mandarte. Con
+// la landing puesta en el HTML, quien ya entró la veía aparecer y desaparecer
+// en cada carga: un parpadeo que se lee como que la página se equivocó.
+//
+// Acá solo se mira si hay sesión guardada, que es sincrónico. Si la hay, la
+// landing arranca oculta y en su lugar va el esqueleto. Si el token resultó
+// vencido, app.js saca la clase y la landing vuelve: el caso raro paga la
+// espera, no el de todos los días.
+try {
+  if (localStorage.getItem('cm.auth.usuario')) {
+    document.documentElement.classList.add('con-sesion')
+  }
+} catch (e) { /* modo privado sin almacenamiento: se ve la landing, como antes */ }
+</script>
 </head>
 <body>
 
@@ -500,6 +518,12 @@
 </main>
 
 <!-- ══ APLICACIÓN ══ -->
+<div class="arranque" id="arranque" aria-hidden="true">
+  <div class="arranque-bloque arranque-bloque--cab"></div>
+  <div class="arranque-bloque arranque-bloque--fila"></div>
+  <div class="arranque-bloque arranque-bloque--fila"></div>
+</div>
+
 <main id="app" class="oculto"><div class="marco" id="app-cuerpo"></div></main>
 
 <script type="module" src="/js/app.js?v=2.1"></script>
