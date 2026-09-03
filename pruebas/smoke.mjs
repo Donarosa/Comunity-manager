@@ -1178,5 +1178,31 @@ test('la plantilla se llama Idea sin cambiar su id', () => {
   assert.ok(CAMPOS_DE_PLANTILLA.manifiesto, 'el id manifiesto desapareció del núcleo')
 })
 
+// El frasco de la espera. El nivel no sube a propósito: llenarse en tres
+// segundos cuando faltan quince es un progreso inventado, y a la segunda vuelta
+// ya se sabe que no significa nada.
+test('el frasco de la espera burbujea sin prometer progreso', () => {
+  const css = readFileSync(join(RAIZ, 'web/css/app.css'), 'utf8')
+  assert.ok(/@keyframes frasco-sube/.test(css), 'las burbujas dejaron de subir')
+  assert.ok(/@keyframes frasco-corre/.test(css), 'la onda dejó de moverse')
+  // Nada que lleve el nivel de vacío a lleno: eso sería el progreso falso.
+  assert.ok(!/@keyframes frasco-llena/.test(css),
+    'apareció una animación de llenado: promete un progreso que no conocemos')
+
+  // Y quieto de verdad para quien pidió reducir movimiento, no más lento.
+  const i = css.indexOf('.frasco-espera')
+  const bloque = css.slice(i, i + 1800)
+  assert.ok(/prefers-reduced-motion: reduce/.test(bloque), 'no contempla reducir movimiento')
+  assert.ok(/animation: none/.test(bloque), 'con reduced-motion sigue animando')
+})
+
+// Dos frascos en la misma página con el mismo id de máscara: el segundo hereda
+// la del primero y el líquido se le escapa del vidrio.
+test('cada frasco lleva su propia máscara', () => {
+  const fuente = readFileSync(join(RAIZ, 'web/js/frasco.js'), 'utf8')
+  assert.ok(/id="frasco-\$\{id\}"/.test(fuente), 'el id de la máscara dejó de ser único')
+  assert.ok(/url\(#frasco-\$\{id\}\)/.test(fuente), 'la máscara no apunta al id de esta instancia')
+})
+
 // El resumen va último: si se agrega un bloque abajo, tiene que contarlo.
 console.log(`\n${ok} pruebas OK${process.exitCode ? ' — con fallas' : ''}\n`)

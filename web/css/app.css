@@ -4241,3 +4241,49 @@ html.con-sesion .arranque { display: block; }
   transition: opacity .12s var(--ease-out);
 }
 @media (prefers-reduced-motion: reduce) { .ayuda-plantilla { transition: none; } }
+
+/* ── El frasco de la espera ─────────────────────────────────
+ *
+ * El nivel se queda donde está y burbujea: no promete un progreso que no
+ * podemos saber. Lo único que se mueve son dos ondas desplazándose y las
+ * burbujas subiendo, las dos con transform, que es lo que el navegador resuelve
+ * sin volver a maquetar nada.
+ */
+.frasco-espera {
+  width: 168px;
+  height: 168px;
+  display: block;
+  margin: 28px auto 6px;
+}
+.frasco-liquido { animation: frasco-respira 3.4s ease-in-out infinite; }
+.frasco-onda {
+  animation: frasco-corre 2.6s linear infinite;
+  will-change: transform;
+}
+/* La de atrás va más lenta: dos ondas al mismo ritmo se leen como una sola. */
+.frasco-onda--fondo { animation-duration: 4.1s; }
+
+.frasco-burbuja {
+  animation: frasco-sube 2.9s ease-out infinite;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+@keyframes frasco-corre { to { transform: translateX(-120px); } }
+@keyframes frasco-respira {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(5px); }
+}
+@keyframes frasco-sube {
+  0%       { transform: translateY(0)      scale(.7); opacity: 0; }
+  18%      { opacity: .6; }
+  75%      { opacity: .5; }
+  100%     { transform: translateY(-118px) scale(1);  opacity: 0; }
+}
+
+/* Quieto de verdad, no más lento: para quien pidió reducir movimiento, una
+   animación suave sigue siendo una animación. */
+@media (prefers-reduced-motion: reduce) {
+  .frasco-liquido, .frasco-onda, .frasco-burbuja { animation: none; }
+  .frasco-burbuja { opacity: .35; }
+}

@@ -7,6 +7,7 @@ import { iniciarEditor } from './editor.js'
 import { iniciarHome, iniciarDashboard } from './dashboard.js'
 import { abrirModalAuth } from './modal-auth.js'
 import { enCambioDeAuth, obtenerUsuario, cerrarSesion } from './auth.js'
+import { frascoCargando } from './frasco.js'
 
 const LLAVE = 'cm.cuenta'
 const landing = $('#landing')
@@ -360,8 +361,13 @@ function vistaSugerir() {
       panel.append(
         el('span.rotulo', {}, 'Paso 3 de 3'),
         el('h2', { style: 'margin:6px 0 8px' }, 'Armando tu publicación'),
-        el('p.cargando-txt', {}, 'Escribiendo el texto y renderizando las placas'),
-        el('p.apunte.chico', {}, 'Tarda unos veinte segundos. No cierres esta pantalla.')
+        // Veinte segundos de un título sobre fondo vacío se hacen largos y
+        // dejan la duda de si algo se colgó. El frasco de la marca burbujea
+        // mientras tanto: no dice cuánto falta —no lo sabemos— pero dice que
+        // hay algo pasando.
+        frascoCargando('sugerir'),
+        el('p.cargando-txt', { style: 'text-align:center' }, 'Escribiendo el texto y renderizando las placas'),
+        el('p.apunte.chico', { style: 'text-align:center' }, 'Tarda unos veinte segundos. No cierres esta pantalla.')
       )
       try {
         const esSemana = st.forma === 'semana'
