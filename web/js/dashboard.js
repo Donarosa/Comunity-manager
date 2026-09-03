@@ -109,14 +109,14 @@ function renderizarHome({
     el('span.apunte.chico', {}, `${placasMes} placas generadas este mes`),
     el('button.btn.chico.btn--outline', {
       style: 'margin-top:8px;width:100%;font-size:0.82rem;padding:6px 10px;text-align:center;justify-content:center;',
-      onclick: onAbrirEditor,
-    }, '+ Generar contenido')
+      onclick: () => onAbrirDashboard('pubs'),
+    }, 'Ver mis placas →')
   )
 
-  // Tarjeta Ahorro acumulado DESTACADA a 10 USD/placa
+  // Tarjeta Ahorro total DESTACADA a 10 USD/placa
   const cardAhorro = el('div.dash-metrica-card.dash-metrica-card--ahorro', {},
     el('div.dash-metrica-topbar', {},
-      el('span.rotulo', { style: 'color:#15803d;font-weight:700;' }, 'Ahorro acumulado'),
+      el('span.rotulo', { style: 'color:#15803d;font-weight:700;' }, 'Ahorro total'),
       el('span.chip-ahorro-destacado', {}, '💰 US$10 / placa')
     ),
     el('div.dash-metrica-cifra-fila', {},

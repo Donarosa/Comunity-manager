@@ -64,7 +64,7 @@ function actualizarNavUsuario(u) {
         if (cuenta) abrirHome()
       }
     }
-    btnEntrar.textContent = pantallaActual === 'dashboard' ? 'Inicio' : 'Ver mis placas'
+    btnEntrar.textContent = pantallaActual === 'editor' ? 'Inicio' : 'Generar contenido'
   } else {
     if (btnLoginNav) btnLoginNav.classList.remove('oculto')
     if (usuarioNav) usuarioNav.classList.add('oculto')
@@ -89,7 +89,7 @@ async function asegurarCatalogo() {
 function abrirHome() {
   if (!cuenta) return entrar()
   pantallaActual = 'home'
-  btnEntrar.textContent = 'Ver mis placas'
+  btnEntrar.textContent = 'Generar contenido'
   mostrarApp(cont => iniciarHome({
     contenedor: cont,
     cuentaId: cuenta.id,
@@ -109,7 +109,7 @@ function abrirHome() {
 function abrirDashboard(tabInicial = 'pubs') {
   if (!cuenta) return entrar()
   pantallaActual = 'dashboard'
-  btnEntrar.textContent = 'Inicio'
+  btnEntrar.textContent = 'Generar contenido'
   mostrarApp(cont => iniciarDashboard({
     contenedor: cont,
     cuentaId: cuenta.id,
@@ -130,7 +130,7 @@ function abrirDashboard(tabInicial = 'pubs') {
 async function abrirEditor() {
   if (!cuenta) return entrar()
   pantallaActual = 'editor'
-  btnEntrar.textContent = 'Ver mis placas'
+  btnEntrar.textContent = 'Inicio'
   await asegurarCatalogo()
   mostrarApp(cont => iniciarEditor({
     contenedor: cont,
@@ -144,7 +144,7 @@ async function abrirEditor() {
 async function abrirWizard() {
   if (!cuenta) return entrar()
   pantallaActual = 'wizard'
-  btnEntrar.textContent = 'Ver mis placas'
+  btnEntrar.textContent = 'Generar contenido'
   await asegurarCatalogo()
   mostrarApp(cont => iniciarWizard({
     contenedor: cont,
@@ -567,10 +567,10 @@ async function arrancar() {
 
   btnEntrar.addEventListener('click', () => {
     if (!app.classList.contains('oculto')) {
-      if (pantallaActual === 'dashboard') {
+      if (pantallaActual === 'editor') {
         abrirHome()
       } else {
-        abrirDashboard()
+        abrirEditor()
       }
       return
     }
