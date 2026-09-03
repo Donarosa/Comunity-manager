@@ -12,7 +12,6 @@ import { api } from './api.js'
 import { el, $$, vaciar, aviso, elegirEnGrupo, demorar } from './ui.js'
 import { selectorDeImagen } from './imagenes.js'
 import { montarFondoCascada } from './cascada-fondo.js'
-import { montarFondoMosaico } from './mosaico-fondo.js'
 // Qué campos tiene cada plantilla lo dice el núcleo, que es el mismo que
 // después arma el spec. Con la lista duplicada acá, las dos se despegaban y el
 // formulario terminaba mandando campos que el render no dibuja —o al revés.
@@ -100,7 +99,6 @@ const FORMATOS = {
 export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambiarCuota, alPaso }) {
   const st = { canal: null, tipo: null, placas: [], activa: 0 }
   let fondoCascada = null
-  let fondoMosaico = null
 
   /* En qué paso está y cómo se sale de él.
    *
@@ -123,8 +121,6 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
   const irAtras = () => {
     fondoCascada?.destruir()
     fondoCascada = null
-    fondoMosaico?.destruir()
-    fondoMosaico = null
     const [, volver] = pasoActual()
     if (alPaso) history.back()
     else volver?.()
@@ -133,8 +129,6 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
   const pintar = () => {
     fondoCascada?.destruir()
     fondoCascada = null
-    fondoMosaico?.destruir()
-    fondoMosaico = null
     vaciar(contenedor)
     if (!st.canal) elegirFormato()
     else editar()
@@ -191,9 +185,6 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
   /* ── 2. el editor ──────────────────────────────────────── */
 
   function editar() {
-    fondoMosaico?.destruir()
-    fondoMosaico = montarFondoMosaico(contenedor)
-
     const esCarrusel = st.tipo === 'carrusel'
     const esHistoria = st.canal === 'historia'
     const placa = () => st.placas[st.activa]
@@ -204,20 +195,6 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
     const form = el('div.editor-form')
     const vista = el('div.editor-vista')
     contenedor.append(el('div.editor', {}, form, vista))
-
-    /* Cada bloque del formulario dice a qué grupo pertenece.
-     *
-     * En escritorio no cambia nada: se apilan todos en la misma columna. En el
-     * teléfono la placa ocupa la pantalla y estos grupos son las hojas que
-     * levanta la barra de abajo, así que el formulario se arma una sola vez y
-     * lo que cambia es dónde se muestra cada parte. */
-    const enGrupo = (grupo, ...nodos) => {
-      for (const n of nodos) {
-        if (!n) continue
-        n.dataset.grupo = grupo
-        form.append(n)
-      }
-    }
 
     /* — vista previa —
      *
@@ -261,17 +238,6 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
       try {
         const disponible = Math.min(zona.clientWidth, F.maxAncho)
         if (!disponible) return
-
-        /* En el teléfono la zona tiene alto propio —el editor es una caja fija
-         * y la placa ocupa lo que sobra— así que la escala sale de la dimensión
-         * que aprieta y listo. En escritorio ese alto lo define el contenido,
-         * o sea la propia placa, y preguntarlo sería circular: ahí hay que
-         * aplicar por ancho y corregir por lo que se pasó. */
-        if (enTelefono() && zona.clientHeight > 40) {
-          aplicar(Math.min(disponible / F.w, zona.clientHeight / F.h))
-          return
-        }
-
         let escala = disponible / F.w
         aplicar(escala)
         const sobra = vista.scrollHeight - vista.clientHeight
@@ -284,13 +250,7 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
       }
     }
     ajustarEscala()
-    // Se miran las dos cajas. La zona sola no alcanza: cuando en el teléfono
-    // sube la hoja, lo que cambia de alto es la vista, y la zona se entera
-    // recién si algo la vuelve a medir. Sin esto la placa conservaba el tamaño
-    // que tenía y se desbordaba por encima de la cabecera.
-    const observador = new ResizeObserver(ajustarEscala)
-    observador.observe(zona)
-    observador.observe(vista)
+    new ResizeObserver(ajustarEscala).observe(zona)
 
     const errorVista = el('div')
     const medidor = el('div.medidor')
@@ -421,7 +381,7 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
         }
       }
       repintarTira()
-      enGrupo('placas', tira)
+      form.append(tira)
     }
 
     /* — cabecera — */
@@ -429,7 +389,7 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
     // así los dos hacen exactamente lo mismo: en feed vuelve a elegir post o
     // carrusel, y en historia y cuadrada a elegir el formato. Esta pantalla era
     // la única del editor sin una salida a la vista.
-    enGrupo('cabecera',
+    form.append(
       el('div', { style: 'margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--color-rule);' },
         el('button.btn.texto.chico', {
           type: 'button',
@@ -489,7 +449,7 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
       grillaPlantillas.append(btn)
     })
 
-    enGrupo('plantilla', el('div.campo', {},
+    form.append(el('div.campo', {},
       el('label', {}, 'Tipo de plantilla'),
       explicacion,
       grillaPlantillas
@@ -541,7 +501,7 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
         if ((p.disposicion || '') === d.id) boton.classList.add('elegida')
         grilla.append(boton)
       }
-      enGrupo('acomodo', el('div.campo', {},
+      form.append(el('div.campo', {},
         el('label', {}, 'Cómo se acomoda'),
         el('span.ayuda', {}, 'Dónde se apoya el texto en esta placa.'),
         grilla
@@ -554,7 +514,7 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
       // Sin eso se comía la advertencia de licencia que aparece al elegir foto.
       const a = aviso('Esta plantilla va sobre una imagen. Mientras no elijas una, la vista previa muestra un fondo liso.')
       a.classList.add('aviso-sin-foto')
-      enGrupo('texto', a)
+      form.append(a)
     }
     /* — los campos —
      *
@@ -574,12 +534,12 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
       if (grupo?.campos.includes(campo)) {
         if (!cajaGrupo) {
           cajaGrupo = el('div.campo-grupo', {}, el('span.campo-grupo-titulo', {}, grupo.titulo))
-          enGrupo('texto', cajaGrupo)
+          form.append(cajaGrupo)
         }
         cajaGrupo.append(armarCampo(campo, p, refrescarDemorado, medidor))
         continue
       }
-      enGrupo('texto', armarCampo(campo, p, refrescarDemorado, medidor))
+      form.append(armarCampo(campo, p, refrescarDemorado, medidor))
     }
 
     const opcionales = camposSecundarios(p.plantilla)
@@ -599,7 +559,7 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
         }
       }
       repintarOpcionales()
-      enGrupo('texto', zona, botones)
+      form.append(zona, botones)
     }
 
     // En historias, todas las plantillas pueden llevar foto de fondo (opcional).
@@ -615,7 +575,7 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
           refrescarDemorado()
         },
       })
-      enGrupo('foto', el('div.campo', {},
+      form.append(el('div.campo', {},
         el('label', {}, '📸 Foto de fondo'),
         el('span.ayuda', {}, 'Opcional. Sin foto la historia usa el color de tu marca como fondo.'),
         !p.foto ? el('div.aviso', { style: 'margin-bottom:10px' }, 'Sin foto, la placa usa el color de tu marca de fondo. Podés dejarlo así.') : null,
@@ -623,115 +583,9 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
       ))
     }
 
-    // La placa manda en el teléfono: el formulario se vuelve una hoja. Va al
-    // final, cuando ya están todos los bloques: la barra se arma con los grupos
-    // que existen, y la tira del carrusel se agrega más arriba que esto.
-    if (enTelefono()) montarEnTelefono(contenedor.querySelector('.editor'), form)
-
     refrescar()
 
     function editarDeNuevo() { vaciar(contenedor); editar() }
-  }
-
-  /* ── el editor en el teléfono ────────────────────────────
-   *
-   * En una pantalla angosta la placa manda. El formulario ya está armado y con
-   * cada bloque etiquetado, así que acá no se construye nada nuevo: la columna
-   * del formulario pasa a ser una hoja que sube desde abajo, y una barra de
-   * botones elige qué grupo se ve.
-   *
-   * Antes la vista previa iba arriba y el formulario debajo, los dos estáticos:
-   * al bajar a escribir el título, la placa se iba de la pantalla. Se escribía
-   * a ciegas, se subía a mirar y se volvía a bajar, y con el teclado abierto
-   * —que se come media pantalla— era peor.
-   */
-  const HERRAMIENTAS = [
-    { id: 'texto',     icono: '✏️', rotulo: 'Texto' },
-    { id: 'plantilla', icono: '🗂️', rotulo: 'Plantilla' },
-    { id: 'acomodo',   icono: '📐', rotulo: 'Acomodo' },
-    { id: 'foto',      icono: '📷', rotulo: 'Foto' },
-    { id: 'placas',    icono: '🎞️', rotulo: 'Placas' },
-  ]
-
-  const enTelefono = () => window.matchMedia('(max-width: 720px)').matches
-
-  function montarEnTelefono(raiz, form) {
-    if (!raiz) return
-    raiz.classList.add('editor--movil')
-
-    // La cabecera sale de la hoja: el botón de volver y en qué placa se está
-    // tienen que verse siempre, no solo con un grupo abierto.
-    const cabecera = form.querySelector('[data-grupo="cabecera"]')
-    if (cabecera) {
-      // El bloque trae márgenes en línea, pensados para ir dentro del
-      // formulario. Acá pasa a ser la barra de arriba y esos márgenes le roban
-      // alto a la placa; en línea le ganan a la hoja de estilos, así que se
-      // limpian desde acá.
-      cabecera.style.margin = '0'
-      cabecera.style.paddingBottom = '10px'
-      raiz.prepend(cabecera)
-    }
-
-    // El rótulo "Vista previa" y el medidor se van: en el teléfono ese alto lo
-    // necesita la placa, y con la placa a pantalla completa nadie duda de que
-    // es la vista previa. Se ocultan acá y no por CSS porque el rótulo lleva un
-    // display en línea que le gana a la hoja de estilos.
-    const vista = raiz.querySelector('.editor-vista')
-    for (const n of vista?.querySelectorAll(':scope > .rotulo, :scope > .medidor') || []) {
-      n.style.display = 'none'
-    }
-
-    // El botón de generar sube a la cabecera. Dentro de la vista previa le
-    // robaba unos sesenta píxeles de alto a la placa, que es lo único que
-    // importa ver en una pantalla de teléfono; arriba a la derecha además es
-    // donde está la acción de confirmar en cualquier app.
-    const generar = [...(vista?.querySelectorAll('.btn') || [])]
-      .find(b => /generar/i.test(b.textContent))
-    if (generar && cabecera) {
-      cabecera.classList.add('cabecera-movil')
-      // Clase propia: la cabecera ya trae el botón de volver, y un selector por
-      // `.btn` los mandaba a los dos a la misma celda de la grilla.
-      generar.classList.add('btn-generar')
-      cabecera.append(generar)
-    }
-
-    // Solo las herramientas que esta placa realmente tiene: sin foto de fondo
-    // no hay grupo "foto", y sin carrusel no hay grupo "placas".
-    const hay = id => Boolean(form.querySelector(`[data-grupo="${id}"]`))
-    const disponibles = HERRAMIENTAS.filter(h => hay(h.id))
-    if (!disponibles.length) return
-
-    const barra = el('nav.editor-barra', { 'aria-label': 'Qué editar' })
-
-    const marcar = () => {
-      const abierta = raiz.classList.contains('con-hoja')
-      for (const b of barra.children) {
-        b.setAttribute('aria-pressed', String(abierta && b.dataset.herr === form.dataset.viendo))
-      }
-    }
-    const cerrar = () => { raiz.classList.remove('con-hoja'); delete form.dataset.viendo; marcar() }
-    const abrir = id => {
-      if (raiz.classList.contains('con-hoja') && form.dataset.viendo === id) return cerrar()
-      form.dataset.viendo = id
-      raiz.classList.add('con-hoja')
-      form.scrollTop = 0
-      marcar()
-    }
-
-    for (const h of disponibles) {
-      barra.append(el('button.editor-herr', {
-        type: 'button', 'data-herr': h.id, 'aria-pressed': 'false',
-        onclick: () => abrir(h.id),
-      }, el('span.editor-herr-icono', {}, h.icono), el('span', {}, h.rotulo)))
-    }
-
-    // El tirador cierra sin tener que volver a buscar el botón que la abrió.
-    form.prepend(el('button.editor-tirador', {
-      type: 'button', 'aria-label': 'Cerrar', onclick: cerrar,
-    }))
-
-    raiz.append(barra)
-    abrir(disponibles[0].id)
   }
 
   /* ── campos ────────────────────────────────────────────── */
