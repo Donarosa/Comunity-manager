@@ -1029,5 +1029,29 @@ test('el archivo que se guarda lleva un nombre que se entiende', () => {
     'lo que se comparte sigue con el nombre interno')
 })
 
+// La disposición se elegía en un desplegable con los nombres sueltos: nadie
+// sabe qué es "Bloque" o "Ficha" hasta aplicarlo, así que había que abrir,
+// elegir, mirar el resultado y volver a abrir, una vez por opción.
+test('la disposición se elige viendo un esquema, no leyendo un nombre', () => {
+  const editor = readFileSync(join(RAIZ, 'web/js/editor.js'), 'utf8')
+  assert.ok(/function esquemaDeDisposicion\(/.test(editor), 'no hay esquema para cada disposición')
+  assert.ok(/disp-grilla/.test(editor), 'la grilla de disposiciones desapareció')
+  // La primera opción tiene que seguir siendo la de la marca: es la que ya está
+  // puesta y la que queda en la gran mayoría de las placas.
+  const i = editor.indexOf('const opciones = [')
+  assert.ok(/La de tu marca/.test(editor.slice(i, i + 260)), 'la de la marca dejó de ir primera')
+})
+
+// La aplicación vive en una sola URL, así que sin esto la flecha de volver del
+// navegador saca del sitio entero, aunque estés en el tercer paso de armar una
+// placa. En el teléfono volver es el gesto natural para deshacer un paso.
+test('la flecha de volver del navegador retrocede dentro de la app', () => {
+  const app = readFileSync(join(RAIZ, 'web/js/app.js'), 'utf8')
+  assert.ok(/history\.pushState/.test(app), 'ninguna pantalla deja entrada en el historial')
+  assert.ok(/addEventListener\('popstate'/.test(app), 'nadie escucha el botón de atrás')
+  const editor = readFileSync(join(RAIZ, 'web/js/editor.js'), 'utf8')
+  assert.ok(/alPaso\?\.\(/.test(editor), 'el editor no informa en qué paso está: la flecha se saltea sus pantallas')
+})
+
 // El resumen va último: si se agrega un bloque abajo, tiene que contarlo.
 console.log(`\n${ok} pruebas OK${process.exitCode ? ' — con fallas' : ''}\n`)

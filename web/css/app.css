@@ -4118,3 +4118,75 @@ html.con-sesion .arranque { display: block; }
   justify-content: center;
 }
 .lienzo-zona .lienzo { flex: 0 0 auto; }
+
+/* ── Elegir la disposición viendo, no leyendo ───────────────
+ *
+ * Era un desplegable con los nombres sueltos —"Bloque", "Ficha"— y ninguno dice
+ * nada hasta aplicarlo: había que abrir, elegir, mirar y volver a abrir, una vez
+ * por opción. Cada tarjeta muestra ahora un esquema de dónde cae el texto: la
+ * volanta fina, el título grueso, el párrafo tenue.
+ */
+.disp-grilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.disp-opcion {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 8px;
+  background: #fff;
+  border: 2px solid var(--linea);
+  border-radius: 11px;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  transition: border-color .15s var(--ease-out), transform .15s var(--ease-out);
+}
+.disp-opcion:hover { border-color: var(--linea-fuerte); transform: translateY(-2px); }
+.disp-opcion:focus-visible { outline: 2px solid var(--color-focus, var(--color-ink)); outline-offset: 2px; }
+.disp-opcion.elegida { border-color: var(--color-accent, var(--color-ink)); }
+.disp-nombre { font-size: 0.78rem; font-weight: 700; line-height: 1.2; }
+
+/* El esquema. Las barras usan currentColor, así que basta con teñir la caja. */
+.disp-mini {
+  aspect-ratio: 4 / 5;
+  background: var(--color-paper-2, #fafafa);
+  border: 1px solid var(--linea);
+  border-radius: 6px;
+  padding: 9%;
+  display: flex;
+  flex-direction: column;
+  gap: 5%;
+  overflow: hidden;
+  /* En tinta y no en el color de acento: son barras que representan texto, y
+     con el acento del sistema —amarillo— el esquema se leía como si la placa
+     estuviera pintada con resaltador en vez de escrita. */
+  color: var(--color-ink);
+}
+/* La elegida sí se tiñe: es la única señal de estado dentro del dibujo. */
+.disp-opcion.elegida .disp-mini { color: var(--color-accent-deep, var(--color-ink)); }
+.disp-mini--centrada { align-items: center; }
+.disp-mini--clasica, .disp-mini--ficha { justify-content: center; }
+
+.disp-b { background: currentColor; border-radius: 2px; display: block; flex: none; }
+.disp-b--k       { height: 3px;  width: 40%; opacity: .55; }
+.disp-b--t       { height: 8px;  width: 92%; opacity: .95; }
+.disp-b--t2      { height: 8px;  width: 62%; opacity: .95; }
+.disp-b--tchico  { height: 4px;  width: 45%; opacity: .6; }
+.disp-b--p       { height: 3px;  width: 100%; opacity: .3; }
+.disp-b--p2      { height: 3px;  width: 78%;  opacity: .3; }
+.disp-b--pgrande { height: 5px;  width: 100%; opacity: .7; }
+.disp-b--pgrande2{ height: 5px;  width: 70%;  opacity: .7; }
+.disp-b--linea   { height: 1px;  width: 34%; opacity: .45; }
+.disp-b--caja    { height: 16px; width: 55%; opacity: .85; border-radius: 3px; margin-bottom: 4%; }
+.disp-b--aire    { flex: 1 1 auto; background: none; }
+
+/* El título del "titular" se come la placa: es lo que lo distingue. */
+.disp-mini--titular .disp-b--t,
+.disp-mini--titular .disp-b--t2 { height: 12px; }
+.disp-mini--centrada .disp-b--t2 { width: 50%; }
+
+@media (prefers-reduced-motion: reduce) { .disp-opcion { transition: none; } }

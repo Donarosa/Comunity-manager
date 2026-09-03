@@ -82,13 +82,31 @@ const FORMATOS = {
 
 /* ── pantalla ────────────────────────────────────────────── */
 
-export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambiarCuota }) {
+export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambiarCuota, alPaso }) {
   const st = { canal: null, tipo: null, placas: [], activa: 0 }
+
+  /* En qué paso está y cómo se sale de él.
+   *
+   * Es lo mismo que hace el botón "Volver" de cada pantalla, expuesto para que
+   * la flecha del navegador haga lo mismo: dentro del editor son tres pasos y
+   * antes la flecha te sacaba del sitio desde cualquiera de ellos. */
+  const pasoActual = () => {
+    if (!st.canal) return ['formato', alVolver]
+    if (st.canal === 'feed' && !st.tipo) return ['tipo', () => { st.canal = null; pintar() }]
+    return ['editar', () => {
+      // En feed se vuelve a elegir post o carrusel; en historia y cuadrada ese
+      // paso no existe, así que se vuelve a la elección de formato.
+      if (st.canal === 'feed') st.tipo = null
+      else st.canal = null
+      pintar()
+    }]
+  }
 
   const pintar = () => {
     vaciar(contenedor)
     if (!st.canal || (st.canal === 'feed' && !st.tipo)) elegirFormato()
     else editar()
+    alPaso?.(...pasoActual())
     window.scrollTo({ top: 0, behavior: 'instant' })
   }
 
@@ -392,19 +410,40 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
       grillaPlantillas
     ))
 
-    // Disposición con selector estilizado
+    // Disposición: se ve, no se lee.
+    //
+    // Era un desplegable con los nombres —"Bloque", "Ficha"— y nadie sabe qué
+    // significan hasta aplicarlos: había que abrir, elegir, mirar el resultado y
+    // volver a abrir, una vez por opción. Ahora cada una muestra un esquema de
+    // dónde cae el texto y se elige de un toque.
     if (catalogo?.disposiciones?.length) {
-      const selDisp = el('select', {
-        onchange: () => { p.disposicion = selDisp.value || null; refrescarDemorado() },
-      },
-        el('option', { value: '', selected: !p.disposicion }, 'La de tu marca (por defecto)'),
-        catalogo.disposiciones.map(d =>
-          el('option', { value: d.id, selected: p.disposicion === d.id }, `${d.label} — ${d.descripcion}`))
-      )
+      const opciones = [
+        { id: '', label: 'La de tu marca', descripcion: 'La que elegiste al armar tu marca. Si no querés pensarlo, dejala.' },
+        ...catalogo.disposiciones,
+      ]
+      const grilla = el('div.disp-grilla')
+      for (const d of opciones) {
+        const boton = el('button.disp-opcion', {
+          type: 'button',
+          title: d.descripcion,
+          'aria-pressed': String((p.disposicion || '') === d.id),
+          onclick: () => {
+            p.disposicion = d.id || null
+            elegirEnGrupo(grilla, boton, 'elegida')
+            for (const b of grilla.children) b.setAttribute('aria-pressed', String(b === boton))
+            refrescarDemorado()
+          },
+        },
+          esquemaDeDisposicion(d.id),
+          el('span.disp-nombre', {}, d.label)
+        )
+        if ((p.disposicion || '') === d.id) boton.classList.add('elegida')
+        grilla.append(boton)
+      }
       form.append(el('div.campo', {},
         el('label', {}, 'Cómo se acomoda'),
-        el('span.ayuda', {}, 'Dónde se apoya el texto en esta placa. Por defecto usa el de tu marca.'),
-        selDisp
+        el('span.ayuda', {}, 'Dónde se apoya el texto en esta placa.'),
+        grilla
       ))
     }
 
@@ -632,6 +671,27 @@ function nombreDeArchivo(marca, i, total) {
   const fecha = `${String(hoy.getDate()).padStart(2, '0')}-${String(hoy.getMonth() + 1).padStart(2, '0')}`
   const base = [marca, fecha].filter(Boolean).join(' ')
   return total > 1 ? `${base} (${i + 1} de ${total}).png` : `${base}.png`
+}
+
+/**
+ * El dibujito de cada disposición.
+ *
+ * Barras donde iría el texto: la volanta fina, el título grueso, el párrafo
+ * tenue. No es la placa —para eso está la vista previa— pero alcanza para saber
+ * si el título va arriba, al medio o se come toda la placa, que es justamente
+ * lo que el nombre no dice.
+ */
+function esquemaDeDisposicion(id) {
+  const barras = {
+    titular:  ['t', 't2', 't', 'aire', 'p'],
+    centrada: ['linea', 't', 't2', 'linea', 'p2'],
+    bloque:   ['caja', 't', 't2', 'aire', 'p', 'p2'],
+    ficha:    ['tchico', 'linea', 'pgrande', 'pgrande', 'pgrande2'],
+  }[id] || ['k', 't', 't2', 'p', 'p2']
+
+  const caja = el(`div.disp-mini.disp-mini--${id || 'marca'}`)
+  for (const b of barras) caja.append(el(`i.disp-b.disp-b--${b}`))
+  return caja
 }
 
 function bloqueDeGuardado(archivos, marca = '') {

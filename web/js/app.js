@@ -92,6 +92,45 @@ async function asegurarCatalogo() {
   try { catalogo = await api.catalogo() } catch { /* lo avisa la pantalla */ }
 }
 
+/* ── la flecha de volver del navegador ─────────────────────
+ *
+ * La aplicación vive en una sola URL, así que el historial del navegador nunca
+ * supo que hubo navegación: la flecha de atrás sacaba del sitio entero, aunque
+ * estuvieras en el tercer paso de armar una placa. En el teléfono es peor,
+ * porque volver es el gesto natural para deshacer un paso.
+ *
+ * Cada pantalla anota cómo se vuelve de ella —la misma acción que su botón
+ * "Volver"— y deja una entrada en el historial. La flecha entonces retrocede un
+ * paso dentro de la aplicación en vez de abandonarla. Sale recién cuando ya no
+ * queda paso atrás, que es lo que uno espera.
+ */
+const pila = []
+let volviendo = false
+
+function registrarPaso(id, volver) {
+  // Si esto viene de haber apretado atrás, el navegador ya sacó su entrada:
+  // apilar de nuevo dejaría la flecha girando entre dos pantallas.
+  if (volviendo) return
+  const ultimo = pila[pila.length - 1]
+  if (ultimo?.id === id) return          // repintar la misma pantalla no es navegar
+  pila.push({ id, volver })
+  history.pushState({ paso: id }, '', `#${id}`)
+}
+
+addEventListener('popstate', () => {
+  const paso = pila.pop()
+  volviendo = true
+  try {
+    if (paso?.volver) paso.volver()
+    else if (cuenta) abrirHome()
+    else mostrarLanding()
+  } finally {
+    // Se libera después de que la pantalla terminó de pintarse, para que su
+    // propio registrarPaso quede descartado y no vuelva a apilar.
+    setTimeout(() => { volviendo = false }, 0)
+  }
+})
+
 /* ── pantallas ───────────────────────────────────────────── */
 
 function abrirHome() {
@@ -115,6 +154,7 @@ function abrirHome() {
 }
 
 function abrirDashboard(tabInicial = 'pubs') {
+  registrarPaso('placas', abrirHome)
   if (!cuenta) return entrar()
   pantallaActual = 'dashboard'
   btnEntrar.textContent = 'Generar contenido'
@@ -137,10 +177,13 @@ function abrirDashboard(tabInicial = 'pubs') {
 
 async function abrirEditor() {
   if (!cuenta) return entrar()
+  // El editor registra sus propios pasos por alPaso: uno acá afuera dejaría una
+  // entrada de más y habría que apretar atrás dos veces para salir del primero.
   pantallaActual = 'editor'
   btnEntrar.textContent = 'Inicio'
   await asegurarCatalogo()
   mostrarApp(cont => iniciarEditor({
+    alPaso: (id, volver) => registrarPaso(`editor-${id}`, volver),
     contenedor: cont,
     cuenta,
     catalogo,
@@ -151,6 +194,7 @@ async function abrirEditor() {
 
 async function abrirWizard() {
   if (!cuenta) return entrar()
+  registrarPaso('marca', abrirHome)
   pantallaActual = 'wizard'
   btnEntrar.textContent = 'Inicio'
   await asegurarCatalogo()
@@ -191,6 +235,7 @@ const FORMAS = [
 ]
 
 function vistaSugerir() {
+  registrarPaso('sugerir', abrirHome)
   if (!cuenta) return entrar()
   pantallaActual = 'plan'
   btnEntrar.textContent = 'Inicio'
