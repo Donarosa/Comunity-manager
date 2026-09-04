@@ -42,11 +42,12 @@ async function pedir(ruta, { metodo = 'GET', cuerpo, texto = false } = {}) {
   try { datos = await res.json() } catch { /* respuesta sin cuerpo */ }
 
   if (!res.ok) {
-    // La sesión guardada ya no sirve y no se pudo refrescar.
-    if (res.status === 401 && obtenerToken()) {
+    // La sesión guardada ya no sirve y no se pudo refrescar (401 o 403 ajena/vencida).
+    if ((res.status === 401 || res.status === 403) && obtenerToken()) {
       localStorage.removeItem('cm.auth.usuario')
       localStorage.removeItem('cm.auth.token')
       localStorage.removeItem('cm.invitado.id')
+      document.documentElement.classList.remove('con-sesion')
       location.reload()
     }
     const e = new Error(datos?.error || `El servidor respondió ${res.status}`)
