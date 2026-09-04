@@ -3401,20 +3401,7 @@ input:focus, select:focus, textarea:focus {
   }
 }
 
-.editor-form {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  background: #fff;
-  border: 2px solid var(--color-rule);
-  border-radius: 24px;
-  padding: 28px;
-  box-shadow: var(--shadow-card);
-  /* Un ítem de grid no baja de su ancho de contenido salvo que se le diga:
-     sin esto la columna 1fr no puede encoger y el formulario se sale de la
-     pantalla en un teléfono. */
-  min-width: 0;
-}
+
 
 .editor-vista {
   position: sticky;
@@ -3822,12 +3809,7 @@ input:focus, select:focus, textarea:focus {
  * ══════════════════════════════════════════════════════════ */
 
 @media (max-width: 620px) {
-  .editor-form { padding: 18px 16px; border-radius: 18px; gap: 14px; }
-  .editor-vista { position: static; padding: 18px 16px; border-radius: 18px; }
-
-  /* La vista previa va primero: es lo que la persona mira mientras escribe. */
-  .editor { display: flex; flex-direction: column; padding: 12px 0 60px; }
-  .editor-vista { order: -1; }
+  .editor-form { padding: 14px 12px; border-radius: 16px; gap: 14px; }
 
   /* Métricas en 1 sola columna en móvil para que las cifras y textos no se compriman */
   .dash-metricas-grid { grid-template-columns: 1fr; gap: 10px; }
@@ -4599,3 +4581,116 @@ html.con-sesion .arranque { display: block; }
   }
 }
 
+/* La fila de acciones de un campo: resaltar, negrita y el contador. */
+.campo-herramientas { min-width: 0; }
+
+/* ── El editor en el teléfono ───────────────────────────────
+ *
+ * Las mismas dos columnas de la computadora, encogidas: los campos a la
+ * izquierda y la placa a la derecha, pegada arriba.
+ *
+ * Antes se apilaban y la vista previa quedaba estática arriba del formulario:
+ * apenas se bajaba a escribir el título, la placa se iba de la pantalla. Se
+ * escribía a ciegas, se subía a mirar y se volvía a bajar. Apilar en el
+ * teléfono es el reflejo, pero acá lo que hay que conservar es justamente lo
+ * que se pierde al apilar.
+ *
+ * La placa queda chica —unos 120 píxeles— y eso se asume: alcanza para ver la
+ * composición, dónde cae el título y si el texto desborda. Para leerla está el
+ * botón que la abre a pantalla completa.
+ */
+@media (max-width: 720px) {
+  .editor {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 124px;
+    gap: 10px;
+    align-items: start;
+    padding: 12px 0 60px;
+  }
+
+  .editor-vista {
+    position: sticky;
+    /* El desfase lo actualiza el JS cuando se abre el teclado: sin eso la
+       columna queda pegada al tope del documento, que con el teclado abierto
+       está fuera de lo que se ve. */
+    top: calc(var(--bar-h, 70px) + 8px + var(--desfase-teclado, 0px));
+    padding: 8px 7px 10px;
+    border-width: 1px;
+    border-radius: 14px;
+    gap: 6px;
+    max-height: none;
+    overflow: visible;
+  }
+  .editor-vista > .rotulo { font-size: 0.52rem; letter-spacing: 0.1em; margin: 0; }
+  /* El medidor no entra en 132 píxeles y no es lo que se mira mientras se
+     escribe: vuelve a aparecer cuando la placa ya se generó. */
+  .editor-vista > .medidor { display: none; }
+  .editor-vista .btn { width: 100%; font-size: 0.72rem; padding: 9px 6px; line-height: 1.15; }
+  .editor-vista .lienzo-zona { width: 100%; }
+
+  /* Abrirla en grande para leerla de verdad. */
+  .btn-ver-grande {
+    width: 100%;
+    border: 1px solid var(--linea-fuerte);
+    background: var(--color-paper);
+    color: var(--color-muted);
+    font: inherit;
+    font-size: 0.6rem;
+    font-weight: 700;
+    border-radius: 99px;
+    padding: 4px 6px;
+    cursor: pointer;
+  }
+  .btn-ver-grande:hover { border-color: var(--color-ink); color: var(--color-ink); }
+
+  /* Los campos, más apretados: la columna quedó angosta. */
+  .editor-form .campo { margin-bottom: 14px; }
+  .editor-form input, .editor-form textarea, .editor-form select { font-size: 0.9rem; }
+  .disp-grilla { max-width: none; gap: 6px; }
+  .disp-nombre { font-size: 0.68rem; }
+  .disp-pie { font-size: 0.55rem; }
+
+  /* La fila de "resaltar" y el contador entra en una línea en escritorio; en la
+     columna angosta se pisaban y el contador quedaba partido contra el borde.
+     Acá pasa a dos renglones. */
+  .campo-herramientas { flex-wrap: wrap; gap: 6px !important; }
+  .campo-herramientas > span[style*="margin-left"] { margin-left: 0 !important; }
+  .editor-form .medidor {
+    font-size: 10px;
+    padding: 3px 8px;
+    white-space: nowrap;
+    flex: none;
+  }
+}
+
+/* La placa a pantalla completa, para leerla. */
+.lupa-placa {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(20, 24, 28, 0.88);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 22px;
+}
+.lupa-placa img { max-width: 100%; max-height: 78vh; border-radius: 10px; box-shadow: 0 12px 40px rgba(0,0,0,.4); }
+.lupa-placa iframe { border: none; border-radius: 10px; background: #fff; box-shadow: 0 12px 40px rgba(0,0,0,.4); }
+
+
+.editor-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  background: #fff;
+  border: 2px solid var(--color-rule);
+  border-radius: 24px;
+  padding: 28px;
+  box-shadow: var(--shadow-card);
+  /* Un ítem de grid no baja de su ancho de contenido salvo que se le diga:
+     sin esto la columna 1fr no puede encoger y el formulario se sale de la
+     pantalla en un teléfono. */
+  min-width: 0;
+}

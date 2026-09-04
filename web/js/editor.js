@@ -337,9 +337,18 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
       },
     }, rotuloGenerar())
 
+    /* En el teléfono la placa entra en unos 120 píxeles: alcanza para ver la
+     * composición —dónde cae el título, si el texto desborda— pero no para
+     * leerla. Este botón la abre a pantalla completa cuando hace falta
+     * revisarla de verdad. En escritorio no aparece: ahí ya se ve. */
+    const verGrande = el('button.btn-ver-grande', {
+      type: 'button',
+      onclick: () => abrirLupa(marco, F),
+    }, 'Ver grande')
+
     vista.append(
       el('span.rotulo', { style: 'display:block;margin-bottom:10px' }, 'Vista previa'),
-      zona, errorVista,
+      zona, verGrande, errorVista,
       el('div', {}, generar),
       errorBajar, salida, medidor
     )
@@ -677,7 +686,10 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
     // Resaltar: envuelve lo que el usuario seleccionó con la etiqueta que
     // corresponde a esta plantilla. Es la forma de enseñar la función sin
     // pedirle a un panadero que escriba HTML a mano.
-    const herramientas = el('div', { style: 'display:flex;gap:10px;align-items:center;margin-top:6px' })
+    // Clase propia: en la columna angosta del teléfono esta fila tiene que
+    // poder pasar a dos renglones, y con el estilo en línea no hay forma de
+    // alcanzarla desde la hoja de estilos.
+    const herramientas = el('div.campo-herramientas', { style: 'display:flex;gap:10px;align-items:center;margin-top:6px' })
     if (def.resalta) {
       // Frase y manifiesto marcan con bastardilla; el resto, con el acento.
       const conEm = p.plantilla === 'frase' || p.plantilla === 'manifiesto'
@@ -731,6 +743,64 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
  * cancela el permiso de compartir si entre el toque y la llamada hay una espera
  * de red. Cuando la persona toca, los datos ya están en memoria.
  */
+/**
+ * La placa a pantalla completa.
+ *
+ * Se clona el iframe que ya está dibujado en vez de pedirle otro render al
+ * servidor: es el mismo HTML, sale instantáneo y no gasta una llamada.
+ */
+function abrirLupa(marco, F) {
+  const capa = el('div.lupa-placa', {
+    onclick: e => { if (e.target === capa) capa.remove() },
+  })
+
+  const copia = marco.cloneNode(true)
+  const anchoDisponible = Math.min(window.innerWidth - 44, 520)
+  const altoDisponible = window.innerHeight * 0.78
+  const escala = Math.min(anchoDisponible / F.w, altoDisponible / F.h)
+
+  const caja = el('div', {
+    style: `width:${Math.round(F.w * escala)}px;height:${Math.round(F.h * escala)}px;` +
+           'position:relative;overflow:hidden;border-radius:10px;background:#fff;' +
+           'box-shadow:0 12px 40px rgba(0,0,0,.4)',
+  })
+  copia.style.cssText = 'position:absolute;top:0;left:0;border:none;transform-origin:0 0;' +
+    `transform:scale(${escala})`
+  caja.append(copia)
+
+  capa.append(caja, el('button.btn.chico', { onclick: () => capa.remove() }, 'Cerrar'))
+  document.body.append(capa)
+
+  // Con Escape también, que es lo que uno prueba primero en una notebook.
+  const conEscape = e => {
+    if (e.key !== 'Escape') return
+    capa.remove()
+    document.removeEventListener('keydown', conEscape)
+  }
+  document.addEventListener('keydown', conEscape)
+}
+
+/**
+ * Que la vista previa no se esconda detrás del teclado.
+ *
+ * La columna de la placa está pegada con `position: sticky`, y sticky se mide
+ * contra el documento, no contra lo que se ve. Al abrirse el teclado, el
+ * navegador desplaza la página hacia arriba: la placa queda pegada a un tope
+ * que ya no está en pantalla. `visualViewport` dice cuánto se corrió, y esa
+ * distancia se le suma al tope para devolverla adentro.
+ */
+function seguirAlTeclado() {
+  const vv = window.visualViewport
+  if (!vv) return
+  const ajustar = () => {
+    document.documentElement.style.setProperty('--desfase-teclado', `${Math.round(vv.offsetTop)}px`)
+  }
+  vv.addEventListener('resize', ajustar)
+  vv.addEventListener('scroll', ajustar)
+  ajustar()
+}
+seguirAlTeclado()
+
 /**
  * Cómo se llama el archivo que ve la persona.
  *
