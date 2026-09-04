@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laboratorio de Experiencia Mobile — 5 Soluciones UX/UI de Alquimia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Fraunces:ital,opsz,wght@0,9..144,700;1,9..144,600&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-dark: #0a0c10;
+    --card-dark: #12161f;
+    --border-dark: rgba(255,255,255,0.1);
+    --mint: #50dca0;
+    --cyan: #38bdf8;
+    --coral: #fb7185;
+    --purple: #c084fc;
+    --yellow: #facc15;
+    --font: 'Plus Jakarta Sans', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font);
+    background: var(--bg-dark);
+    color: #f1f5f9;
+    line-height: 1.5;
+    padding-bottom: 60px;
+  }
+
+  /* BARRA SUPERIOR */
+  .header-hub {
+    background: rgba(18, 22, 31, 0.85);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border-dark);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .logo-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 800;
+    font-size: 1.15rem;
+  }
+  .logo-dot {
+    width: 10px;
+    height: 10px;
+    background: var(--mint);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--mint);
+  }
+  .badge-tag {
+    background: rgba(80, 220, 160, 0.15);
+    color: var(--mint);
+    font-size: 0.72rem;
+    font-family: var(--font-mono);
+    padding: 3px 10px;
+    border-radius: 99px;
+    border: 1px solid rgba(80,220,160,0.3);
+  }
+
+  /* SWITCHER DE SOLUCIONES */
+  .solutions-nav {
+    display: flex;
+    gap: 6px;
+    background: #090b0e;
+    padding: 4px;
+    border-radius: 12px;
+    border: 1px solid var(--border-dark);
+    overflow-x: auto;
+    max-width: 100%;
+  }
+  .btn-sol {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-family: var(--font);
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-sol:hover {
+    color: #fff;
+    background: rgba(255,255,255,0.05);
+  }
+  .btn-sol.active {
+    background: #fff;
+    color: #0b0d13;
+    font-weight: 800;
+  }
+
+  /* HERO Y CONTEXTO */
+  .hero-intro {
+    max-width: 1200px;
+    margin: 32px auto 20px;
+    padding: 0 24px;
+  }
+  .hero-intro h1 {
+    font-size: clamp(1.6rem, 3.5vw, 2.5rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    margin-bottom: 12px;
+  }
+  .hero-intro h1 em {
+    color: var(--mint);
+    font-style: normal;
+  }
+  .hero-intro p {
+    color: #94a3b8;
+    font-size: 1.05rem;
+    max-width: 820px;
+    line-height: 1.6;
+  }
+
+  /* LAYOUT PRINCIPAL: DISPOSITIVO INTERACTIVO + PANEL DE EVALUACIÓN */
+  .main-layout {
+    max-width: 1300px;
+    margin: 20px auto;
+    padding: 0 24px;
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    gap: 36px;
+    align-items: start;
+  }
+  @media (max-width: 960px) {
+    .main-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* SMARTPHONE MOCKUP FRAME (IPHONE 16 PRO) */
+  .phone-wrapper {
+    position: sticky;
+    top: 86px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+  .phone-frame {
+    width: 390px;
+    height: 760px;
+    background: #000;
+    border-radius: 50px;
+    padding: 11px;
+    box-shadow: 0 25px 60px -15px rgba(0,0,0,0.9), 0 0 0 4px #2c3340, 0 0 0 6px #13171f;
+    position: relative;
+    overflow: hidden;
+  }
+  .phone-screen {
+    width: 100%;
+    height: 100%;
+    border-radius: 40px;
+    overflow: hidden;
+    background: #000;
+    position: relative;
+  }
+  .phone-island {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 110px;
+    height: 28px;
+    background: #000;
+    border-radius: 99px;
+    z-index: 999;
+    pointer-events: none;
+    box-shadow: 0 0 2px rgba(255,255,255,0.2);
+  }
+  .phone-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: #0d0f13;
+  }
+  .phone-actions {
+    display: flex;
+    gap: 8px;
+    width: 390px;
+    justify-content: space-between;
+  }
+  .btn-open-tab {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid var(--border-dark);
+    color: #cbd5e1;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-open-tab:hover {
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+  }
+
+  /* PANEL DE DETALLES Y ANÁLISIS UX/UI */
+  .details-card {
+    background: var(--card-dark);
+    border: 1px solid var(--border-dark);
+    border-radius: 20px;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  .card-header-sol {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .sol-num {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: var(--mint);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .sol-title {
+    font-size: 1.55rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-top: 4px;
+  }
+  .sol-rating {
+    background: rgba(80, 220, 160, 0.15);
+    color: var(--mint);
+    border: 1px solid rgba(80, 220, 160, 0.3);
+    padding: 6px 14px;
+    border-radius: 99px;
+    font-weight: 800;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+
+  /* PILARES UX */
+  .ux-pillars {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+  }
+  .pillar-box {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 12px 14px;
+  }
+  .pillar-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #64748b;
+    font-family: var(--font-mono);
+  }
+  .pillar-val {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #f1f5f9;
+    margin-top: 4px;
+  }
+
+  /* PROS Y CONTRAS */
+  .grid-pros-cons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 650px) {
+    .grid-pros-cons { grid-template-columns: 1fr; }
+  }
+  .pro-box {
+    background: rgba(80, 220, 160, 0.05);
+    border: 1px solid rgba(80, 220, 160, 0.2);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .con-box {
+    background: rgba(251, 113, 133, 0.05);
+    border: 1px solid rgba(251, 113, 133, 0.2);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .box-head {
+    font-size: 0.82rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .pro-box .box-head { color: var(--mint); }
+  .con-box .box-head { color: var(--coral); }
+  .list-bullets {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: #cbd5e1;
+  }
+  .list-bullets li {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    line-height: 1.4;
+  }
+
+  /* RECOMENDACIÓN FINAL */
+  .veredicto-box {
+    background: linear-gradient(135deg, rgba(80,220,160,0.12) 0%, rgba(56,189,248,0.08) 100%);
+    border: 1px solid rgba(80,220,160,0.3);
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .veredicto-head {
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: var(--mint);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .veredicto-body {
+    font-size: 0.95rem;
+    color: #e2e8f0;
+    line-height: 1.55;
+  }
+
+  /* MATRIZ COMPARATIVA */
+  .matrix-section {
+    max-width: 1300px;
+    margin: 40px auto 0;
+    padding: 0 24px;
+  }
+  .table-matrix {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--card-dark);
+    border: 1px solid var(--border-dark);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-top: 16px;
+    font-size: 0.85rem;
+  }
+  .table-matrix th, .table-matrix td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .table-matrix th {
+    background: rgba(255,255,255,0.04);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #94a3b8;
+  }
+  .table-matrix tr:hover td {
+    background: rgba(255,255,255,0.02);
+  }
+  .star { color: var(--yellow); }
+</style>
+</head>
+<body>
+
+<header class="header-hub">
+  <div class="logo-title">
+    <span class="logo-dot"></span>
+    <span>Alquimia Mobile UX Studio</span>
+    <span class="badge-tag">5 Modelos de Interacción</span>
+  </div>
+
+  <nav class="solutions-nav">
+    <button class="btn-sol" style="background:linear-gradient(135deg,#50dca0,#38bdf8);color:#071810;font-weight:900;" onclick="cargarAlquimiaOficial(this)">👑 Alquimia Focus Deck (Oficial)</button>
+    <button class="btn-sol active" onclick="cargarSolucion(1, this)">1. Bottom Sheet ⭐</button>
+    <button class="btn-sol" onclick="cargarSolucion(2, this)">2. Split View 50/50</button>
+    <button class="btn-sol" onclick="cargarSolucion(3, this)">3. Canvas 70% + Smart Bar</button>
+    <button class="btn-sol" onclick="cargarSolucion(4, this)">4. PIP Flotante</button>
+    <button class="btn-sol" onclick="cargarSolucion(5, this)">5. Step Deck</button>
+  </nav>
+</header>
+
+<section class="hero-intro">
+  <h1>Diseño UX/UI Mobile: <em>La pieza gráfica siempre en vivo</em></h1>
+  <p>
+    En escritorio la vista previa funciona perfecto porque sobra ancho. En teléfonos celulares el desafío es crítico: <b>el teclado virtual ocupa el 45% de la pantalla</b> y el canvas suele desaparecer. Acá exploramos y comparamos las 5 soluciones con mejor usabilidad del mundo (sin el concepto complejo de tocar sobre la pieza estilo Canva), manteniendo controles directos y feedback en milisegundos.
+  </p>
+</section>
+
+<main class="main-layout">
+  <!-- SMARTPHONE INTERACTIVO -->
+  <div class="phone-wrapper">
+    <div class="phone-frame">
+      <div class="phone-island"></div>
+      <div class="phone-screen">
+        <iframe class="phone-iframe" id="previewIframe" src="mobile-solucion-1-bottom-sheet.html"></iframe>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:center;margin-bottom:8px;">
+        <button type="button" id="btnSimularKbdHub" style="background:#50dca0;color:#0b2518;border:none;font-weight:800;font-size:0.8rem;padding:7px 18px;border-radius:99px;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 3px 12px rgba(80,220,160,0.35);" onclick="toggleTecladoEnIframe()">
+          <span>⌨️</span>
+          <span id="txtBtnKbdHub">Simular Teclado Móvil (Abrir/Cerrar)</span>
+        </button>
+      </div>
+      <div class="phone-actions">
+      <a href="mobile-solucion-1-bottom-sheet.html" target="_blank" class="btn-open-tab" id="btnLinkTab">
+        <span>Abrir en pestaña completa ↗</span>
+      </a>
+      <button class="btn-open-tab" onclick="recargarIframe()">
+        <span>↻ Reiniciar demo</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- DETALLE Y ANÁLISIS DE LA SOLUCIÓN ACTIVA -->
+  <div class="details-card" id="detailsCard">
+    <!-- El contenido se inyecta dinámicamente según la solución elegida -->
+  </div>
+</main>
+
+<!-- MATRIZ COMPARATIVA HEURÍSTICA -->
+<section class="matrix-section">
+  <h2 style="font-size: 1.3rem; font-weight: 800;">Matriz Heurística Comparativa (Criterios de Usabilidad Nielsen / Mobile First)</h2>
+  <div style="overflow-x: auto;">
+    <table class="table-matrix">
+      <thead>
+        <tr>
+          <th>Solución</th>
+          <th>Impronta Gráfica</th>
+          <th>Resistencia a Teclado</th>
+          <th>Velocidad de Edición</th>
+          <th>Carga Cognitiva</th>
+          <th>Ideal Para</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>1. Sticky Stage + Bottom Sheet</b></td>
+          <td><span class="star">★★★★★</span> (9.5/10)</td>
+          <td><span class="star">★★★★★</span> (Auto-escala)</td>
+          <td><span class="star">★★★★★</span> (Instantánea)</td>
+          <td>Muy baja</td>
+          <td><b>Recomendada global</b> (Instagram/TikTok style)</td>
+        </tr>
+        <tr>
+          <td><b>2. Split View 50/50</b></td>
+          <td><span class="star">★★★★☆</span> (8.5/10)</td>
+          <td><span class="star">★★★★☆</span> (Adaptable)</td>
+          <td><span class="star">★★★★☆</span> (Formulario)</td>
+          <td>Baja</td>
+          <td>Usuarios que prefieren ver todo el formulario ordenado</td>
+        </tr>
+        <tr>
+          <td><b>3. Canvas 70% + Smart Bar</b></td>
+          <td><span class="star">★★★★★</span> (10/10)</td>
+          <td><span class="star">★★★☆☆</span> (Micro-drawer)</td>
+          <td><span class="star">★★★★☆</span> (Un campo a la vez)</td>
+          <td>Mínima</td>
+          <td>Pura estética visual y marcas de diseño/moda</td>
+        </tr>
+        <tr>
+          <td><b>4. PIP Flotante en Scroll</b></td>
+          <td><span class="star">★★★★☆</span> (8.8/10)</td>
+          <td><span class="star">★★★★★</span> (PIP inmune)</td>
+          <td><span class="star">★★★★☆</span> (Scroll)</td>
+          <td>Media</td>
+          <td>Posts con muchos datos secundarios y fuentes</td>
+        </tr>
+        <tr>
+          <td><b>5. Step Focus Deck</b></td>
+          <td><span class="star">★★★★★</span> (9.0/10)</td>
+          <td><span class="star">★★★★★</span> (Campos aislados)</td>
+          <td><span class="star">★★★★☆</span> (Paso a paso)</td>
+          <td>Nula (Imposible equivocarse)</td>
+          <td>Dueños de negocio sin tiempo que quieren post en 20 seg</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<script>
+  const infoSoluciones = {
+    1: {
+      url: 'mobile-solucion-1-bottom-sheet.html',
+      num: 'Solución 1 de 5 · Opción Recomendada',
+      title: 'Sticky Stage + Bottom Sheet Deslizable',
+      rating: '⭐ 9.8 / 10 · Mejor Balance Global',
+      pillars: [
+        { label: 'Visibilidad de Placa', val: '100% Permanente' },
+        { label: 'Interacción Teclado', val: 'Stage se compacta 15%' },
+        { label: 'Sensación Nativa', val: 'Tipo Instagram / CapCut' }
+      ],
+      pros: [
+        'La pieza gráfica ocupa el 50-55% superior y preside toda la experiencia como una marquesina viva.',
+        'No requiere tocar la pieza para escribir: los campos están en el sheet con excelente tamaño táctil (Thumb Zone).',
+        'Al abrir el teclado en el celular, el stage se reescala suavemente sin parpadear ni tapar el texto que estás escribiendo.',
+        'Pestañas rápidas (Contenido, Plantilla, Color) que evitan scrolls infinitos.'
+      ],
+      cons: [
+        'En teléfonos muy pequeños (ej. iPhone SE 4.7") el Bottom Sheet requiere scroll interno si se muestran muchos campos a la vez.'
+      ],
+      veredicto: '<b>Por qué es la ganadora:</b> Es el estándar de oro adoptado por aplicaciones líderes como Instagram Stories, CapCut y TikTok Studio. Logra que el usuario sienta que tiene una pieza gráfica profesional en sus manos sin abrumarlo con herramientas de diseño complejas.'
+    },
+    2: {
+      url: 'mobile-solucion-2-split-view.html',
+      num: 'Solución 2 de 5',
+      title: 'Split View 50/50 Dinámico',
+      rating: '8.7 / 10 · Máxima Estabilidad',
+      pillars: [
+        { label: 'Estructura', val: 'Mitades fijas 50/50' },
+        { label: 'Mecánica', val: 'Segmented Controls + Inputs' },
+        { label: 'Estilo', val: 'Lightroom / VSCO Studio' }
+      ],
+      pros: [
+        'Arquitectura predecible: nada se superpone ni flota sobre la pieza gráfica.',
+        'El usuario ve exactamente qué campos componen la placa sin tener que adivinar qué pestañas abrir.',
+        'Plantillas accesibles en una barra horizontal de 1 toque directo (Texto, Frase, Oferta, Pasos, Idea).'
+      ],
+      cons: [
+        'La pieza gráfica se ve un poco más reducida que en la Solución 1 o 3.',
+        'Al abrir el teclado, el formulario debe hacer scroll automático para que el campo enfocado no quede tapado.'
+      ],
+      veredicto: 'Excelente para usuarios técnicos o metódicos que prefieren ver la estructura de campos tradicional bien ordenada.'
+    },
+    3: {
+      url: 'mobile-solucion-3-floating-bar.html',
+      num: 'Solución 3 de 5',
+      title: 'Canvas Dominante (70%) + Floating Smart Bar',
+      rating: '9.2 / 10 · Máxima Impronta Visual',
+      pillars: [
+        { label: 'Superficie de Placa', val: '72% de pantalla (Gigante)' },
+        { label: 'Controles', val: 'Smart Bar Flotante' },
+        { label: 'Enfoque', val: 'Micro-Drawers Contextuales' }
+      ],
+      pros: [
+        'La pieza gráfica luce sencillamente espectacular: casi ocupa toda la pantalla del teléfono.',
+        'La Smart Bar flotante le da un toque ultra moderno y limpio.',
+        'Los micro-drawers se abren solo para lo que necesitás en ese segundo (ej. solo el Título con sugerencias de 1 toque).'
+      ],
+      cons: [
+        'Requiere un toque extra para abrir el micro-drawer de cada campo (ej. tocar Título para escribir, tocar Bajada para cambiar la explicación).'
+      ],
+      veredicto: 'Ideal si el objetivo prioritario es el impacto estético de la pieza y se redactan publicaciones cortas y contundentes.'
+    },
+    4: {
+      url: 'mobile-solucion-4-pip-flotante.html',
+      num: 'Solución 4 de 5',
+      title: 'Dual View con PIP Flotante en Scroll',
+      rating: '8.8 / 10 · Para Formularios Ricos',
+      pillars: [
+        { label: 'Modo Reposo', val: 'Hero Stage Grande' },
+        { label: 'Modo Scroll', val: 'Mini-PIP Flotante en Esquina' },
+        { label: 'Inspiración', val: 'YouTube / Twitch Mobile' }
+      ],
+      pros: [
+        'Permite tener formularios muy largos o detallados con múltiples opciones sin perder jamás la previsualización.',
+        'Al scrollear, la pieza se encoge a una ventana flotante nítida en la esquina superior que refleja cada letra tipeada.',
+        'Tocar el PIP devuelve la pantalla arriba al instante.'
+      ],
+      cons: [
+        'En pantallas muy estrechas el PIP flotante puede tapar momentáneamente algún botón del formulario si no se cuida el padding.'
+      ],
+      veredicto: 'La solución más potente si en el futuro se agregan muchos campos avanzados (fuentes INDEC, múltiples fotos, stickers, etc.).'
+    },
+    5: {
+      url: 'mobile-solucion-5-step-deck.html',
+      num: 'Solución 5 de 5',
+      title: 'Step-by-Step Focus Deck (Asistente Guiado)',
+      rating: '9.0 / 10 · Cero Carga Cognitiva',
+      pillars: [
+        { label: 'Formato', val: 'Paso a paso 1 → 2 → 3 → 4' },
+        { label: 'Foco Mental', val: 'Una sola decisión a la vez' },
+        { label: 'Inspiración', val: 'Duolingo / Apple Clips' }
+      ],
+      pros: [
+        'Diseñada pensando en comerciantes o dueños de pyme que no tienen tiempo ni conocimientos de diseño.',
+        'La pieza arriba muta con cada paso: Paso 1 elegís plantilla, Paso 2 ponés el gancho, Paso 3 bajada, Paso 4 colores.',
+        'Es imposible perderse o cometer errores tipográficos o de desborde.'
+      ],
+      cons: [
+        'Menor agilidad para usuarios avanzados que quieren editar todo en una sola pantalla sin pasar de paso en paso.'
+      ],
+      veredicto: 'Increíblemente amigable para personas que suelen frustrarse con herramientas de diseño tradicionales.'
+    }
+  };
+
+  function renderDetails(solId) {
+    const data = infoSoluciones[solId];
+    const card = document.getElementById('detailsCard');
+    card.innerHTML = `
+      <div class="card-header-sol">
+        <div>
+          <div class="sol-num">${data.num}</div>
+          <div class="sol-title">${data.title}</div>
+        </div>
+        <div class="sol-rating">${data.rating}</div>
+      </div>
+
+      <div class="ux-pillars">
+        ${data.pillars.map(p => `
+          <div class="pillar-box">
+            <div class="pillar-label">${p.label}</div>
+            <div class="pillar-val">${p.val}</div>
+          </div>
+        `).join('')}
+      </div>
+
+      <div class="grid-pros-cons">
+        <div class="pro-box">
+          <div class="box-head">✓ Ventajas de Usabilidad (UX)</div>
+          <ul class="list-bullets">
+            ${data.pros.map(p => `<li><span>•</span><span>${p}</span></li>`).join('')}
+          </ul>
+        </div>
+        <div class="con-box">
+          <div class="box-head">⚠️ Puntos a Considerar</div>
+          <ul class="list-bullets">
+            ${data.cons.map(c => `<li><span>•</span><span>${c}</span></li>`).join('')}
+          </ul>
+        </div>
+      </div>
+
+      <div class="veredicto-box">
+        <div class="veredicto-head">Criterio Experto UX/UI</div>
+        <div class="veredicto-body">${data.veredicto}</div>
+      </div>
+    `;
+  }
+
+  function cargarAlquimiaOficial(btn) {
+      document.querySelectorAll(".btn-sol").forEach(b => b.classList.remove("active"));
+      if (btn) btn.classList.add("active");
+      const iframe = document.getElementById("previewIframe");
+      iframe.src = "mobile-focus-deck-alquimia.html";
+      document.getElementById("btnLinkTab").href = "mobile-focus-deck-alquimia.html";
+      const card = document.getElementById("detailsCard");
+      card.innerHTML = `
+        <div class="card-header-sol">
+          <div>
+            <div class="sol-num" style="color:#50dca0;">DISEÑO OFICIAL DE ALQUIMIA</div>
+            <div class="sol-title">Experiencia Mobile Step Deck con Flujos Reales</div>
+          </div>
+          <div class="sol-rating" style="background:rgba(80,220,160,0.2);color:#50dca0;">👑 Recomendada Oficial</div>
+        </div>
+        <p style="color:#cbd5e1;font-size:0.95rem;line-height:1.6;">
+          Esta versión integra <b>tu sistema de diseño real (Hum Bubble Edition)</b> y <b>todos los flujos y datos de tu aplicación</b>:
+        </p>
+        <ul style="color:#94a3b8;font-size:0.85rem;line-height:1.8;padding-left:20px;">
+          <li><b>Stage superior 100% en vivo:</b> la pieza gráfica no se oculta jamás al escribir o cambiar formato.</li>
+          <li><b>Flujo real de 4 pasos sin fricción:</b> Formato/Plantilla (las 6 de Alquimia: Texto, Frase, Oferta, Pasos, Idea, Foto) → Título & Gancho → Bajada & Fuente → Colores de marca y ahorro generado.</li>
+          <li><b>Soporte para Carrusel nativo:</b> tira de miniaturas con selector de placas [01] [02] [03] y [+] placa.</li>
+          <li><b>Teclado virtual táctil:</b> podés abrirlo con el botón flotante o tocando los campos y escribir en vivo.</li>
+        </ul>
+        <div style="margin-top:16px;">
+          <a href="mobile-focus-deck-alquimia.html" target="_blank" style="display:inline-block;background:#50dca0;color:#0b2518;font-weight:800;padding:10px 22px;border-radius:99px;text-decoration:none;font-size:0.9rem;">
+            Abrir versión oficial en pantalla completa ↗
+          </a>
+        </div>
+      `;
+    }
+
+    function cargarSolucion(solId, btn) {
+    document.querySelectorAll('.btn-sol').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    const data = infoSoluciones[solId];
+    const iframe = document.getElementById('previewIframe');
+    iframe.src = data.url;
+
+    document.getElementById('btnLinkTab').href = data.url;
+    renderDetails(solId);
+  }
+
+  function toggleTecladoEnIframe() {
+      const iframe = document.getElementById('previewIframe');
+      if (iframe && iframe.contentWindow && iframe.contentWindow.toggleTecladoVirtual) {
+        iframe.contentWindow.toggleTecladoVirtual();
+        const isOpen = iframe.contentDocument.body.classList.contains('keyboard-visible');
+        document.getElementById('txtBtnKbdHub').textContent = isOpen ? 'Ocultar Teclado Móvil ✕' : 'Simular Teclado Móvil (Abrir/Cerrar)';
+        document.getElementById('btnSimularKbdHub').style.background = isOpen ? '#fb7185' : '#50dca0';
+        document.getElementById('btnSimularKbdHub').style.color = isOpen ? '#fff' : '#0b2518';
+      }
+    }
+
+    function recargarIframe() {
+    const iframe = document.getElementById('previewIframe');
+    iframe.src = iframe.src;
+  }
+
+  // Inicializar en solución 1
+  renderDetails(1);
+</script>
+</body>
+</html>

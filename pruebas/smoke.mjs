@@ -1241,18 +1241,14 @@ console.log('\nel editor en el teléfono')
 // En el teléfono la vista previa iba arriba y el formulario debajo, los dos
 // apilados y estáticos: al bajar a escribir el título la placa se iba de la
 // pantalla. Ahora son las mismas dos columnas de escritorio, encogidas.
-test('en el teléfono el editor sigue siendo dos columnas', () => {
+test('en el teléfono el editor organiza la experiencia con focus deck y vista previa fija', () => {
   const css = readFileSync(join(RAIZ, 'web/css/app.css'), 'utf8')
   const i = css.indexOf('@media (max-width: 720px)')
   assert.ok(i > -1, 'no hay reglas propias para el teléfono')
   const bloque = css.slice(i, i + 1200)
-  assert.ok(/grid-template-columns:\s*minmax\(0, 1fr\)/.test(bloque),
-    'el editor volvió a apilarse en una columna')
   assert.ok(/position:\s*sticky/.test(bloque),
     'la vista previa dejó de acompañar el scroll')
-
-  // Y tiene que venir después de la regla base, o la base le gana y todo esto
-  // queda escrito sin efecto. Pasó al implementarlo.
+  assert.ok(bloque.includes('.editor-vista'), 'falta el bloque de la vista previa en mobile')
   assert.ok(i > css.indexOf('\n.editor-vista {'),
     'las reglas del teléfono están antes que las base: no se aplican')
 })

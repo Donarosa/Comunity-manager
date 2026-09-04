@@ -4599,68 +4599,228 @@ html.con-sesion .arranque { display: block; }
  * composición, dónde cae el título y si el texto desborda. Para leerla está el
  * botón que la abre a pantalla completa.
  */
+/* ══ REGLAS DE ESCRITORIO (FOCUS DECK OCULTO EN DESKTOP) ══ */
+@media (min-width: 721px) {
+  .editor-pasos-nav,
+  .editor-paso-footer,
+  .placa-live-badge {
+    display: none !important;
+  }
+  .editor-paso {
+    display: contents !important;
+  }
+}
+
+/* ══ 5. EXPERIENCIA MOBILE: FOCUS DECK CON PLACA PROTAGONISTA EN VIVO ══ */
 @media (max-width: 720px) {
   .editor {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 124px;
-    gap: 10px;
-    align-items: start;
-    padding: 12px 0 60px;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+    padding: 8px 0 80px !important;
+    max-width: 100% !important;
   }
 
+  /* Stage superior: la pieza gráfica se ubica arriba, fija y nítida */
   .editor-vista {
-    position: sticky;
-    /* El desfase lo actualiza el JS cuando se abre el teclado: sin eso la
-       columna queda pegada al tope del documento, que con el teclado abierto
-       está fuera de lo que se ve. */
-    top: calc(var(--bar-h, 70px) + 8px + var(--desfase-teclado, 0px));
-    padding: 8px 7px 10px;
-    border-width: 1px;
-    border-radius: 14px;
-    gap: 6px;
-    max-height: none;
-    overflow: visible;
+    order: -1 !important;
+    position: sticky !important;
+    top: calc(var(--bar-h, 70px) + 4px + var(--desfase-teclado, 0px)) !important;
+    z-index: 35 !important;
+    background: var(--color-paper-2) !important;
+    border: 1px solid var(--color-rule) !important;
+    border-radius: var(--r-card, 20px) !important;
+    box-shadow: 0 16px 36px -12px oklch(20% 0.012 250 / 0.18) !important;
+    padding: 10px 12px 12px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    max-height: 48vh !important;
+    min-height: 200px !important;
+    transition: max-height 0.25s cubic-bezier(0.16, 1, 0.3, 1), padding 0.25s !important;
+    overflow: hidden !important;
+    position: relative !important;
   }
-  .editor-vista > .rotulo { font-size: 0.52rem; letter-spacing: 0.1em; margin: 0; }
-  /* El medidor no entra en 132 píxeles y no es lo que se mira mientras se
-     escribe: vuelve a aparecer cuando la placa ya se generó. */
-  .editor-vista > .medidor { display: none; }
-  .editor-vista .btn { width: 100%; font-size: 0.72rem; padding: 9px 6px; line-height: 1.15; }
-  .editor-vista .lienzo-zona { width: 100%; }
 
-  /* Abrirla en grande para leerla de verdad. */
+  /* Al abrir el teclado del teléfono: el stage se compacta para no tapar nada */
+  body.teclado-abierto .editor-vista {
+    max-height: 28vh !important;
+    min-height: 155px !important;
+    padding: 4px 8px !important;
+  }
+
+  .editor-vista .lienzo-zona {
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 1 !important;
+    min-height: 0 !important;
+  }
+
+  .editor-vista .lienzo {
+    box-shadow: 0 12px 32px -8px rgba(0,0,0,0.25) !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    margin: 0 auto !important;
+  }
+
+  .editor-vista > .rotulo {
+    display: none !important;
+  }
+
+  /* Ocultamos el botón "Ver grande" en mobile: ya se ve en grande */
   .btn-ver-grande {
-    width: 100%;
-    border: 1px solid var(--linea-fuerte);
-    background: var(--color-paper);
-    color: var(--color-muted);
-    font: inherit;
-    font-size: 0.6rem;
-    font-weight: 700;
-    border-radius: 99px;
-    padding: 4px 6px;
-    cursor: pointer;
+    display: none !important;
   }
-  .btn-ver-grande:hover { border-color: var(--color-ink); color: var(--color-ink); }
 
-  /* Los campos, más apretados: la columna quedó angosta. */
-  .editor-form .campo { margin-bottom: 14px; }
-  .editor-form input, .editor-form textarea, .editor-form select { font-size: 0.9rem; }
+  /* Ocultamos el botón generar flotante de la vista previa en mobile para usar el del paso 4 */
+  .editor-vista-generar {
+    display: none !important;
+  }
+
+  /* Badge EN VIVO pulsante */
+  .placa-live-badge {
+    position: absolute !important;
+    bottom: 8px !important;
+    right: 12px !important;
+    background: rgba(0,0,0,0.7) !important;
+    backdrop-filter: blur(8px) !important;
+    border: 1px solid rgba(255,255,255,0.18) !important;
+    color: var(--color-mint) !important;
+    font-family: var(--font-label) !important;
+    font-size: 0.62rem !important;
+    font-weight: 800 !important;
+    padding: 2px 8px !important;
+    border-radius: var(--r-pill) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    z-index: 25 !important;
+  }
+  .placa-live-badge .live-dot {
+    width: 6px !important;
+    height: 6px !important;
+    background: var(--color-mint) !important;
+    border-radius: 50% !important;
+    animation: livePulseMobile 1.8s infinite !important;
+  }
+  @keyframes livePulseMobile {
+    0% { transform: scale(0.9); opacity: 0.5; }
+    50% { transform: scale(1.3); opacity: 1; }
+    100% { transform: scale(0.9); opacity: 0.5; }
+  }
+
+  /* Formulario inferior (Focus Deck) */
+  .editor-form {
+    order: 2 !important;
+    width: 100% !important;
+    background: var(--color-paper) !important;
+    border: 1px solid var(--color-rule) !important;
+    border-radius: var(--r-card, 20px) !important;
+    box-shadow: var(--shadow-card) !important;
+    padding: 16px 14px 24px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+
+  /* Stepper de navegación de pasos */
+  .editor-pasos-nav {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 0 0 12px !important;
+    margin-bottom: 6px !important;
+    border-bottom: 1px solid var(--color-rule) !important;
+  }
+  .stepper-dots-wrap {
+    display: flex !important;
+    gap: 6px !important;
+    flex: 1 !important;
+    max-width: 160px !important;
+  }
+  .stepper-dot-seg {
+    height: 4px !important;
+    flex: 1 !important;
+    background: var(--color-rule) !important;
+    border-radius: var(--r-pill) !important;
+    transition: background 0.25s ease !important;
+  }
+  .stepper-dot-seg.activo {
+    background: var(--color-mint) !important;
+    box-shadow: 0 0 6px var(--color-mint) !important;
+  }
+  .stepper-dot-seg.completado {
+    background: var(--color-mint-deep) !important;
+  }
+  .paso-label-mobile {
+    font-family: var(--font-label) !important;
+    font-size: 0.68rem !important;
+    font-weight: 700 !important;
+    color: var(--color-muted) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.06em !important;
+  }
+  .paso-label-mobile b { color: var(--color-ink) !important; }
+
+  /* Pasos del formulario */
+  .editor-paso {
+    display: none !important;
+  }
+  .editor-paso.activo {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    animation: pasoFadeMobile 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+  @keyframes pasoFadeMobile {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Footers de navegación entre pasos */
+  .editor-paso-footer {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding-top: 14px !important;
+    margin-top: 8px !important;
+    border-top: 1px solid var(--color-rule) !important;
+  }
+  .btn-paso-siguiente {
+    background: var(--color-mint) !important;
+    color: #0b2518 !important;
+    font-weight: 800 !important;
+    padding: 8px 18px !important;
+    border-radius: var(--r-pill) !important;
+    box-shadow: 0 3px 0 var(--color-mint-deep) !important;
+    margin-left: auto !important;
+    border: none !important;
+    font-size: 0.82rem !important;
+    cursor: pointer !important;
+  }
+  .btn-paso-siguiente:active {
+    transform: translateY(2px) !important;
+    box-shadow: 0 1px 0 var(--color-mint-deep) !important;
+  }
+  .btn-paso-anterior {
+    color: var(--color-muted) !important;
+    font-weight: 700 !important;
+    font-size: 0.8rem !important;
+    padding: 8px 6px !important;
+  }
+
+  /* Ajuste de inputs y campos */
+  .editor-form .campo { margin-bottom: 8px; }
+  .editor-form input, .editor-form textarea, .editor-form select { font-size: 0.95rem; }
   .disp-grilla { max-width: none; gap: 6px; }
   .disp-nombre { font-size: 0.68rem; }
   .disp-pie { font-size: 0.55rem; }
-
-  /* La fila de "resaltar" y el contador entra en una línea en escritorio; en la
-     columna angosta se pisaban y el contador quedaba partido contra el borde.
-     Acá pasa a dos renglones. */
   .campo-herramientas { flex-wrap: wrap; gap: 6px !important; }
   .campo-herramientas > span[style*="margin-left"] { margin-left: 0 !important; }
-  .editor-form .medidor {
-    font-size: 10px;
-    padding: 3px 8px;
-    white-space: nowrap;
-    flex: none;
-  }
 }
 
 /* La placa a pantalla completa, para leerla. */
@@ -4694,3 +4854,17 @@ html.con-sesion .arranque { display: block; }
      pantalla en un teléfono. */
   min-width: 0;
 }
+
+
+/* Clases auxiliares para Stepper y Focus Deck */
+.paso-num-txt { font-weight: 800; color: var(--color-ink); }
+.paso-nom-txt { color: var(--color-ink-2); }
+.editor-paso-resumen {
+  background: var(--color-paper-2);
+  border: 1px solid var(--color-rule);
+  border-radius: 12px;
+  padding: 12px;
+  margin: 8px 0;
+}
+.stepper-dot-seg.completado { background: var(--color-mint-deep); }
+.editor-vista-generar { margin-top: 10px; }
