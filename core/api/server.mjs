@@ -90,10 +90,37 @@ export async function obtenerUsuarioAutenticado(req) {
   //    en el server las únicas sesiones posibles son Firebase y el token de
   //    admin.
   if (!TOKEN && !firestore.estaActivo() && !esServerless()) {
-    return { tipo: 'local', uid: token }
+    return { tipo: 'local', uid: uidDeTokenSinVerificar(token) || token }
   }
 
   return null
+}
+
+/**
+ * El uid que dice un token de Firebase, sin verificarlo. Solo para trabajar en
+ * una máquina.
+ *
+ * Entrando con Google en local, el navegador manda el token de Firebase, que es
+ * un JWT largo. Sin las credenciales de servicio no hay con qué verificarlo, y
+ * la rama de desarrollo terminaba usando el JWT entero como identificador: la
+ * cuenta se creaba con el uid corto y cada pedido llegaba con el token largo,
+ * así que la comprobación de dueño devolvía 403 sobre la cuenta propia.
+ *
+ * Se lee la carga del token sin comprobar la firma, y eso solo es admisible
+ * porque quien llama ya está en la rama que acepta cualquier cadena como
+ * sesión: no afloja nada que estuviera cerrado. Esa rama exige no tener token
+ * de admin, no tener Firestore y no estar corriendo como función, o sea que en
+ * el servidor no se alcanza nunca.
+ */
+function uidDeTokenSinVerificar(token) {
+  const partes = String(token || '').split('.')
+  if (partes.length !== 3) return null
+  try {
+    const carga = JSON.parse(Buffer.from(partes[1], 'base64url').toString('utf8'))
+    return carga.user_id || carga.sub || null
+  } catch {
+    return null
+  }
 }
 
 function autorizado(req) {

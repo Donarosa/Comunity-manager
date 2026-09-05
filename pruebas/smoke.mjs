@@ -1270,5 +1270,43 @@ test('la placa se encoge al escribir y al abrirse el teclado', () => {
 })
 
 
+// Entrando con Google en una máquina, el navegador manda el token de Firebase
+// —un JWT largo— y sin credenciales de servicio no hay con qué verificarlo. La
+// rama de desarrollo usaba el JWT entero como identificador: la cuenta se creaba
+// con el uid corto y cada pedido llegaba con el largo, así que la comprobación
+// de dueño devolvía 403 sobre la cuenta propia.
+await testAsync('en una máquina, el token de Firebase da el uid corto', async () => {
+  const previo = process.env.VERCEL
+  try {
+    delete process.env.VERCEL
+    const carga = Buffer.from(JSON.stringify({ user_id: 'uid-corto' })).toString('base64url')
+    const jwt = `cab.${carga}.firma`
+    const u = await obtenerUsuarioAutenticado(pedidoCon(jwt))
+    assert.equal(u?.uid, 'uid-corto', 'el uid sigue siendo el token entero: 403 sobre la cuenta propia')
+
+    // Y una cadena cualquiera tiene que seguir sirviendo para trabajar sin
+    // Google, que es como se prueba la mayor parte del tiempo.
+    const simple = await obtenerUsuarioAutenticado(pedidoCon('sesion-de-prueba'))
+    assert.equal(simple?.uid, 'sesion-de-prueba')
+  } finally {
+    if (previo === undefined) delete process.env.VERCEL
+    else process.env.VERCEL = previo
+  }
+})
+
+// Y en el servidor esa lectura no se alcanza nunca: la rama exige no tener
+// Firestore ni token de admin y no correr como función.
+await testAsync('en el servidor un JWT sin verificar no abre nada', async () => {
+  const previo = process.env.VERCEL
+  try {
+    process.env.VERCEL = '1'
+    const carga = Buffer.from(JSON.stringify({ user_id: 'un-vivo' })).toString('base64url')
+    assert.equal(await obtenerUsuarioAutenticado(pedidoCon(`cab.${carga}.firma`)), null)
+  } finally {
+    if (previo === undefined) delete process.env.VERCEL
+    else process.env.VERCEL = previo
+  }
+})
+
 // El resumen va último: si se agrega un bloque abajo, tiene que contarlo.
 console.log(`\n${ok} pruebas OK${process.exitCode ? ' — con fallas' : ''}\n`)
