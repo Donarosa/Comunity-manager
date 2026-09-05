@@ -34,6 +34,14 @@ function apagarArranque() {
   $('#arranque')?.remove()
 }
 
+// Salvaguarda: si por latencia de red o sesión huérfana el arranque se atasca,
+// se apaga automáticamente para que la página nunca quede congelada en gris.
+setTimeout(() => {
+  if (document.documentElement.classList.contains('con-sesion') && $('#arranque')) {
+    mostrarLanding()
+  }
+}, 2500)
+
 function mostrarLanding() {
   apagarArranque()
   pantallaActual = 'landing'
@@ -652,8 +660,14 @@ async function arrancar() {
       if (!cuenta.marca) abrirWizard()
       else abrirHome()
     } catch {
-      // Si la cuenta no existe en el backend, la sincronizamos
-      await sincronizarUsuario(u)
+      // Si la cuenta no existe en el backend o falló la sesión, la sincronizamos o volvemos a landing
+      try {
+        await sincronizarUsuario(u)
+      } catch (err) {
+        console.warn('[Arranque] Sesión no válida o cuenta inaccesible, restaurando landing:', err?.message)
+        await cerrarSesion()
+        mostrarLanding()
+      }
     }
   } else {
     mostrarLanding()

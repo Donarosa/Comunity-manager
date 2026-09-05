@@ -1238,37 +1238,40 @@ test('el tablero contempla una cuenta sin tope', () => {
 
 console.log('\nel editor en el teléfono')
 
-// En el teléfono la placa arriba y el formulario abajo, pero la placa no se va:
-// se encoge. Apilarlas sin más la dejaba fuera de la pantalla apenas se bajaba a
-// escribir; dos columnas la mantenían a la vista pero en 110 píxeles, ahogando
-// además los campos.
-test('en el teléfono la placa se encoge en vez de irse', () => {
+// En el teléfono la vista previa iba arriba y el formulario debajo, los dos
+// apilados y estáticos: al bajar a escribir el título la placa se iba de la
+// pantalla. Ahora son las mismas dos columnas de escritorio, encogidas.
+test('en el teléfono el editor organiza la experiencia con focus deck y vista previa fija', () => {
   const css = readFileSync(join(RAIZ, 'web/css/app.css'), 'utf8')
   const i = css.indexOf('@media (max-width: 720px)')
   assert.ok(i > -1, 'no hay reglas propias para el teléfono')
-  const bloque = css.slice(i, i + 3000)
-  assert.ok(/\.editor--chica \.editor-vista/.test(bloque),
-    'no hay estado encogido: la placa vuelve a irse de la pantalla al escribir')
-  assert.ok(/position:\s*fixed/.test(bloque),
-    'sin fijar al viewport el alto no se puede repartir entre placa y campos')
-
-  // Y tiene que venir después de las reglas base, o la base le gana y nada de
-  // esto se aplica. Pasó al implementarlo.
+  const bloque = css.slice(i, i + 1200)
+  assert.ok(/position:\s*sticky/.test(bloque),
+    'la vista previa dejó de acompañar el scroll')
+  assert.ok(bloque.includes('.editor-vista'), 'falta el bloque de la vista previa en mobile')
   assert.ok(i > css.indexOf('\n.editor-vista {'),
     'las reglas del teléfono están antes que las base: no se aplican')
 })
 
-// Los dos momentos en que hace falta el alto abajo: bajar por los campos y
-// abrir el teclado. Si solo se contempla el scroll, al tocar un campo sin haber
-// bajado el teclado tapa lo que se escribe.
-test('la placa se encoge al escribir y al abrirse el teclado', () => {
+// La placa entra en unos 110 píxeles: alcanza para ver la composición pero no
+// para leerla, así que tiene que haber forma de abrirla.
+test('la placa chica se puede abrir en grande', () => {
   const editor = readFileSync(join(RAIZ, 'web/js/editor.js'), 'utf8')
-  assert.ok(/editor--chica/.test(editor), 'nadie activa el estado encogido')
-  assert.ok(/form\.addEventListener\('scroll'/.test(editor), 'no se encoge al bajar')
-  assert.ok(/visualViewport\?\.addEventListener\('resize'/.test(editor),
-    'no se entera de que se abrió el teclado')
+  assert.ok(/function abrirLupa\(/.test(editor), 'no hay forma de ver la placa en grande')
+  assert.ok(/btn-ver-grande/.test(editor), 'falta el botón que la abre')
+  // Se clona el iframe ya dibujado: pedir otro render gastaría una llamada.
+  assert.ok(/marco\.cloneNode/.test(editor), 'la lupa vuelve a renderizar en vez de clonar')
 })
 
+// La columna pegada se mide contra el documento, no contra lo que se ve: con el
+// teclado abierto el navegador desplaza la página y la placa queda arriba de lo
+// visible, que es volver al problema original por otra puerta.
+test('la vista previa sigue al teclado', () => {
+  const editor = readFileSync(join(RAIZ, 'web/js/editor.js'), 'utf8')
+  assert.ok(/visualViewport/.test(editor), 'nadie mira si el teclado corrió la página')
+  const css = readFileSync(join(RAIZ, 'web/css/app.css'), 'utf8')
+  assert.ok(/--desfase-teclado/.test(css), 'el desfase del teclado no llega al CSS')
+})
 
 // Entrando con Google en una máquina, el navegador manda el token de Firebase
 // —un JWT largo— y sin credenciales de servicio no hay con qué verificarlo. La
@@ -1280,8 +1283,7 @@ await testAsync('en una máquina, el token de Firebase da el uid corto', async (
   try {
     delete process.env.VERCEL
     const carga = Buffer.from(JSON.stringify({ user_id: 'uid-corto' })).toString('base64url')
-    const jwt = `cab.${carga}.firma`
-    const u = await obtenerUsuarioAutenticado(pedidoCon(jwt))
+    const u = await obtenerUsuarioAutenticado(pedidoCon(`cab.${carga}.firma`))
     assert.equal(u?.uid, 'uid-corto', 'el uid sigue siendo el token entero: 403 sobre la cuenta propia')
 
     // Y una cadena cualquiera tiene que seguir sirviendo para trabajar sin

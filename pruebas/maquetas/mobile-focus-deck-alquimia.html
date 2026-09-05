@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Alquimia — Editor Mobile Step Deck</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=JetBrains+Mono:wght@400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,800;1,9..144,400&family=Syne:wght@700;800&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --color-paper:        oklch(97% 0.012 95);
+    --color-paper-2:      oklch(94% 0.016 95);
+    --color-paper-3:      oklch(91% 0.020 95);
+    --color-rule:         oklch(86% 0.014 90);
+    --color-rule-2:       oklch(70% 0.018 85);
+    --color-muted:        oklch(52% 0.014 90);
+    --color-neutral:      oklch(38% 0.014 100);
+    --color-ink-2:        oklch(28% 0.014 250);
+    --color-ink:          oklch(20% 0.012 250);
+
+    --color-mint:         oklch(80% 0.16 150);
+    --color-mint-deep:    oklch(70% 0.18 150);
+    --color-accent:       oklch(86% 0.18 95);     /* Pear */
+    --color-accent-deep:  oklch(76% 0.20 95);
+    --color-cyan:         oklch(66% 0.18 235);    /* Cyan */
+    --color-cyan-deep:    oklch(56% 0.20 235);
+    --color-coral:        oklch(68% 0.24 18);     /* Coral */
+    --color-coral-deep:   oklch(58% 0.26 18);
+    --color-lavender:     oklch(74% 0.16 305);
+
+    --tint-mint:          oklch(80% 0.16 150 / 0.16);
+    --tint-pear:          oklch(86% 0.18 95 / 0.16);
+    --tint-cyan:          oklch(66% 0.18 235 / 0.14);
+    --tint-coral:         oklch(68% 0.24 18 / 0.12);
+
+    --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
+    --font-body:    "Plus Jakarta Sans", system-ui, sans-serif;
+    --font-serif:   "Fraunces", Georgia, serif;
+    --font-syne:    "Syne", sans-serif;
+    --font-label:   "JetBrains Mono", ui-monospace, monospace;
+    --font-mono:    "JetBrains Mono", ui-monospace, monospace;
+
+    --btn-edge: var(--color-rule-2);
+    --btn-cast: oklch(20% 0.012 250 / 0.15);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: var(--font-body);
+    background: #0d0f13;
+    color: var(--color-ink);
+    height: 100dvh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ══ 1. HEADER ALQUIMIA MOBILE CON IDENTIDAD REAL ══ */
+  .top-bar {
+    height: 52px;
+    background: #12161f;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 14px;
+    flex-shrink: 0;
+    z-index: 50;
+  }
+  .brand-logo-area {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.98rem;
+    letter-spacing: -0.02em;
+  }
+  .brand-bubble-icon {
+    width: 26px;
+    height: 26px;
+    background: linear-gradient(135deg, var(--color-mint) 0%, var(--color-cyan) 100%);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(80, 220, 160, 0.35);
+  }
+  .brand-bubble-icon svg {
+    width: 16px;
+    height: 16px;
+    fill: #0b2518;
+  }
+  .cuota-pill {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #94a3b8;
+    font-size: 0.68rem;
+    font-family: var(--font-mono);
+    padding: 3px 8px;
+    border-radius: 99px;
+  }
+  .cuota-pill b { color: var(--color-mint); }
+  .btn-generar-top {
+    background: var(--color-mint);
+    color: #0b2518;
+    font-weight: 800;
+    font-size: 0.76rem;
+    padding: 6px 13px;
+    border-radius: 99px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 3px 0 var(--color-mint-deep), 0 4px 12px rgba(80,220,160,0.3);
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  .btn-generar-top:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 var(--color-mint-deep);
+  }
+
+  /* ══ 2. STAGE SUPERIOR FIJO (LA PIEZA GRÁFICA PROTAGONISTA) ══ */
+  .stage-section {
+    flex: 1;
+    min-height: 220px;
+    max-height: 52%;
+    background: radial-gradient(circle at 50% 35%, #18202c 0%, #0c0e12 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 10px 14px;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
+  }
+  body.keyboard-visible .stage-section {
+    max-height: 30vh !important;
+    min-height: 175px !important;
+    padding: 4px 10px !important;
+  }
+
+  /* CONTROLES RÁPIDOS SOBRE EL STAGE (FORMATO & CARRUSEL) */
+  .stage-quick-bar {
+    position: absolute;
+    top: 8px;
+    left: 12px;
+    right: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 20;
+    pointer-events: none;
+  }
+  .stage-quick-bar > * { pointer-events: auto; }
+
+  .format-pills-bar {
+    display: flex;
+    gap: 4px;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(10px);
+    padding: 3px;
+    border-radius: 99px;
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+  .fmt-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.65);
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 99px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .fmt-btn.active {
+    background: #fff;
+    color: #0b0d13;
+    font-weight: 800;
+  }
+
+  /* TIRA DE PLACAS DEL CARRUSEL EN EL STAGE */
+  .tira-carrusel {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(10px);
+    padding: 4px 8px;
+    border-radius: 99px;
+    border: 1px solid rgba(255,255,255,0.12);
+    z-index: 20;
+  }
+  .tira-mini {
+    background: rgba(255,255,255,0.15);
+    border: none;
+    color: #cbd5e1;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 700;
+    width: 26px;
+    height: 22px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .tira-mini.active {
+    background: var(--color-mint);
+    color: #0b2518;
+    box-shadow: 0 0 8px var(--color-mint);
+  }
+  .tira-mini.btn-add {
+    background: transparent;
+    border: 1px dashed rgba(255,255,255,0.3);
+    color: #fff;
+  }
+
+  /* ══ LA PIEZA GRÁFICA REAL DE ALQUIMIA ══ */
+  .placa-box {
+    position: relative;
+    box-shadow: 0 20px 48px -12px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.14);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: transform 0.25s ease, aspect-ratio 0.25s ease;
+    height: 94%;
+    max-height: 100%;
+    max-width: 90%;
+    aspect-ratio: 4/5;
+    margin: 0 auto;
+    flex-shrink: 0;
+  }
+  .placa-box.fmt-feed { aspect-ratio: 4/5; }
+  .placa-box.fmt-historia { aspect-ratio: 9/16; }
+  .placa-box.fmt-cuadrado { aspect-ratio: 1/1; }
+
+  .placa-render {
+    width: 100%;
+    height: 100%;
+    background: #141820;
+    color: #f8fafc;
+    padding: 7% 8%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    font-size: clamp(11px, 2.7vw, 15px);
+    position: relative;
+    transition: background 0.3s ease, color 0.3s ease;
+    user-select: none;
+  }
+  .placa-render.theme-dark { background: #141820; color: #f8fafc; }
+  .placa-render.theme-mint { background: #0b251a; color: #eafaf4; }
+  .placa-render.theme-coral { background: #2f1216; color: #fff1f2; }
+  .placa-render.theme-crema { background: #fcf9f2; color: #181b22; }
+  .placa-render.theme-crema .placa-kicker { color: #854d0e; }
+  .placa-render.theme-crema .placa-brand-dot { background: #854d0e; }
+  .placa-render.theme-crema .placa-oferta-box { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.2); }
+  .placa-render.theme-crema .oferta-big { color: #059669; }
+
+  .placa-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.68em;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.85;
+  }
+  .placa-brand-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .placa-brand-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--color-mint);
+  }
+  .placa-main {
+    margin: auto 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.52em;
+  }
+  .placa-kicker {
+    font-family: var(--font-mono);
+    font-size: 0.68em;
+    font-weight: 700;
+    color: var(--color-mint);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+  .placa-title {
+    font-family: var(--font-serif);
+    font-size: 1.55em;
+    line-height: 1.15;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    word-break: break-word;
+  }
+  .placa-title em.hl {
+    color: var(--color-mint);
+    font-style: normal;
+  }
+  .tpl-frase .placa-title {
+    font-style: italic;
+    font-weight: 600;
+    border-left: 3px solid var(--color-mint);
+    padding-left: 0.45em;
+  }
+  .tpl-manifiesto .placa-title {
+    font-family: var(--font-syne);
+    font-size: 1.95em;
+    text-transform: uppercase;
+    line-height: 1.05;
+  }
+  .placa-body {
+    font-size: 0.82em;
+    line-height: 1.44;
+    opacity: 0.85;
+  }
+  .placa-oferta-box {
+    background: rgba(255,255,255,0.08);
+    border: 1.5px dashed rgba(255,255,255,0.25);
+    border-radius: 8px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 4px;
+  }
+  .oferta-big {
+    font-size: 1.9em;
+    font-weight: 900;
+    color: var(--color-mint);
+    font-family: var(--font-syne);
+    line-height: 1;
+  }
+  .oferta-desc { font-size: 0.74em; line-height: 1.3; }
+  .placa-pasos { display: flex; flex-direction: column; gap: 5px; margin-top: 4px; }
+  .paso-item { display: flex; align-items: center; gap: 8px; font-size: 0.78em; }
+  .paso-num {
+    background: rgba(80,220,160,0.2);
+    color: var(--color-mint);
+    font-weight: 800;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8em;
+    flex-shrink: 0;
+  }
+  .placa-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.65em;
+    opacity: 0.7;
+    font-family: var(--font-mono);
+  }
+
+  /* BADGE EN VIVO */
+  .live-badge {
+    position: absolute;
+    bottom: 8px;
+    right: 12px;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.18);
+    color: var(--color-mint);
+    font-size: 0.62rem;
+    font-weight: 800;
+    padding: 3px 9px;
+    border-radius: 99px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    z-index: 25;
+  }
+  .live-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--color-mint);
+    border-radius: 50%;
+    animation: livePulse 1.8s infinite;
+  }
+  @keyframes livePulse {
+    0% { transform: scale(0.9); opacity: 0.5; }
+    50% { transform: scale(1.3); opacity: 1; }
+    100% { transform: scale(0.9); opacity: 0.5; }
+  }
+
+  /* ══ 3. FOCUS DECK INFERIOR (EL WIZARD ASISTIDO) ══ */
+  .focus-deck-wrapper {
+    background: #151922;
+    border-top: 1px solid rgba(255,255,255,0.12);
+    display: flex;
+    flex-direction: column;
+    z-index: 40;
+    flex-shrink: 0;
+    height: 290px;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  body.keyboard-visible .focus-deck-wrapper {
+    margin-bottom: 315px !important;
+    height: 195px !important;
+  }
+
+  /* BARRA DE PASOS (STEPPER CONECTADO) */
+  .stepper-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px 6px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    background: #11141b;
+  }
+  .stepper-dots {
+    display: flex;
+    gap: 6px;
+    flex: 1;
+    max-width: 180px;
+  }
+  .step-bar-seg {
+    height: 4px;
+    flex: 1;
+    background: rgba(255,255,255,0.15);
+    border-radius: 99px;
+    transition: background 0.25s ease;
+  }
+  .step-bar-seg.active { background: var(--color-mint); box-shadow: 0 0 6px var(--color-mint); }
+  .step-bar-seg.done { background: var(--color-mint-deep); }
+  .step-current-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-family: var(--font-mono);
+  }
+  .step-current-label b { color: #fff; }
+
+  /* ÁREA DEL PASO ACTIVO */
+  .step-content-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 16px;
+  }
+
+  .step-pane {
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    animation: deckSlide 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .step-pane.active { display: flex; }
+  @keyframes deckSlide {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .pane-intro-title {
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: #fff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .pane-intro-desc {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    line-height: 1.35;
+  }
+
+  /* GRILLA DE PLANTILLAS (6 TIPOS REALES DE ALQUIMIA) */
+  .tpl-real-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin-top: 4px;
+  }
+  .tpl-real-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 9px;
+    padding: 7px 8px;
+    color: #e2e8f0;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    transition: all 0.15s ease;
+  }
+  .tpl-real-card:hover {
+    background: rgba(255,255,255,0.08);
+  }
+  .tpl-real-card.active {
+    background: rgba(80, 220, 160, 0.18);
+    border-color: var(--color-mint);
+    color: #fff;
+    box-shadow: 0 0 10px rgba(80,220,160,0.25);
+  }
+  .tpl-card-icon { font-size: 1rem; line-height: 1; }
+  .tpl-card-name { font-weight: 800; font-size: 0.75rem; }
+  .tpl-card-desc { font-size: 0.62rem; color: #94a3b8; line-height: 1.2; }
+
+  /* CAMPOS TÁCTILES DEL STEP DECK */
+  .field-block {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .field-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #cbd5e1;
+  }
+  .field-counter {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: #94a3b8;
+  }
+  .input-control {
+    background: #0f131a;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 8px;
+    color: #fff;
+    font-family: var(--font-body);
+    font-size: 0.92rem;
+    padding: 8px 12px;
+    outline: none;
+    width: 100%;
+  }
+  .input-control:focus {
+    border-color: var(--color-mint);
+    box-shadow: 0 0 0 2px rgba(80,220,160,0.25);
+  }
+  textarea.input-control {
+    resize: none;
+    min-height: 52px;
+  }
+
+  /* CHIPS DE GANCHOS RÁPIDOS (1-TAP INSPIRACIÓN) */
+  .ganchos-scroll {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-top: 2px;
+  }
+  .gancho-chip {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #93c5fd;
+    font-size: 0.68rem;
+    padding: 4px 9px;
+    border-radius: 99px;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .gancho-chip:active { background: rgba(80,220,160,0.2); color: #fff; }
+
+  /* COLORES Y MARCA EN PASO 4 */
+  .colors-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-top: 6px;
+  }
+  .color-dot-real {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform 0.15s, border-color 0.15s;
+  }
+  .color-dot-real.active {
+    border-color: #fff;
+    transform: scale(1.15);
+    box-shadow: 0 0 10px rgba(255,255,255,0.4);
+  }
+
+  /* BARRA DE NAVEGACIÓN ENTRE PASOS (BOTTOM FOOTER) */
+  .deck-actions-bar {
+    height: 48px;
+    background: #11141b;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 16px;
+    flex-shrink: 0;
+  }
+  .btn-deck-back {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-weight: 700;
+    font-size: 0.78rem;
+    cursor: pointer;
+  }
+  .btn-deck-next {
+    background: var(--color-mint);
+    color: #0b2518;
+    border: none;
+    font-weight: 800;
+    font-size: 0.8rem;
+    padding: 7px 18px;
+    border-radius: 99px;
+    cursor: pointer;
+    box-shadow: 0 3px 0 var(--color-mint-deep);
+  }
+  .btn-deck-next:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--color-mint-deep); }
+
+  /* ══ 4. TECLADO VIRTUAL MOBILE INTERACTIVO ══ */
+  .ios-keyboard-overlay {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 315px;
+    background: #1e222b;
+    backdrop-filter: blur(25px);
+    border-top: 1px solid rgba(255,255,255,0.18);
+    display: flex;
+    flex-direction: column;
+    z-index: 9999;
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.8);
+    transform: translateY(100%);
+    transition: transform 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+    user-select: none;
+  }
+  body.keyboard-visible .ios-keyboard-overlay {
+    transform: translateY(0);
+  }
+
+  .kbd-toolbar {
+    height: 40px;
+    background: rgba(13, 16, 22, 0.96);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    flex-shrink: 0;
+  }
+  .kbd-btn-done {
+    background: var(--color-mint);
+    color: #0b2518;
+    font-weight: 800;
+    font-size: 0.76rem;
+    padding: 4px 14px;
+    border-radius: 99px;
+    border: none;
+    cursor: pointer;
+  }
+
+  .kbd-keys-area {
+    flex: 1;
+    padding: 6px 4px 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    gap: 5px;
+  }
+  .kbd-row {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    width: 100%;
+  }
+  .k-key {
+    background: #3a4150;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-family: -apple-system, system-ui, sans-serif;
+    font-size: 1.15rem;
+    font-weight: 500;
+    height: 42px;
+    flex: 1;
+    max-width: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 1.5px 0 #181b22;
+  }
+  .k-key:active { background: var(--color-mint); color: #0b2518; }
+  .k-special { background: #272c37; font-size: 0.8rem; font-weight: 600; color: #cbd5e1; max-width: 52px; flex: 1.4; }
+  .k-space { max-width: 170px; flex: 4; font-size: 0.75rem; color: #94a3b8; }
+
+  /* BOTÓN FLOTANTE SIMULAR TECLADO */
+  .kbd-toggle-pill {
+    position: fixed;
+    top: 58px;
+    right: 12px;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(80, 220, 160, 0.4);
+    color: var(--color-mint);
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 5px 11px;
+    border-radius: 99px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    z-index: 999;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+  }
+  body.keyboard-visible .kbd-toggle-pill {
+    background: var(--color-mint);
+    color: #0b2518;
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ 1. HEADER ALQUIMIA ══ -->
+<header class="top-bar">
+  <div class="brand-logo-area">
+    <div class="brand-bubble-icon">
+      <svg viewBox="0 0 24 24"><path d="M7 2v2h1v5l-4.5 9A3 3 0 0 0 6 22h12a3 3 0 0 0 2.5-4.5L16 9V4h1V2H7zm3 2h4v5.5l.5 1 3.5 7a1 1 0 0 1-.8 1.5H6.8a1 1 0 0 1-.8-1.5l3.5-7 .5-1V4z"/></svg>
+    </div>
+    <span>Alquimia</span>
+    <span class="cuota-pill"><b>5</b> placas</span>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:8px;">
+    <button type="button" class="btn-generar-top" onclick="finalizarGeneracion()">Generar placa →</button>
+  </div>
+</header>
+
+<!-- BOTÓN SIMULADOR DE TECLADO FLOTANTE -->
+<button type="button" class="kbd-toggle-pill" onclick="toggleTecladoVirtual()">
+  <span>⌨️</span>
+  <span id="kbdToggleTxt">Simular Teclado</span>
+</button>
+
+<!-- ══ 2. STAGE SUPERIOR FIJO (LA PIEZA GRÁFICA EN VIVO) ══ -->
+<section class="stage-section" id="stage">
+  <div class="stage-quick-bar">
+    <div class="format-pills-bar">
+      <button type="button" class="fmt-btn active" onclick="cambiarFormato('fmt-feed', this)">Feed 4:5</button>
+      <button type="button" class="fmt-btn" onclick="cambiarFormato('fmt-carrusel', this)">Carrusel</button>
+      <button type="button" class="fmt-btn" onclick="cambiarFormato('fmt-historia', this)">Historia 9:16</button>
+      <button type="button" class="fmt-btn" onclick="cambiarFormato('fmt-cuadrado', this)">1:1</button>
+    </div>
+  </div>
+
+  <!-- LA PIEZA GRÁFICA INTERACTIVA -->
+  <div class="placa-box fmt-feed" id="placaBox">
+    <div class="placa-render theme-dark" id="placaRender">
+      <div class="placa-header">
+        <div class="placa-brand-badge">
+          <span class="placa-brand-dot"></span>
+          <span id="txtBrand">Panadería Mendieta</span>
+        </div>
+        <span id="txtIdx" style="font-family:var(--font-mono);">01/03</span>
+      </div>
+
+      <div class="placa-main" id="placaMain">
+        <div class="placa-kicker" id="viewKicker">MASA MADRE · FERMENTACIÓN</div>
+        <div class="placa-title" id="viewTitle">Por qué tardamos tres días en hacer un pan.</div>
+        <div class="placa-body" id="viewBody">La masa madre no se apura. Te contamos qué pasa en cada uno de esos tres días en el horno.</div>
+        <div id="viewExtra"></div>
+      </div>
+
+      <div class="placa-footer">
+        <span id="viewHandle">@panaderiamendieta</span>
+        <span id="viewPaginadorHint">DESLIZÁ ↑</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TIRA DE MINIATURAS SI ES CARRUSEL -->
+  <div class="tira-carrusel" id="tiraCarrusel" style="display:none;">
+    <button type="button" class="tira-mini active" onclick="elegirPlacaCarrusel(1, this)">01</button>
+    <button type="button" class="tira-mini" onclick="elegirPlacaCarrusel(2, this)">02</button>
+    <button type="button" class="tira-mini" onclick="elegirPlacaCarrusel(3, this)">03</button>
+    <button type="button" class="tira-mini btn-add" onclick="agregarPlacaCarrusel()">+</button>
+  </div>
+
+  <div class="live-badge">
+    <span class="live-dot"></span>
+    <span>EN VIVO</span>
+  </div>
+</section>
+
+<!-- ══ 3. FOCUS DECK INFERIOR (PASO A PASO ASISTIDO) ══ -->
+<main class="focus-deck-wrapper" id="deckWrapper">
+  <!-- ENCABEZADO DEL STEPPER -->
+  <div class="stepper-header">
+    <div class="stepper-dots">
+      <div class="step-bar-seg active" id="dot-1"></div>
+      <div class="step-bar-seg" id="dot-2"></div>
+      <div class="step-bar-seg" id="dot-3"></div>
+      <div class="step-bar-seg" id="dot-4"></div>
+    </div>
+    <div class="step-current-label">
+      PASO <b id="lblNumPaso">1</b> DE 4 · <span id="lblTituloPaso">Plantilla</span>
+    </div>
+  </div>
+
+  <!-- ÁREA SCROLLEABLE DE PASOS -->
+  <div class="step-content-area">
+    <!-- ── PASO 1: PLANTILLA & DISPOSICIÓN ── -->
+    <div class="step-pane active" id="pane-1">
+      <div>
+        <div class="pane-intro-title">
+          <span>¿Qué vas a comunicar?</span>
+          <span style="font-size:0.68rem;color:var(--color-mint);font-family:var(--font-mono);">6 plantillas</span>
+        </div>
+        <p class="pane-intro-desc">Elegí la plantilla según el objetivo. La pieza gráfica arriba cambia de inmediato:</p>
+      </div>
+
+      <div class="tpl-real-grid">
+        <button type="button" class="tpl-real-card active" onclick="elegirPlantilla('texto', this)">
+          <span class="tpl-card-icon">📝</span>
+          <span class="tpl-card-name">Texto</span>
+          <span class="tpl-card-desc">Título con bajada</span>
+        </button>
+        <button type="button" class="tpl-real-card" onclick="elegirPlantilla('frase', this)">
+          <span class="tpl-card-icon">💬</span>
+          <span class="tpl-card-name">Frase</span>
+          <span class="tpl-card-desc">Cita en bastardilla</span>
+        </button>
+        <button type="button" class="tpl-real-card" onclick="elegirPlantilla('oferta', this)">
+          <span class="tpl-card-icon">🏷️</span>
+          <span class="tpl-card-name">Oferta</span>
+          <span class="tpl-card-desc">Precio o 2×1</span>
+        </button>
+        <button type="button" class="tpl-real-card" onclick="elegirPlantilla('pasos', this)">
+          <span class="tpl-card-icon">🔢</span>
+          <span class="tpl-card-name">Pasos</span>
+          <span class="tpl-card-desc">Proceso 1-2-3</span>
+        </button>
+        <button type="button" class="tpl-real-card" onclick="elegirPlantilla('manifiesto', this)">
+          <span class="tpl-card-icon">💡</span>
+          <span class="tpl-card-name">Idea</span>
+          <span class="tpl-card-desc">Tipografía gigante</span>
+        </button>
+        <button type="button" class="tpl-real-card" onclick="elegirPlantilla('foto', this)">
+          <span class="tpl-card-icon">📸</span>
+          <span class="tpl-card-name">Con Foto</span>
+          <span class="tpl-card-desc">Texto sobre imagen</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── PASO 2: TÍTULO & GANCHO ── -->
+    <div class="step-pane" id="pane-2">
+      <div class="field-block">
+        <div class="field-top-row">
+          <label for="inKicker">Etiqueta superior (Volanta)</label>
+          <span class="field-counter" id="cntKicker">26/30</span>
+        </div>
+        <input class="input-control" id="inKicker" value="MASA MADRE · FERMENTACIÓN" oninput="actualizarPlaca()">
+      </div>
+
+      <div class="field-block" style="margin-top:2px;">
+        <div class="field-top-row">
+          <label for="inTitle">Título principal</label>
+          <span class="field-counter" id="cntTitle">45/55</span>
+        </div>
+        <input class="input-control" id="inTitle" value="Por qué tardamos tres días en hacer un pan." oninput="actualizarPlaca()">
+      </div>
+
+      <!-- SI ES OFERTA: CAMPO DE PRECIO/PROMO -->
+      <div class="field-block" id="boxCampoOferta" style="display:none;margin-top:2px;">
+        <div class="field-top-row">
+          <label for="inPromo">Cifra o Descuento (Grande)</label>
+          <span class="field-counter">ej: 2×1 o 50%</span>
+        </div>
+        <input class="input-control" id="inPromo" value="2×1" oninput="actualizarPlaca()">
+      </div>
+
+      <!-- INSPIRACIÓN RÁPIDA 1-TAP -->
+      <div style="margin-top:2px;">
+        <div style="font-size:0.65rem;color:#94a3b8;margin-bottom:3px;">Inspiración de gancho en 1 toque:</div>
+        <div class="ganchos-scroll">
+          <span class="gancho-chip" onclick="aplicarGancho('El secreto de nuestra masa madre.')">+ El secreto de...</span>
+          <span class="gancho-chip" onclick="aplicarGancho('3 errores comunes al hornear pan.')">+ 3 errores comunes...</span>
+          <span class="gancho-chip" onclick="aplicarGancho('Lo que nadie te cuenta de la fermentación.')">+ Lo que nadie te cuenta...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PASO 3: BAJADA & EXPLICACIÓN ── -->
+    <div class="step-pane" id="pane-3">
+      <div class="field-block">
+        <div class="field-top-row">
+          <label for="inBody">Bajada explicativa (Cuerpo)</label>
+          <span class="field-counter" id="cntBody">87/200</span>
+        </div>
+        <textarea class="input-control" id="inBody" oninput="actualizarPlaca()">La masa madre no se apura. Te contamos qué pasa en cada uno de esos tres días en el horno.</textarea>
+      </div>
+
+      <div class="field-block" style="margin-top:2px;">
+        <div class="field-top-row">
+          <label for="inFuente">Fuente o autor (Opcional)</label>
+          <span class="field-counter">ej: INDEC, 2025</span>
+        </div>
+        <input class="input-control" id="inFuente" placeholder="ej: INDEC, 2025 o Maestro Panadero" oninput="actualizarPlaca()">
+      </div>
+    </div>
+
+    <!-- ── PASO 4: COLOR, MARCA & EXPORTACIÓN ── -->
+    <div class="step-pane" id="pane-4">
+      <div>
+        <div class="pane-intro-title">
+          <span>Paleta de tu marca</span>
+        </div>
+        <div class="colors-row">
+          <div class="color-dot-real active" style="background:#141820;" onclick="cambiarColorTema('theme-dark', this)" title="Darkroom"></div>
+          <div class="color-dot-real" style="background:#0b251a;" onclick="cambiarColorTema('theme-mint', this)" title="Salvia Mint"></div>
+          <div class="color-dot-real" style="background:#2f1216;" onclick="cambiarColorTema('theme-coral', this)" title="Terracota Coral"></div>
+          <div class="color-dot-real" style="background:#fcf9f2;border:1px solid #aaa;" onclick="cambiarColorTema('theme-crema', this)" title="Crema Editorial"></div>
+        </div>
+      </div>
+
+      <!-- AHORRO ESTIMADO DE ALQUIMIA -->
+      <div style="background:rgba(80,220,160,0.1);border:1px solid rgba(80,220,160,0.25);padding:8px 12px;border-radius:10px;display:flex;align-items:center;gap:10px;margin-top:6px;">
+        <span style="font-size:1.3rem;">💰</span>
+        <div style="font-size:0.75rem;color:#e2e8f0;">
+          Te ahorraste <b>$15.000</b> de un diseñador o community manager con esta pieza.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER DE NAVEGACIÓN DEL STEPPER -->
+  <div class="deck-actions-bar">
+    <button type="button" class="btn-deck-back" id="btnPasoAtras" onclick="irPaso(-1)" style="visibility:hidden;">
+      ← Anterior
+    </button>
+    <button type="button" class="btn-deck-next" id="btnPasoSiguiente" onclick="irPaso(1)">
+      Siguiente: Título →
+    </button>
+  </div>
+</main>
+
+<!-- ══ 4. TECLADO VIRTUAL INTERACTIVO ══ -->
+<div class="ios-keyboard-overlay" id="iosKeyboard">
+  <div class="kbd-toolbar">
+    <div style="display:flex;align-items:center;gap:6px;font-size:0.74rem;color:#94a3b8;font-weight:700;">
+      <span style="width:7px;height:7px;border-radius:50%;background:var(--color-mint);"></span>
+      <span id="kbdActiveFieldLabel">Editando: Título</span>
+    </div>
+    <button type="button" class="kbd-btn-done" onclick="cerrarTecladoVirtual()">Listo ✓</button>
+  </div>
+
+  <div class="kbd-keys-area">
+    <div class="kbd-row">
+      <button class="k-key" onclick="teclear('Q')">Q</button>
+      <button class="k-key" onclick="teclear('W')">W</button>
+      <button class="k-key" onclick="teclear('E')">E</button>
+      <button class="k-key" onclick="teclear('R')">R</button>
+      <button class="k-key" onclick="teclear('T')">T</button>
+      <button class="k-key" onclick="teclear('Y')">Y</button>
+      <button class="k-key" onclick="teclear('U')">U</button>
+      <button class="k-key" onclick="teclear('I')">I</button>
+      <button class="k-key" onclick="teclear('O')">O</button>
+      <button class="k-key" onclick="teclear('P')">P</button>
+    </div>
+    <div class="kbd-row">
+      <button class="k-key" onclick="teclear('A')">A</button>
+      <button class="k-key" onclick="teclear('S')">S</button>
+      <button class="k-key" onclick="teclear('D')">D</button>
+      <button class="k-key" onclick="teclear('F')">F</button>
+      <button class="k-key" onclick="teclear('G')">G</button>
+      <button class="k-key" onclick="teclear('H')">H</button>
+      <button class="k-key" onclick="teclear('J')">J</button>
+      <button class="k-key" onclick="teclear('K')">K</button>
+      <button class="k-key" onclick="teclear('L')">L</button>
+      <button class="k-key" onclick="teclear('Ñ')">Ñ</button>
+    </div>
+    <div class="kbd-row">
+      <button class="k-key k-special" onclick="teclearMayus()">⇧</button>
+      <button class="k-key" onclick="teclear('Z')">Z</button>
+      <button class="k-key" onclick="teclear('X')">X</button>
+      <button class="k-key" onclick="teclear('C')">C</button>
+      <button class="k-key" onclick="teclear('V')">V</button>
+      <button class="k-key" onclick="teclear('B')">B</button>
+      <button class="k-key" onclick="teclear('N')">N</button>
+      <button class="k-key" onclick="teclear('M')">M</button>
+      <button class="k-key k-special" onclick="teclearBorrar()">⌫</button>
+    </div>
+    <div class="kbd-row">
+      <button class="k-key k-special" style="background:#2bb379;color:#0b2518;font-weight:700;" onclick="teclearFraseRapida()">💡 +Frase</button>
+      <button class="k-key k-space" onclick="teclear(' ')">espacio</button>
+      <button class="k-key" onclick="teclear('.')">.</button>
+      <button class="k-key k-special" style="background:var(--color-mint);color:#0b2518;font-weight:800;" onclick="cerrarTecladoVirtual()">intro ↵</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let pasoActual = 1;
+  const totalPasos = 4;
+  let plantillaActual = 'texto';
+  let campoEnfocado = null;
+  let mayusculas = false;
+
+  const nombresPasos = {
+    1: 'Plantilla',
+    2: 'Título & Gancho',
+    3: 'Bajada & Detalles',
+    4: 'Marca & Salida'
+  };
+
+  function irPaso(dir) {
+    pasoActual += dir;
+    if (pasoActual < 1) pasoActual = 1;
+    if (pasoActual > totalPasos) {
+      finalizarGeneracion();
+      pasoActual = totalPasos;
+      return;
+    }
+
+    // Actualizar paneles
+    document.querySelectorAll('.step-pane').forEach(p => p.classList.remove('active'));
+    document.getElementById('pane-' + pasoActual).classList.add('active');
+
+    // Actualizar stepper dots
+    for (let i = 1; i <= totalPasos; i++) {
+      const dot = document.getElementById('dot-' + i);
+      dot.className = 'step-bar-seg';
+      if (i === pasoActual) dot.classList.add('active');
+      else if (i < pasoActual) dot.classList.add('done');
+    }
+
+    document.getElementById('lblNumPaso').textContent = pasoActual;
+    document.getElementById('lblTituloPaso').textContent = nombresPasos[pasoActual];
+
+    // Botones atras / siguiente
+    document.getElementById('btnPasoAtras').style.visibility = (pasoActual === 1) ? 'hidden' : 'visible';
+    const btnNext = document.getElementById('btnPasoSiguiente');
+    if (pasoActual === 1) btnNext.textContent = 'Siguiente: Título →';
+    else if (pasoActual === 2) btnNext.textContent = 'Siguiente: Bajada →';
+    else if (pasoActual === 3) btnNext.textContent = 'Siguiente: Marca →';
+    else if (pasoActual === 4) btnNext.textContent = 'Generar en Alta Resolución ✨';
+  }
+
+  function elegirPlantilla(tpl, btn) {
+    plantillaActual = tpl;
+    document.querySelectorAll('.tpl-real-card').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    const render = document.getElementById('placaRender');
+    const extra = document.getElementById('viewExtra');
+    const boxOferta = document.getElementById('boxCampoOferta');
+
+    render.classList.remove('tpl-frase', 'tpl-manifiesto', 'tpl-oferta', 'tpl-pasos');
+    if (boxOferta) boxOferta.style.display = (tpl === 'oferta') ? 'block' : 'none';
+
+    if (tpl === 'frase') {
+      render.classList.add('tpl-frase');
+      extra.innerHTML = '<span style="font-size:0.7em;font-weight:700;letter-spacing:0.05em;color:var(--color-mint);">— Juan Mendieta, Fundador</span>';
+    } else if (tpl === 'oferta') {
+      render.classList.add('tpl-oferta');
+      const promo = document.getElementById('inPromo')?.value || '2×1';
+      extra.innerHTML = `
+        <div class="placa-oferta-box">
+          <div class="oferta-big">${promo}</div>
+          <div class="oferta-desc"><b>Llevando 2 panes de campo</b><br>Martes y jueves en el local.</div>
+        </div>`;
+    } else if (tpl === 'pasos') {
+      render.classList.add('tpl-pasos');
+      extra.innerHTML = `
+        <div class="placa-pasos">
+          <div class="paso-item"><span class="paso-num">1</span> Alimentar masa a las 6 AM</div>
+          <div class="paso-item"><span class="paso-num">2</span> 48h fermentación lenta</div>
+          <div class="paso-item"><span class="paso-num">3</span> Horneado en piso de piedra</div>
+        </div>`;
+    } else if (tpl === 'manifiesto') {
+      render.classList.add('tpl-manifiesto');
+      extra.innerHTML = '';
+    } else {
+      extra.innerHTML = '';
+    }
+  }
+
+  function actualizarPlaca() {
+    const kicker = document.getElementById('inKicker').value;
+    const title = document.getElementById('inTitle').value;
+    const body = document.getElementById('inBody').value;
+    const fuente = document.getElementById('inFuente').value;
+
+    document.getElementById('viewKicker').textContent = kicker;
+    document.getElementById('viewTitle').textContent = title;
+    document.getElementById('viewBody').textContent = body;
+
+    document.getElementById('cntKicker').textContent = kicker.length + '/30';
+    document.getElementById('cntTitle').textContent = title.length + '/55';
+    document.getElementById('cntBody').textContent = body.length + '/200';
+
+    if (plantillaActual === 'oferta') {
+      const promo = document.getElementById('inPromo')?.value || '2×1';
+      const big = document.querySelector('.oferta-big');
+      if (big) big.textContent = promo;
+    }
+
+    if (fuente && plantillaActual === 'frase') {
+      const extra = document.getElementById('viewExtra');
+      if (extra) extra.innerHTML = '<span style="font-size:0.7em;font-weight:700;letter-spacing:0.05em;color:var(--color-mint);">— ' + fuente + '</span>';
+    }
+  }
+
+  function cambiarFormato(fmt, btn) {
+    document.querySelectorAll('.fmt-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    const box = document.getElementById('placaBox');
+    const tira = document.getElementById('tiraCarrusel');
+
+    if (fmt === 'fmt-carrusel') {
+      box.className = 'placa-box fmt-feed';
+      tira.style.display = 'flex';
+      document.getElementById('txtIdx').textContent = '01/03';
+      document.getElementById('viewPaginadorHint').textContent = 'DESLIZÁ →';
+    } else {
+      box.className = 'placa-box ' + fmt;
+      tira.style.display = 'none';
+      document.getElementById('txtIdx').textContent = '';
+      document.getElementById('viewPaginadorHint').textContent = 'DESLIZÁ ↑';
+    }
+  }
+
+  function elegirPlacaCarrusel(idx, btn) {
+    document.querySelectorAll('.tira-mini').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    document.getElementById('txtIdx').textContent = String(idx).padStart(2, '0') + '/03';
+  }
+
+  function agregarPlacaCarrusel() {
+    alert('Nueva placa añadida al carrusel.');
+  }
+
+  function cambiarColorTema(tema, btn) {
+    document.querySelectorAll('.color-dot-real').forEach(d => d.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    const r = document.getElementById('placaRender');
+    r.classList.remove('theme-dark', 'theme-mint', 'theme-coral', 'theme-crema');
+    r.classList.add(tema);
+  }
+
+  function aplicarGancho(txt) {
+    document.getElementById('inTitle').value = txt;
+    actualizarPlaca();
+  }
+
+  function finalizarGeneracion() {
+    alert('🎉 ¡Placa generada en alta resolución (2160×2700px)! Lista para descargar y subir a Instagram.');
+  }
+
+  /* ══ TECLADO VIRTUAL INTERACTIVO ══ */
+  function registrarFocos() {
+    campoEnfocado = document.getElementById('inTitle');
+    document.querySelectorAll('input, textarea').forEach(input => {
+      input.addEventListener('focus', () => {
+        campoEnfocado = input;
+        actualizarLabelTeclado();
+        abrirTecladoVirtual();
+      });
+      input.addEventListener('click', () => {
+        campoEnfocado = input;
+        actualizarLabelTeclado();
+        abrirTecladoVirtual();
+      });
+    });
+  }
+
+  function actualizarLabelTeclado() {
+    if (!campoEnfocado) return;
+    const lbl = document.getElementById('kbdActiveFieldLabel');
+    let n = 'Campo';
+    if (campoEnfocado.id === 'inTitle') n = 'Título';
+    else if (campoEnfocado.id === 'inBody') n = 'Bajada';
+    else if (campoEnfocado.id === 'inKicker') n = 'Etiqueta';
+    else if (campoEnfocado.id === 'inPromo') n = 'Precio/Oferta';
+    if (lbl) lbl.textContent = 'Editando: ' + n;
+  }
+
+  function abrirTecladoVirtual() {
+    document.body.classList.add('keyboard-visible');
+    document.getElementById('kbdToggleTxt').textContent = 'Cerrar Teclado ✕';
+  }
+
+  function cerrarTecladoVirtual() {
+    document.body.classList.remove('keyboard-visible');
+    document.getElementById('kbdToggleTxt').textContent = 'Simular Teclado';
+    if (campoEnfocado) campoEnfocado.blur();
+  }
+
+  function toggleTecladoVirtual() {
+    if (document.body.classList.contains('keyboard-visible')) cerrarTecladoVirtual();
+    else {
+      if (!campoEnfocado) campoEnfocado = document.getElementById('inTitle');
+      abrirTecladoVirtual();
+    }
+  }
+
+  function teclear(car) {
+    if (!campoEnfocado) campoEnfocado = document.getElementById('inTitle');
+    const c = mayusculas ? car.toUpperCase() : car.toLowerCase();
+    campoEnfocado.value += (car === ' ' || car === '.') ? car : c;
+    actualizarPlaca();
+  }
+
+  function teclearBorrar() {
+    if (!campoEnfocado || !campoEnfocado.value) return;
+    campoEnfocado.value = campoEnfocado.value.slice(0, -1);
+    actualizarPlaca();
+  }
+
+  function teclearMayus() {
+    mayusculas = !mayusculas;
+    document.querySelectorAll('.k-key').forEach(k => {
+      if (k.textContent.length === 1 && /[a-zA-ZñÑ]/.test(k.textContent)) {
+        k.textContent = mayusculas ? k.textContent.toUpperCase() : k.textContent.toLowerCase();
+      }
+    });
+  }
+
+  const frasesAlquimia = [
+    ' Calidad artesanal única.',
+    ' Hecho a mano cada mañana.',
+    ' Sin aditivos químicos.',
+    ' El secreto de nuestra receta.'
+  ];
+  let idxFrase = 0;
+  function teclearFraseRapida() {
+    if (!campoEnfocado) campoEnfocado = document.getElementById('inTitle');
+    campoEnfocado.value += frasesAlquimia[idxFrase % frasesAlquimia.length];
+    idxFrase++;
+    actualizarPlaca();
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    registrarFocos();
+  });
+</script>
+</body>
+</html>

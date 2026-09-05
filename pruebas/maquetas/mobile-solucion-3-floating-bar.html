@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Solución 3: Canvas Dominante + Floating Smart Bar — Alquimia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Fraunces:ital,opsz,wght@0,9..144,700;1,9..144,600&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+
+  :root {
+    --color-paper: oklch(97% 0.012 95);
+    --color-paper-2: oklch(94% 0.016 95);
+    --color-rule: oklch(86% 0.014 90);
+    --color-muted: oklch(52% 0.014 90);
+    --color-ink: oklch(20% 0.012 250);
+    --color-mint: #50dca0;
+    --color-mint-deep: #2bb379;
+    --color-cyan: #38bdf8;
+    --color-coral: #fb7185;
+    --color-lavender: #c084fc;
+    --font-sans: 'Plus Jakarta Sans', -apple-system, system-ui, sans-serif;
+    --font-serif: 'Fraunces', Georgia, serif;
+    --font-display: 'Syne', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: var(--font-sans);
+    background: #0d0f13;
+    color: #f1f5f9;
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+  /* Estilos del Lienzo Gráfico en Vivo */
+  .placa-box {
+    position: relative;
+    box-shadow: 0 16px 36px -10px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.12);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: transform 0.25s ease, aspect-ratio 0.25s ease, max-height 0.25s ease, width 0.25s ease;
+    height: 96%;
+    max-height: 100%;
+    max-width: 100%;
+    aspect-ratio: 4/5;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .placa-box.fmt-feed { aspect-ratio: 4/5; }
+  .placa-box.fmt-historia { aspect-ratio: 9/16; }
+  .placa-box.fmt-cuadrado { aspect-ratio: 1/1; }
+
+  .placa-render {
+    width: 100%;
+    height: 100%;
+    background: #141820;
+    color: #f8fafc;
+    padding: 7% 8%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    font-size: clamp(11px, 2.7vw, 15px);
+    position: relative;
+    transition: background 0.3s ease, color 0.3s ease;
+    user-select: none;
+  }
+  .placa-render.theme-dark { background: #141820; color: #f8fafc; }
+  .placa-render.theme-mint { background: #0c2b20; color: #eafaf4; }
+  .placa-render.theme-coral { background: #2f1216; color: #fff1f2; }
+  .placa-render.theme-crema { background: #fbf8f1; color: #1c1917; }
+  .placa-render.theme-crema .placa-kicker { color: #854d0e; }
+  .placa-render.theme-crema .placa-brand-dot { background: #854d0e; }
+  .placa-render.theme-crema .placa-brand-badge { color: #44403c; }
+  .placa-render.theme-crema .placa-footer { color: #78716c; }
+  .placa-render.theme-crema .placa-oferta-box { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.2); }
+  .placa-render.theme-crema .oferta-big { color: #059669; }
+
+  .placa-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.68em;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.85;
+  }
+  .placa-brand-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .placa-brand-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--color-mint);
+  }
+  .placa-main {
+    margin: auto 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+  }
+  .placa-kicker {
+    font-family: var(--font-mono);
+    font-size: 0.68em;
+    font-weight: 700;
+    color: var(--color-mint);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+  .placa-title {
+    font-family: var(--font-serif);
+    font-size: 1.55em;
+    line-height: 1.16;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    word-break: break-word;
+  }
+  .tpl-frase .placa-title {
+    font-style: italic;
+    font-weight: 600;
+    border-left: 3px solid var(--color-mint);
+    padding-left: 0.45em;
+  }
+  .tpl-manifiesto .placa-title {
+    font-family: var(--font-display);
+    font-size: 1.9em;
+    text-transform: uppercase;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+  }
+  .placa-body {
+    font-size: 0.84em;
+    line-height: 1.42;
+    opacity: 0.85;
+  }
+  .placa-oferta-box {
+    background: rgba(255,255,255,0.08);
+    border: 1.5px dashed rgba(255,255,255,0.3);
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 6px;
+  }
+  .oferta-big {
+    font-size: 1.85em;
+    font-weight: 900;
+    color: var(--color-mint);
+    font-family: var(--font-display);
+    line-height: 1;
+  }
+  .oferta-desc { font-size: 0.76em; line-height: 1.3; }
+  .placa-pasos { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+  .paso-item { display: flex; align-items: center; gap: 8px; font-size: 0.78em; }
+  .paso-num {
+    background: rgba(80,220,160,0.2);
+    color: var(--color-mint);
+    font-weight: 800;
+    width: 19px;
+    height: 19px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8em;
+    flex-shrink: 0;
+  }
+  .placa-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.65em;
+    opacity: 0.7;
+    font-family: var(--font-mono);
+  }
+  .live-pill {
+    position: absolute;
+    bottom: 10px;
+    right: 14px;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.18);
+    color: var(--color-mint);
+    font-size: 0.62rem;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 99px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    z-index: 10;
+  }
+  .live-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--color-mint);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--color-mint);
+  }
+
+
+  body {
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #08090c;
+  }
+
+  /* Top bar discreta y transparente */
+  .top-bar {
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    z-index: 20;
+  }
+  .tag-sol {
+    background: rgba(251, 113, 133, 0.18);
+    color: #fb7185;
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 99px;
+    font-family: var(--font-mono);
+  }
+
+  /* CANVAS PROTAGONISTA ABSOLUTO (72% DEL VIEWPORT) */
+  .canvas-stage {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 10px 20px 84px;
+    overflow: hidden;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .canvas-stage .placa-box {
+    max-width: 84%;
+    max-height: 82%;
+  }
+  body.keyboard-open .canvas-stage {
+    padding-bottom: 200px;
+  }
+
+  /* FLOATING SMART BAR */
+  .smart-bar-wrap {
+    position: fixed;
+    bottom: 16px;
+    left: 12px;
+    right: 12px;
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .smart-bar {
+    background: rgba(22, 27, 36, 0.88);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 20px;
+    padding: 6px 8px;
+    box-shadow: 0 12px 36px rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+  }
+  .action-pill {
+    background: transparent;
+    border: none;
+    color: #cbd5e1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 6px 10px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 0.65rem;
+    font-weight: 700;
+    transition: all 0.15s ease;
+  }
+  .action-pill.active {
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+  }
+  .action-pill-icon {
+    font-size: 1.1rem;
+    line-height: 1;
+  }
+
+  /* MICRO-DRAWER INFERIOR AL ABRIR UN CAMPO */
+  .micro-drawer {
+    display: none;
+    background: #181d26;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 18px;
+    padding: 14px 16px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.8);
+    animation: slideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .drawer-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .drawer-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #94a3b8;
+  }
+  .btn-close-drawer {
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: #fff;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 0.8rem;
+  }
+
+  .quick-text-chips {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    overflow-x: auto;
+  }
+  .q-chip {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #cbd5e1;
+    font-size: 0.68rem;
+    padding: 4px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+    
+  /* ══ TECLADO VIRTUAL MÓVIL INTERACTIVO NATIVO ══ */
+  .ios-keyboard-overlay {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 315px;
+    background: #1e222b;
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border-top: 1px solid rgba(255,255,255,0.18);
+    display: flex;
+    flex-direction: column;
+    z-index: 9999;
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.8);
+    transform: translateY(100%);
+    transition: transform 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+    user-select: none;
+    touch-action: manipulation;
+  }
+  body.keyboard-visible .ios-keyboard-overlay {
+    transform: translateY(0);
+  }
+
+  /* BARRA DE HERRAMIENTAS DEL TECLADO (TIPO IOS TOOLBAR) */
+  .kbd-toolbar {
+    height: 42px;
+    background: rgba(13, 16, 22, 0.95);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    flex-shrink: 0;
+  }
+  .kbd-tool-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.72rem;
+    color: #94a3b8;
+    font-weight: 600;
+  }
+  .kbd-indicator-dot {
+    width: 7px;
+    height: 7px;
+    background: #50dca0;
+    border-radius: 50%;
+    animation: kbdPulse 1.5s infinite;
+  }
+  @keyframes kbdPulse {
+    0% { transform: scale(0.9); opacity: 0.5; }
+    50% { transform: scale(1.3); opacity: 1; }
+    100% { transform: scale(0.9); opacity: 0.5; }
+  }
+  .kbd-btn-done {
+    background: #50dca0;
+    color: #0b2518;
+    font-weight: 800;
+    font-size: 0.78rem;
+    padding: 5px 14px;
+    border-radius: 99px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(80, 220, 160, 0.3);
+  }
+
+  /* MATRIZ DE TECLAS TÁCTILES QWERTY */
+  .kbd-keys-area {
+    flex: 1;
+    padding: 6px 4px 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    gap: 5px;
+  }
+  .kbd-row {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    width: 100%;
+  }
+  .k-key {
+    background: #3a4150;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-family: -apple-system, system-ui, sans-serif;
+    font-size: 1.15rem;
+    font-weight: 500;
+    height: 42px;
+    flex: 1;
+    max-width: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 1.5px 0 #181b22;
+    transition: background 0.08s, transform 0.08s;
+  }
+  .k-key:active {
+    background: #50dca0;
+    color: #0c2b20;
+    transform: translateY(2px);
+  }
+  .k-special {
+    background: #272c37;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #cbd5e1;
+    max-width: 52px;
+    flex: 1.4;
+  }
+  .k-space {
+    max-width: 170px;
+    flex: 4;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #94a3b8;
+  }
+
+  /* BOTÓN FLOTANTE O DE PRUEBA RÁPIDA DE TECLADO */
+  .kbd-toggle-pill {
+    position: fixed;
+    top: 54px;
+    right: 12px;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(80, 220, 160, 0.4);
+    color: #50dca0;
+    font-size: 0.68rem;
+    font-weight: 800;
+    padding: 5px 11px;
+    border-radius: 99px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    z-index: 999;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+    transition: all 0.2s ease;
+  }
+  body.keyboard-visible .kbd-toggle-pill {
+    background: #50dca0;
+    color: #0b2518;
+    border-color: #50dca0;
+  }
+
+    
+  body.keyboard-visible .canvas-stage {
+    padding-bottom: 360px !important;
+    transform: scale(0.85);
+    transform-origin: top center;
+  }
+  body.keyboard-visible .smart-bar-wrap {
+    bottom: 322px !important;
+  }
+
+  </style>
+</head>
+<body>
+
+<header class="top-bar">
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span style="font-weight:700;font-size:0.9rem;">Alquimia</span>
+    <span class="tag-sol">3 · Canvas Dominante (70%)</span>
+  </div>
+  <button style="background:#fb7185;color:#fff;border:none;font-weight:800;font-size:0.75rem;padding:6px 14px;border-radius:99px;cursor:pointer;" onclick="alert('Publicación lista!')">Guardar</button>
+</header>
+
+<main class="canvas-stage" id="stage">
+  
+  <div class="placa-box fmt-feed" id="placaBox">
+    <div class="placa-render theme-dark" id="placaRender">
+      <div class="placa-header">
+        <div class="placa-brand-badge">
+          <span class="placa-brand-dot"></span>
+          <span id="txtBrand">Panadería Mendieta</span>
+        </div>
+        <span id="txtIdx">01/03</span>
+      </div>
+
+      <div class="placa-main" id="placaMain">
+        <div class="placa-kicker" id="viewKicker">MASA MADRE · FERMENTACIÓN</div>
+        <div class="placa-title" id="viewTitle">Por qué tardamos tres días en hacer un pan.</div>
+        <div class="placa-body" id="viewBody">La masa madre no se apura. Te contamos qué pasa en cada uno de esos tres días en el horno.</div>
+        <div id="viewExtra"></div>
+      </div>
+
+      <div class="placa-footer">
+        <span id="viewHandle">@panaderiamendieta</span>
+        <span>DESLIZÁ ↑</span>
+      </div>
+    </div>
+  </div>
+  <div class="live-pill">
+    <span class="live-dot"></span>
+    <span>EN VIVO</span>
+  </div>
+  
+</main>
+
+<!-- FLOATING SMART BAR + MICRO DRAWERS -->
+<div class="smart-bar-wrap">
+  <!-- MICRO-DRAWER: TÍTULO -->
+  <div class="micro-drawer" id="drawer-titulo">
+    <div class="drawer-head">
+      <span class="drawer-title">Editar Título</span>
+      <span style="font-size:0.68rem;color:#94a3b8;" id="cntTitle">45/55</span>
+      <button class="btn-close-drawer" onclick="cerrarDrawers()">✕</button>
+    </div>
+    <input class="field-input" id="inTitle" value="Por qué tardamos tres días en hacer un pan." oninput="actualizarTexto()" style="width:100%;padding:10px;border-radius:8px;background:#0d1117;color:#fff;border:1px solid rgba(255,255,255,0.2);outline:none;font-size:0.95rem;">
+    <div class="quick-text-chips">
+      <span class="q-chip" onclick="ponerTitulo('El secreto de nuestra masa madre.')">+ El secreto de...</span>
+      <span class="q-chip" onclick="ponerTitulo('3 razones para elegir pan artesanal.')">+ 3 razones...</span>
+      <span class="q-chip" onclick="ponerTitulo('Hecho a mano todos los días.')">+ Hecho a mano...</span>
+    </div>
+  </div>
+
+  <!-- MICRO-DRAWER: BAJADA -->
+  <div class="micro-drawer" id="drawer-bajada">
+    <div class="drawer-head">
+      <span class="drawer-title">Editar Bajada</span>
+      <span style="font-size:0.68rem;color:#94a3b8;" id="cntBody">87/200</span>
+      <button class="btn-close-drawer" onclick="cerrarDrawers()">✕</button>
+    </div>
+    <textarea class="field-textarea" id="inBody" oninput="actualizarTexto()" style="width:100%;padding:10px;border-radius:8px;background:#0d1117;color:#fff;border:1px solid rgba(255,255,255,0.2);outline:none;font-size:0.9rem;resize:none;min-height:60px;">La masa madre no se apura. Te contamos qué pasa en cada uno de esos tres días en el horno.</textarea>
+  </div>
+
+  <!-- MICRO-DRAWER: PLANTILLA -->
+  <div class="micro-drawer" id="drawer-plantilla">
+    <div class="drawer-head">
+      <span class="drawer-title">Elegir Plantilla</span>
+      <button class="btn-close-drawer" onclick="cerrarDrawers()">✕</button>
+    </div>
+    <div style="display:flex;gap:6px;overflow-x:auto;">
+      <button class="tpl-chip active" onclick="seleccionarPlantilla('texto', this)">Texto</button>
+      <button class="tpl-chip" onclick="seleccionarPlantilla('frase', this)">Frase</button>
+      <button class="tpl-chip" onclick="seleccionarPlantilla('oferta', this)">Oferta</button>
+      <button class="tpl-chip" onclick="seleccionarPlantilla('pasos', this)">Pasos</button>
+      <button class="tpl-chip" onclick="seleccionarPlantilla('manifiesto', this)">Idea</button>
+    </div>
+  </div>
+
+  <!-- MICRO-DRAWER: FORMATO -->
+  <div class="micro-drawer" id="drawer-formato">
+    <div class="drawer-head">
+      <span class="drawer-title">Formato de Salida</span>
+      <button class="btn-close-drawer" onclick="cerrarDrawers()">✕</button>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn-fmt active" style="flex:1;padding:8px;background:#fff;color:#111;border-radius:8px;font-weight:700;border:none;" onclick="cambiarFormato('fmt-feed', this)">Feed 4:5</button>
+      <button class="btn-fmt" style="flex:1;padding:8px;background:rgba(255,255,255,0.1);color:#fff;border-radius:8px;font-weight:700;border:none;" onclick="cambiarFormato('fmt-historia', this)">Historia 9:16</button>
+      <button class="btn-fmt" style="flex:1;padding:8px;background:rgba(255,255,255,0.1);color:#fff;border-radius:8px;font-weight:700;border:none;" onclick="cambiarFormato('fmt-cuadrado', this)">1:1</button>
+    </div>
+  </div>
+
+  <!-- LA BARRA PRINCIPAL -->
+  <nav class="smart-bar">
+    <button class="action-pill" onclick="abrirDrawer('plantilla', this)">
+      <span class="action-pill-icon">🎨</span>
+      <span>Plantilla</span>
+    </button>
+    <button class="action-pill" onclick="abrirDrawer('titulo', this)">
+      <span class="action-pill-icon">✏️</span>
+      <span>Título</span>
+    </button>
+    <button class="action-pill" onclick="abrirDrawer('bajada', this)">
+      <span class="action-pill-icon">📝</span>
+      <span>Bajada</span>
+    </button>
+    <button class="action-pill" onclick="abrirDrawer('formato', this)">
+      <span class="action-pill-icon">📐</span>
+      <span>Formato</span>
+    </button>
+    <button class="action-pill" onclick="rotarTema()">
+      <span class="action-pill-icon">✨</span>
+      <span>Color</span>
+    </button>
+  </nav>
+</div>
+
+<script>
+
+  let plantillaActual = 'texto';
+
+  function cambiarFormato(fmt, btn) {
+    document.querySelectorAll('.btn-fmt').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    const box = document.getElementById('placaBox');
+    if (box) {
+      box.className = 'placa-box ' + fmt;
+    }
+  }
+
+  function actualizarTexto() {
+    const kickerIn = document.getElementById('inKicker');
+    const titleIn = document.getElementById('inTitle');
+    const bodyIn = document.getElementById('inBody');
+
+    const kicker = kickerIn ? kickerIn.value : '';
+    const title = titleIn ? titleIn.value : '';
+    const body = bodyIn ? bodyIn.value : '';
+
+    const viewKicker = document.getElementById('viewKicker');
+    const viewTitle = document.getElementById('viewTitle');
+    const viewBody = document.getElementById('viewBody');
+
+    if (viewKicker) viewKicker.textContent = kicker;
+    if (viewTitle) viewTitle.textContent = title;
+    if (viewBody) viewBody.textContent = body;
+
+    const cntKicker = document.getElementById('cntKicker');
+    const cntTitle = document.getElementById('cntTitle');
+    const cntBody = document.getElementById('cntBody');
+
+    if (cntKicker) cntKicker.textContent = kicker.length + '/30';
+    if (cntTitle) cntTitle.textContent = title.length + '/55';
+    if (cntBody) cntBody.textContent = body.length + '/200';
+  }
+
+  function seleccionarPlantilla(tpl, btn) {
+    plantillaActual = tpl;
+    document.querySelectorAll('.tpl-chip, .tpl-pill').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    const render = document.getElementById('placaRender');
+    const extra = document.getElementById('viewExtra');
+    if (!render) return;
+
+    render.classList.remove('tpl-frase', 'tpl-manifiesto', 'tpl-oferta', 'tpl-pasos');
+
+    if (tpl === 'frase') {
+      render.classList.add('tpl-frase');
+      if (extra) extra.innerHTML = '<span style="font-size:0.7em;font-weight:700;letter-spacing:0.05em;color:var(--color-mint);">— Juan Mendieta, Fundador</span>';
+    } else if (tpl === 'oferta') {
+      render.classList.add('tpl-oferta');
+      if (extra) extra.innerHTML = `
+        <div class="placa-oferta-box">
+          <div class="oferta-big">2×1</div>
+          <div class="oferta-desc"><b>Llevando 2 panes de campo</b><br>Martes y jueves en el local.</div>
+        </div>`;
+    } else if (tpl === 'pasos') {
+      render.classList.add('tpl-pasos');
+      if (extra) extra.innerHTML = `
+        <div class="placa-pasos">
+          <div class="paso-item"><span class="paso-num">1</span> Alimentar masa a las 6 AM</div>
+          <div class="paso-item"><span class="paso-num">2</span> 48h fermentación lenta</div>
+          <div class="paso-item"><span class="paso-num">3</span> Horneado en piso de piedra</div>
+        </div>`;
+    } else if (tpl === 'manifiesto') {
+      render.classList.add('tpl-manifiesto');
+      if (extra) extra.innerHTML = '';
+    } else {
+      if (extra) extra.innerHTML = '';
+    }
+  }
+
+  function cambiarTema(tema, btn) {
+    document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    const r = document.getElementById('placaRender');
+    if (!r) return;
+    r.classList.remove('theme-dark', 'theme-mint', 'theme-coral', 'theme-crema');
+    r.classList.add(tema);
+  }
+
+  function simularTeclado() {
+    document.body.classList.toggle('keyboard-open');
+    const banner = document.getElementById('tecladoVirtual');
+    if (banner) {
+      banner.style.display = document.body.classList.contains('keyboard-open') ? 'block' : 'none';
+    }
+  }
+
+
+  let temas = ['theme-dark', 'theme-mint', 'theme-coral', 'theme-crema'];
+  let temaIdx = 0;
+  function rotarTema() {
+    temaIdx = (temaIdx + 1) % temas.length;
+    cambiarTema(temas[temaIdx]);
+  }
+
+  function abrirDrawer(id, btn) {
+    document.querySelectorAll('.micro-drawer').forEach(d => d.style.display = 'none');
+    document.querySelectorAll('.action-pill').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    const drawer = document.getElementById('drawer-' + id);
+    if (drawer) {
+      drawer.style.display = 'block';
+      const input = drawer.querySelector('input, textarea');
+      if (input) input.focus();
+    }
+  }
+
+  function cerrarDrawers() {
+    document.querySelectorAll('.micro-drawer').forEach(d => d.style.display = 'none');
+    document.querySelectorAll('.action-pill').forEach(p => p.classList.remove('active'));
+  }
+
+  function ponerTitulo(txt) {
+    document.getElementById('inTitle').value = txt;
+    actualizarTexto();
+  }
+</script>
+
+    
+  <!-- TOGGLE FLOTANTE DE SIMULACIÓN DE TECLADO -->
+  <button type="button" class="kbd-toggle-pill" id="kbdToggleBtn" onclick="toggleTecladoVirtual()">
+    <span>⌨️</span>
+    <span id="kbdToggleTxt">Simular Teclado</span>
+  </button>
+
+  <!-- TECLADO VIRTUAL INTERACTIVO -->
+  <div class="ios-keyboard-overlay" id="iosKeyboard">
+    <div class="kbd-toolbar">
+      <div class="kbd-tool-left">
+        <span class="kbd-indicator-dot"></span>
+        <span id="kbdActiveFieldName">Editando: Título</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span style="font-size:0.65rem;color:#64748b;font-family:var(--font-mono);" id="kbdCharCount">45 car.</span>
+        <button type="button" class="kbd-btn-done" onclick="cerrarTecladoVirtual()">Listo ✓</button>
+      </div>
+    </div>
+
+    <div class="kbd-keys-area">
+      <!-- Fila 1 -->
+      <div class="kbd-row">
+        <button class="k-key" onclick="teclear('Q')">Q</button>
+        <button class="k-key" onclick="teclear('W')">W</button>
+        <button class="k-key" onclick="teclear('E')">E</button>
+        <button class="k-key" onclick="teclear('R')">R</button>
+        <button class="k-key" onclick="teclear('T')">T</button>
+        <button class="k-key" onclick="teclear('Y')">Y</button>
+        <button class="k-key" onclick="teclear('U')">U</button>
+        <button class="k-key" onclick="teclear('I')">I</button>
+        <button class="k-key" onclick="teclear('O')">O</button>
+        <button class="k-key" onclick="teclear('P')">P</button>
+      </div>
+      <!-- Fila 2 -->
+      <div class="kbd-row">
+        <button class="k-key" onclick="teclear('A')">A</button>
+        <button class="k-key" onclick="teclear('S')">S</button>
+        <button class="k-key" onclick="teclear('D')">D</button>
+        <button class="k-key" onclick="teclear('F')">F</button>
+        <button class="k-key" onclick="teclear('G')">G</button>
+        <button class="k-key" onclick="teclear('H')">H</button>
+        <button class="k-key" onclick="teclear('J')">J</button>
+        <button class="k-key" onclick="teclear('K')">K</button>
+        <button class="k-key" onclick="teclear('L')">L</button>
+        <button class="k-key" onclick="teclear('Ñ')">Ñ</button>
+      </div>
+      <!-- Fila 3 -->
+      <div class="kbd-row">
+        <button class="k-key k-special" onclick="teclearMayus()">⇧</button>
+        <button class="k-key" onclick="teclear('Z')">Z</button>
+        <button class="k-key" onclick="teclear('X')">X</button>
+        <button class="k-key" onclick="teclear('C')">C</button>
+        <button class="k-key" onclick="teclear('V')">V</button>
+        <button class="k-key" onclick="teclear('B')">B</button>
+        <button class="k-key" onclick="teclear('N')">N</button>
+        <button class="k-key" onclick="teclear('M')">M</button>
+        <button class="k-key k-special" onclick="teclearBorrar()">⌫</button>
+      </div>
+      <!-- Fila 4 -->
+      <div class="kbd-row">
+        <button class="k-key k-special" onclick="teclearFraseRapida()">💡 +Frase</button>
+        <button class="k-key k-space" onclick="teclear(' ')">espacio</button>
+        <button class="k-key" onclick="teclear('.')">.</button>
+        <button class="k-key k-special" style="background:#50dca0;color:#0b2518;font-weight:700;" onclick="cerrarTecladoVirtual()">intro ↵</button>
+      </div>
+    </div>
+  </div>
+
+    <script>
+      
+  let campoEnfocado = null;
+  let mayusculas = false;
+
+  function registrarEnfoqueInputs() {
+    campoEnfocado = document.getElementById('inTitle') || document.querySelector('input, textarea');
+    document.querySelectorAll('input, textarea').forEach(input => {
+      input.addEventListener('focus', () => {
+        campoEnfocado = input;
+        actualizarLabelCampo();
+        abrirTecladoVirtual();
+      });
+      input.addEventListener('click', () => {
+        campoEnfocado = input;
+        actualizarLabelCampo();
+        abrirTecladoVirtual();
+      });
+    });
+  }
+
+  function actualizarLabelCampo() {
+    if (!campoEnfocado) return;
+    const lbl = document.getElementById('kbdActiveFieldName');
+    const cnt = document.getElementById('kbdCharCount');
+    let nombre = 'Campo';
+    if (campoEnfocado.id === 'inTitle') nombre = 'Título principal';
+    else if (campoEnfocado.id === 'inBody') nombre = 'Bajada explicativa';
+    else if (campoEnfocado.id === 'inKicker') nombre = 'Etiqueta superior';
+    if (lbl) lbl.textContent = 'Editando: ' + nombre;
+    if (cnt) cnt.textContent = (campoEnfocado.value ? campoEnfocado.value.length : 0) + ' car.';
+  }
+
+  function abrirTecladoVirtual() {
+    document.body.classList.add('keyboard-visible');
+    const txt = document.getElementById('kbdToggleTxt');
+    if (txt) txt.textContent = 'Cerrar Teclado ✕';
+    actualizarLabelCampo();
+  }
+
+  function cerrarTecladoVirtual() {
+    document.body.classList.remove('keyboard-visible');
+    const txt = document.getElementById('kbdToggleTxt');
+    if (txt) txt.textContent = 'Simular Teclado';
+    if (campoEnfocado) campoEnfocado.blur();
+  }
+
+  function toggleTecladoVirtual() {
+    if (document.body.classList.contains('keyboard-visible')) {
+      cerrarTecladoVirtual();
+    } else {
+      if (!campoEnfocado) {
+        campoEnfocado = document.getElementById('inTitle') || document.querySelector('input, textarea');
+      }
+      abrirTecladoVirtual();
+    }
+  }
+
+  function teclear(caracter) {
+    if (!campoEnfocado) {
+      campoEnfocado = document.getElementById('inTitle') || document.querySelector('input, textarea');
+    }
+    if (!campoEnfocado) return;
+    const char = mayusculas ? caracter.toUpperCase() : caracter.toLowerCase();
+    campoEnfocado.value += (caracter === ' ' || caracter === '.') ? caracter : char;
+    actualizarTexto();
+    actualizarLabelCampo();
+  }
+
+  function teclearBorrar() {
+    if (!campoEnfocado || !campoEnfocado.value) return;
+    campoEnfocado.value = campoEnfocado.value.slice(0, -1);
+    actualizarTexto();
+    actualizarLabelCampo();
+  }
+
+  function teclearMayus() {
+    mayusculas = !mayusculas;
+    document.querySelectorAll('.k-key').forEach(k => {
+      if (k.textContent.length === 1 && /[a-zA-ZñÑ]/.test(k.textContent)) {
+        k.textContent = mayusculas ? k.textContent.toUpperCase() : k.textContent.toLowerCase();
+      }
+    });
+  }
+
+  const frasesSugeridas = [
+    ' Calidad artesanal única.',
+    ' Horneado hoy a la madrugada.',
+    ' Sin aditivos ni conservantes.',
+    ' El sabor de lo hecho en casa.'
+  ];
+  let fraseIdx = 0;
+  function teclearFraseRapida() {
+    if (!campoEnfocado) campoEnfocado = document.getElementById('inTitle');
+    campoEnfocado.value += frasesSugeridas[fraseIdx % frasesSugeridas.length];
+    fraseIdx++;
+    actualizarTexto();
+    actualizarLabelCampo();
+  }
+
+  // Auto-registrar al cargar
+  window.addEventListener('DOMContentLoaded', () => {
+    registrarEnfoqueInputs();
+  });
+
+    </script>
+  </body>
+</html>
