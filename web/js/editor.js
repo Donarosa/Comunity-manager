@@ -236,6 +236,21 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
       if (ajustando) return
       ajustando = true
       try {
+        /* En el teléfono la placa se acomoda al alto y no al ancho.
+         *
+         * La zona va en una fila y su ancho lo determina la propia placa, así
+         * que preguntarlo sería circular: la placa quedaba en cero. El alto en
+         * cambio está definido —lo fija la zona, que ocupa 42vh o 104px según
+         * esté grande o encogida— y de ahí sale la escala. El ancho de la
+         * pantalla queda como tope, para que en horizontal no se desborde. */
+        if (window.matchMedia('(max-width: 720px)').matches) {
+          const alto = zona.clientHeight
+          if (alto > 40) {
+            aplicar(Math.min(alto / F.h, (window.innerWidth - 48) / F.w))
+            return
+          }
+        }
+
         const disponible = Math.min(zona.clientWidth, F.maxAncho)
         if (!disponible) return
         let escala = disponible / F.w
@@ -344,11 +359,16 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
     const verGrande = el('button.btn-ver-grande', {
       type: 'button',
       onclick: () => abrirLupa(marco, F),
-    }, 'Ver grande')
+    }, '⤢ Ver grande')
+
+    /* Lo que acompaña a la placa cuando se encoge: en qué placa estás y el
+     * botón para abrirla. Con la placa grande el CSS lo esconde. */
+    const tituloActual = el('span.titulo-actual')
+    const costado = el('div.editor-costado', {}, tituloActual, verGrande)
 
     vista.append(
       el('span.rotulo', { style: 'display:block;margin-bottom:10px' }, 'Vista previa'),
-      zona, verGrande, errorVista,
+      zona, costado, errorVista,
       el('div', {}, generar),
       errorBajar, salida, medidor
     )
@@ -591,6 +611,38 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
         selFoto.nodo
       ))
     }
+
+    /* La placa se encoge en los dos momentos en que el alto hace falta abajo:
+     * cuando se baja por los campos y cuando se abre el teclado. En los dos, lo
+     * que se necesita de la placa es ver su forma, no leerla. */
+    // El rótulo "Vista previa" y el medidor se van en el teléfono: ese alto lo
+    // necesita la placa, y con la placa arriba de todo nadie duda de qué es.
+    // Se ocultan desde acá porque el rótulo lleva un display en línea que le
+    // gana a la hoja de estilos.
+    if (window.matchMedia('(max-width: 720px)').matches) {
+      for (const n of vista.querySelectorAll(':scope > .rotulo, :scope > .medidor')) {
+        n.style.display = 'none'
+      }
+    }
+
+    const raizEditor = contenedor.querySelector('.editor')
+    const acomodarPlaca = () => {
+      if (!raizEditor) return
+      const bajando = form.scrollTop > 24
+      const conTeclado = Boolean(window.visualViewport) &&
+        window.visualViewport.height < window.innerHeight - 120
+      raizEditor.classList.toggle('editor--chica', bajando || conTeclado)
+    }
+    form.addEventListener('scroll', acomodarPlaca, { passive: true })
+    window.visualViewport?.addEventListener('resize', acomodarPlaca)
+
+    // El título de la placa, para saber en cuál se está parado con la tira.
+    const alEscribirTitulo = () => {
+      tituloActual.textContent = (p.titulo || '').replace(/<[^>]+>/g, '').trim() ||
+        `Placa de ${PLANTILLAS[p.plantilla]?.label?.toLowerCase() || 'texto'}`
+    }
+    form.addEventListener('input', alEscribirTitulo)
+    alEscribirTitulo()
 
     refrescar()
 
