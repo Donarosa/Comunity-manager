@@ -238,6 +238,21 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
       try {
         const disponible = Math.min(zona.clientWidth, F.maxAncho)
         if (!disponible) return
+
+        /* En el teléfono la placa se acomoda al alto disponible.
+         *
+         * El panel de arriba tiene un tope propio y se compacta al abrirse el
+         * teclado, así que su alto está definido y es el que aprieta. Midiendo
+         * solo el ancho, la placa conservaba su tamaño cuando el panel se
+         * achicaba y quedaba cortada por el `overflow: hidden`: se veía partida,
+         * como si estuviera por detrás. La corrección por desborde tampoco
+         * servía acá, justamente porque con el desborde oculto no hay nada que
+         * medir. */
+        if (window.matchMedia('(max-width: 720px)').matches && zona.clientHeight > 40) {
+          aplicar(Math.min(disponible / F.w, zona.clientHeight / F.h))
+          return
+        }
+
         let escala = disponible / F.w
         aplicar(escala)
         const sobra = vista.scrollHeight - vista.clientHeight
@@ -250,7 +265,11 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
       }
     }
     ajustarEscala()
-    new ResizeObserver(ajustarEscala).observe(zona)
+    // Se miran las dos cajas: cuando el panel se compacta lo que cambia de alto
+    // es la vista, y la zona no se entera si nada la vuelve a medir.
+    const observador = new ResizeObserver(ajustarEscala)
+    observador.observe(zona)
+    observador.observe(vista)
 
     const errorVista = el('div')
     const medidor = el('div.medidor')
@@ -643,15 +662,21 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
 
     form.append(pasoNav, paso1, paso2, paso3, paso4)
 
-    // Ajuste de visualViewport para teclado en mobile
+    /* Con el teclado abierto la placa se compacta.
+     *
+     * Acá solo se marca que el teclado está: el desfase de la columna pegada lo
+     * lleva seguirAlTeclado(), que es lo único que lo escribe. Los dos ponían
+     * `--desfase-teclado` con valores distintos —este el alto del teclado, unos
+     * 300 píxeles, y el otro cuánto se corrió la página— y ganaba el que
+     * atendiera último. Usar el alto del teclado como tope empujaba la placa
+     * fuera de la pantalla, que es el salto raro que se veía al escribir. */
     if (window.visualViewport) {
-      const onResizeViewport = () => {
-        const kbdVisible = window.visualViewport.height < window.innerHeight * 0.75
-        document.body.classList.toggle("teclado-abierto", kbdVisible)
-        const desfase = window.innerHeight - window.visualViewport.height
-        document.documentElement.style.setProperty("--desfase-teclado", `${Math.max(0, desfase)}px`)
+      const alAbrirseElTeclado = () => {
+        const abierto = window.visualViewport.height < window.innerHeight * 0.75
+        document.body.classList.toggle('teclado-abierto', abierto)
       }
-      window.visualViewport.addEventListener("resize", onResizeViewport)
+      window.visualViewport.addEventListener('resize', alAbrirseElTeclado)
+      alAbrirseElTeclado()
     }
 
     refrescar()
@@ -661,7 +686,25 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
 
   /* ── campos ────────────────────────────────────────────── */
 
-  function armarCampo(campo, p, alEscribir, medidor) {
+  /**
+ * Lo que hay que decirle al teléfono sobre estos campos.
+ *
+ * Sin `autocomplete="off"`, iOS abre el teclado con su barra de autorrelleno:
+ * los iconos de llave, tarjeta y ubicación arriba de las teclas. Acá no se pide
+ * ninguna de esas cosas —se escribe el texto de una placa— así que esa barra
+ * ocupa alto y ofrece datos que no vienen al caso.
+ *
+ * Lo demás es para escribir en castellano: mayúscula al empezar la oración y el
+ * corrector encendido, que en un texto que se publica conviene.
+ */
+const COMO_SE_ESCRIBE = {
+  autocomplete: 'off',
+  autocorrect: 'on',
+  autocapitalize: 'sentences',
+  spellcheck: 'true',
+}
+
+function armarCampo(campo, p, alEscribir, medidor) {
     const def = CAMPOS[campo]
 
     if (campo === 'imagen') {
@@ -683,7 +726,7 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
     }
 
     if (campo === 'chips') {
-      const ta = el('textarea', { rows: 3, placeholder: def.ej, value: (p.chips || []).join('\n') })
+      const ta = el('textarea', { rows: 3, placeholder: def.ej, value: (p.chips || []).join('\n'), ...COMO_SE_ESCRIBE })
       ta.addEventListener('input', () => {
         p.chips = ta.value.split('\n').map(s => s.trim()).filter(Boolean).slice(0, 3)
         alEscribir()
@@ -705,7 +748,7 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
             ['etiqueta', 'Etiqueta corta', 'Día uno'],
             ['titulo', 'Qué se hace', 'Se alimenta la madre'],
           ]) {
-            const inp = el('input', { type: 'text', placeholder: ej, value: paso[clave], style: 'margin-bottom:6px' })
+            const inp = el('input', { type: 'text', placeholder: ej, value: paso[clave], style: 'margin-bottom:6px', ...COMO_SE_ESCRIBE })
             inp.addEventListener('input', () => { paso[clave] = inp.value; alEscribir() })
             fila.append(el('label.chico', { style: 'display:block;color:var(--tinta-3);margin-bottom:2px' }, etiqueta), inp)
           }
@@ -730,8 +773,8 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
 
     /* — campos de texto — */
     const entrada = def.largo
-      ? el('textarea', { rows: campo === 'cuerpo' ? 3 : 2, placeholder: def.ej })
-      : el('input', { type: 'text', placeholder: def.ej })
+      ? el('textarea', { rows: campo === 'cuerpo' ? 3 : 2, placeholder: def.ej, ...COMO_SE_ESCRIBE })
+      : el('input', { type: 'text', placeholder: def.ej, ...COMO_SE_ESCRIBE })
     entrada.value = p[campo] || ''
 
     const cuenta_ = el('span.medidor')

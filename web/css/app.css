@@ -4621,12 +4621,30 @@ html.con-sesion .arranque { display: block; }
     max-width: 100% !important;
   }
 
-  /* Stage superior: la pieza gráfica se ubica arriba, fija y nítida */
+  /* La barra de arriba se va mientras se edita en el teléfono.
+   *
+   * Acompaña el scroll y se lleva 70 píxeles de alto que acá valen más que en
+   * ningún lado: son los que le faltan a la placa cuando el teclado ya se comió
+   * media pantalla. Adentro del editor no hace falta —la vuelta se hace con el
+   * "Volver" del formulario— y vuelve sola al salir. */
+  body:has(.editor) .barra { display: none; }
+  body:has(.editor) { --bar-h: 0px; }
+
+  /* Stage superior: la pieza gráfica arriba, pegada. */
   .editor-vista {
     order: -1 !important;
+    /* Una sola declaración de position. Estaba dos veces —sticky arriba y
+       relative al final de la misma regla— y ganaba la última: la placa dejaba
+       de pegarse y, con z-index 35, se dibujaba encima de la cabecera del
+       formulario. Eso es el efecto de "adelante y atrás". */
     position: sticky !important;
-    top: calc(var(--bar-h, 70px) + 4px + var(--desfase-teclado, 0px)) !important;
-    z-index: 35 !important;
+    /* El desfase lo escribe seguirAlTeclado(): sticky se mide contra el
+       documento y no contra lo que se ve, así que al abrirse el teclado la
+       placa quedaba pegada a un tope que ya no estaba en pantalla. */
+    top: calc(4px + var(--desfase-teclado, 0px)) !important;
+    /* Por debajo de la barra del sistema y por encima del formulario, sin
+       invadir a nadie: antes competía con capas que no le correspondían. */
+    z-index: 3 !important;
     background: var(--color-paper-2) !important;
     border: 1px solid var(--color-rule) !important;
     border-radius: var(--r-card, 20px) !important;
@@ -4641,7 +4659,6 @@ html.con-sesion .arranque { display: block; }
     min-height: 200px !important;
     transition: max-height 0.25s cubic-bezier(0.16, 1, 0.3, 1), padding 0.25s !important;
     overflow: hidden !important;
-    position: relative !important;
   }
 
   /* Al abrir el teclado del teléfono: el stage se compacta para no tapar nada */
@@ -4667,9 +4684,19 @@ html.con-sesion .arranque { display: block; }
     margin: 0 auto !important;
   }
 
-  .editor-vista > .rotulo {
+  .editor-vista > .rotulo,
+  .editor-vista > .medidor {
     display: none !important;
   }
+
+  /* Sin separación entre elementos.
+   *
+   * La vista previa tiene nueve hijos y casi todos están vacíos —los huecos de
+   * error, la salida, el medidor—, pero el gap se cobra igual entre cada par:
+   * ochenta píxeles de aire entre cosas que no existen, sacados del único alto
+   * que le importa a la placa. */
+  .editor-vista { gap: 0 !important; }
+  .editor-vista > *:empty { display: none !important; }
 
   /* Ocultamos el botón "Ver grande" en mobile: ya se ve en grande */
   .btn-ver-grande {
@@ -4681,7 +4708,9 @@ html.con-sesion .arranque { display: block; }
     display: none !important;
   }
 
-  /* Badge EN VIVO pulsante */
+  /* El badge se ubicaba contra el `position: relative` que había que sacar. La
+     vista previa ya es contenedor de posicionamiento por ser sticky, así que
+     sigue anclado igual. */
   .placa-live-badge {
     position: absolute !important;
     bottom: 8px !important;

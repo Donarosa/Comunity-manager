@@ -1310,5 +1310,37 @@ await testAsync('en el servidor un JWT sin verificar no abre nada', async () => 
   }
 })
 
+// Sin autocomplete="off", iOS abre el teclado con su barra de autorrelleno
+// —llave, tarjeta, ubicación— arriba de las teclas. Acá se escribe el texto de
+// una placa: esa barra ocupa alto y ofrece datos que no vienen al caso.
+test('los campos del editor no piden autorrelleno', () => {
+  const editor = readFileSync(join(RAIZ, 'web/js/editor.js'), 'utf8')
+  assert.ok(/autocomplete: 'off'/.test(editor), 'volvió el autorrelleno del sistema')
+  // Y que se aplique en todos: uno suelto alcanza para que iOS muestre la barra.
+  const creados = (editor.match(/el\('(input|textarea)',/g) || []).length
+  const conAtributos = (editor.match(/\.\.\.COMO_SE_ESCRIBE/g) || []).length
+  assert.equal(conAtributos, creados,
+    `hay ${creados - conAtributos} campo(s) sin los atributos: iOS va a mostrar la barra igual`)
+})
+
+// La barra de arriba acompaña el scroll y se lleva 70 píxeles que en el
+// teléfono, con el teclado abierto, hacen la diferencia entre ver la placa y no.
+test('la barra de arriba no está mientras se edita en el teléfono', () => {
+  const css = readFileSync(join(RAIZ, 'web/css/app.css'), 'utf8')
+  const i = css.indexOf('FOCUS DECK')
+  assert.ok(/body:has\(\.editor\) \.barra \{ display: none/.test(css.slice(i, i + 1600)),
+    'la barra volvió a ocupar alto en el editor del teléfono')
+})
+
+// Estaban las dos declaradas en la misma regla y ganaba la última: la placa
+// dejaba de pegarse y se dibujaba encima de la cabecera del formulario.
+test('la vista previa declara su posición una sola vez', () => {
+  const css = readFileSync(join(RAIZ, 'web/css/app.css'), 'utf8')
+  const i = css.indexOf('.editor-vista {', css.indexOf('FOCUS DECK'))
+  const regla = css.slice(i, css.indexOf('}', i))
+  const veces = (regla.match(/position:/g) || []).length
+  assert.equal(veces, 1, 'la vista previa vuelve a declarar position dos veces')
+})
+
 // El resumen va último: si se agrega un bloque abajo, tiene que contarlo.
 console.log(`\n${ok} pruebas OK${process.exitCode ? ' — con fallas' : ''}\n`)
