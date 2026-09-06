@@ -1238,16 +1238,20 @@ test('el tablero contempla una cuenta sin tope', () => {
 
 console.log('\nel editor en el teléfono')
 
-// En el teléfono la vista previa iba arriba y el formulario debajo, los dos
-// apilados y estáticos: al bajar a escribir el título la placa se iba de la
-// pantalla. Ahora son las mismas dos columnas de escritorio, encogidas.
+// La vista previa iba arriba y el formulario debajo, los dos en el flujo: al
+// bajar a escribir, la placa se iba de la pantalla. Con sticky se quedaba, pero
+// el teclado de iOS la corría igual —sticky se mide contra el viewport de
+// maquetación, que con el teclado abierto no es lo que se ve—, así que ahora va
+// fija y ubicada por JS.
 test('en el teléfono el editor organiza la experiencia con focus deck y vista previa fija', () => {
   const css = readFileSync(join(RAIZ, 'web/css/app.css'), 'utf8')
-  const i = css.indexOf('@media (max-width: 720px)')
+  // Anclado al bloque del deck y no al primer 720px que aparezca: hay varios y
+  // el primero es otro.
+  const i = css.indexOf('@media (max-width: 720px)', css.indexOf('FOCUS DECK'))
   assert.ok(i > -1, 'no hay reglas propias para el teléfono')
-  const bloque = css.slice(i, i + 1200)
-  assert.ok(/position:\s*sticky/.test(bloque),
-    'la vista previa dejó de acompañar el scroll')
+  const bloque = css.slice(i, i + 2600)
+  assert.ok(/position:\s*fixed/.test(bloque),
+    'la vista previa volvió a sticky: con el teclado de iOS se corre y parece irse para atrás')
   assert.ok(bloque.includes('.editor-vista'), 'falta el bloque de la vista previa en mobile')
   assert.ok(i > css.indexOf('\n.editor-vista {'),
     'las reglas del teléfono están antes que las base: no se aplican')
@@ -1270,7 +1274,10 @@ test('la vista previa sigue al teclado', () => {
   const editor = readFileSync(join(RAIZ, 'web/js/editor.js'), 'utf8')
   assert.ok(/visualViewport/.test(editor), 'nadie mira si el teclado corrió la página')
   const css = readFileSync(join(RAIZ, 'web/css/app.css'), 'utf8')
-  assert.ok(/--desfase-teclado/.test(css), 'el desfase del teclado no llega al CSS')
+  assert.ok(/--tope-placa/.test(css), 'el tope que calcula el JS no llega al CSS')
+  // Y el formulario tiene que reservar el lugar: la placa dejó de ocupar sitio
+  // en el flujo, así que sin esto sus primeros campos quedan debajo.
+  assert.ok(/--alto-placa/.test(css), 'el formulario no reserva el alto de la placa')
 })
 
 // Entrando con Google en una máquina, el navegador manda el token de Firebase
@@ -1317,10 +1324,11 @@ test('los campos del editor no piden autorrelleno', () => {
   const editor = readFileSync(join(RAIZ, 'web/js/editor.js'), 'utf8')
   assert.ok(/autocomplete: 'off'/.test(editor), 'volvió el autorrelleno del sistema')
   // Y que se aplique en todos: uno suelto alcanza para que iOS muestre la barra.
-  const creados = (editor.match(/el\('(input|textarea)',/g) || []).length
-  const conAtributos = (editor.match(/\.\.\.COMO_SE_ESCRIBE/g) || []).length
-  assert.equal(conAtributos, creados,
-    `hay ${creados - conAtributos} campo(s) sin los atributos: iOS va a mostrar la barra igual`)
+  // Y ningún input de texto: Safari ignora autocomplete="off" en los input y
+  // abre su barra igual. Los de una línea van como textarea de una fila.
+  assert.ok(!/el\('input', \{ type: 'text'/.test(editor),
+    'volvió un input de texto: iOS le abre la barra de llave, tarjeta y ubicación')
+  assert.ok(/function campoDeUnaLinea/.test(editor), 'no está el campo de una línea')
 })
 
 // La barra de arriba acompaña el scroll y se lleva 70 píxeles que en el

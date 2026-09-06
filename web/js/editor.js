@@ -267,7 +267,13 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
     ajustarEscala()
     // Se miran las dos cajas: cuando el panel se compacta lo que cambia de alto
     // es la vista, y la zona no se entera si nada la vuelve a medir.
-    const observador = new ResizeObserver(ajustarEscala)
+    const observador = new ResizeObserver(() => {
+      ajustarEscala()
+      // El formulario reserva arriba lo que mide la placa. Cambia al compactarse
+      // con el teclado, así que se publica en cada medición.
+      document.documentElement.style.setProperty(
+        '--alto-placa', `${Math.round(vista.getBoundingClientRect().height)}px`)
+    })
     observador.observe(zona)
     observador.observe(vista)
 
@@ -704,6 +710,24 @@ const COMO_SE_ESCRIBE = {
   spellcheck: 'true',
 }
 
+/**
+ * Un campo de una línea, sin la barra de autorrelleno de iOS.
+ *
+ * Safari ignora `autocomplete="off"` en los `input` de texto: abre igual su
+ * barra con la llave, la tarjeta y la ubicación, ofreciendo datos que no vienen
+ * al caso para escribir el texto de una placa, y encima ocupa alto sobre un
+ * teclado que ya se comió media pantalla.
+ *
+ * Con un `textarea` esa barra no aparece. Se lo deja de una fila y se bloquea el
+ * Enter para que se comporte como el input que reemplaza: en un campo de una
+ * línea, un salto no significa nada y rompe la placa.
+ */
+function campoDeUnaLinea(props = {}) {
+  const n = el('textarea', { rows: 1, ...COMO_SE_ESCRIBE, ...props })
+  n.addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault() })
+  return n
+}
+
 function armarCampo(campo, p, alEscribir, medidor) {
     const def = CAMPOS[campo]
 
@@ -748,7 +772,7 @@ function armarCampo(campo, p, alEscribir, medidor) {
             ['etiqueta', 'Etiqueta corta', 'Día uno'],
             ['titulo', 'Qué se hace', 'Se alimenta la madre'],
           ]) {
-            const inp = el('input', { type: 'text', placeholder: ej, value: paso[clave], style: 'margin-bottom:6px', ...COMO_SE_ESCRIBE })
+            const inp = campoDeUnaLinea({ placeholder: ej, value: paso[clave], style: 'margin-bottom:6px' })
             inp.addEventListener('input', () => { paso[clave] = inp.value; alEscribir() })
             fila.append(el('label.chico', { style: 'display:block;color:var(--tinta-3);margin-bottom:2px' }, etiqueta), inp)
           }
@@ -774,7 +798,7 @@ function armarCampo(campo, p, alEscribir, medidor) {
     /* — campos de texto — */
     const entrada = def.largo
       ? el('textarea', { rows: campo === 'cuerpo' ? 3 : 2, placeholder: def.ej, ...COMO_SE_ESCRIBE })
-      : el('input', { type: 'text', placeholder: def.ej, ...COMO_SE_ESCRIBE })
+      : campoDeUnaLinea({ placeholder: def.ej })
     entrada.value = p[campo] || ''
 
     const cuenta_ = el('span.medidor')
@@ -896,12 +920,19 @@ function abrirLupa(marco, F) {
  */
 function seguirAlTeclado() {
   const vv = window.visualViewport
+  const raiz = document.documentElement
   if (!vv) return
   const ajustar = () => {
-    document.documentElement.style.setProperty('--desfase-teclado', `${Math.round(vv.offsetTop)}px`)
+    // `offsetTop` es cuánto se corrió la página por debajo de lo que se ve. Con
+    // el teclado abierto iOS desplaza la página sin cambiar el viewport de
+    // maquetación: sumarlo devuelve la placa adentro de la pantalla.
+    raiz.style.setProperty('--tope-placa', `${Math.round(vv.offsetTop) + 4}px`)
   }
   vv.addEventListener('resize', ajustar)
   vv.addEventListener('scroll', ajustar)
+  // Y también en el scroll de la página: iOS avisa por visualViewport solo a
+  // veces, y entre aviso y aviso la placa se quedaba corrida.
+  addEventListener('scroll', ajustar, { passive: true })
   ajustar()
 }
 seguirAlTeclado()

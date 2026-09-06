@@ -4637,14 +4637,23 @@ html.con-sesion .arranque { display: block; }
        relative al final de la misma regla— y ganaba la última: la placa dejaba
        de pegarse y, con z-index 35, se dibujaba encima de la cabecera del
        formulario. Eso es el efecto de "adelante y atrás". */
-    position: sticky !important;
-    /* El desfase lo escribe seguirAlTeclado(): sticky se mide contra el
-       documento y no contra lo que se ve, así que al abrirse el teclado la
-       placa quedaba pegada a un tope que ya no estaba en pantalla. */
-    top: calc(4px + var(--desfase-teclado, 0px)) !important;
-    /* Por debajo de la barra del sistema y por encima del formulario, sin
-       invadir a nadie: antes competía con capas que no le correspondían. */
-    z-index: 3 !important;
+    /* Fija y ubicada por JS, no sticky.
+     *
+     * `sticky` se mide contra el viewport de maquetación, y con el teclado
+     * abierto iOS no lo cambia: solo achica el viewport visual y desplaza la
+     * página por debajo. La placa quedaba pegada a un tope que ya no estaba en
+     * pantalla, así que al scrollear parecía irse para atrás. Sumarle el
+     * desfase tampoco alcanza, porque el navegador reposiciona el sticky en
+     * momentos que no coinciden con los avisos de visualViewport.
+     *
+     * Fija, con el tope que le dicta `--tope-placa` desde visualViewport, la
+     * posición es siempre la que se ve. */
+    position: fixed !important;
+    top: var(--tope-placa, 4px) !important;
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+    z-index: 30 !important;
     background: var(--color-paper-2) !important;
     border: 1px solid var(--color-rule) !important;
     border-radius: var(--r-card, 20px) !important;
@@ -4696,6 +4705,15 @@ html.con-sesion .arranque { display: block; }
    * ochenta píxeles de aire entre cosas que no existen, sacados del único alto
    * que le importa a la placa. */
   .editor-vista { gap: 0 !important; }
+
+  /* Los campos de una línea son textarea —es la única forma de que iOS no abra
+     su barra de autorrelleno— y hay que impedir que se estiren o se agranden. */
+  .editor-form textarea[rows="1"] {
+    resize: none;
+    overflow: hidden;
+    min-height: 0;
+    height: auto;
+  }
   .editor-vista > *:empty { display: none !important; }
 
   /* Ocultamos el botón "Ver grande" en mobile: ya se ve en grande */
@@ -4750,7 +4768,11 @@ html.con-sesion .arranque { display: block; }
     border: 1px solid var(--color-rule) !important;
     border-radius: var(--r-card, 20px) !important;
     box-shadow: var(--shadow-card) !important;
-    padding: 16px 14px 24px !important;
+    /* Arriba se reserva lo que mide la placa: dejó de ocupar lugar en el flujo
+       al pasar a posición fija, y sin esto sus primeros campos quedan debajo.
+       El alto lo publica el JS, que es quien sabe cuánto mide en cada momento
+       —cambia al compactarse con el teclado—. */
+    padding: calc(var(--alto-placa, 210px) + 14px) 14px 24px !important;
     display: flex !important;
     flex-direction: column !important;
     gap: 12px !important;
