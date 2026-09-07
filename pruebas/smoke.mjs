@@ -1238,23 +1238,39 @@ test('el tablero contempla una cuenta sin tope', () => {
 
 console.log('\nel editor en el teléfono')
 
-// La vista previa iba arriba y el formulario debajo, los dos en el flujo: al
-// bajar a escribir, la placa se iba de la pantalla. Con sticky se quedaba, pero
-// el teclado de iOS la corría igual —sticky se mide contra el viewport de
-// maquetación, que con el teclado abierto no es lo que se ve—, así que ahora va
-// fija y ubicada por JS.
-test('en el teléfono el editor organiza la experiencia con focus deck y vista previa fija', () => {
+// El editor del teléfono es una capa fija del alto de lo que se ve: la placa
+// arriba y la banda de escritura al pie, sin scroll de página. Hubo tres
+// intentos antes de este apilando placa y formulario, y todos se rompían igual:
+// con el teclado abierto no entraban los dos.
+const MOBILE = '══ La capa del teléfono'
+test('en el teléfono el editor es una capa fija del alto de lo que se ve', () => {
   const css = readFileSync(join(RAIZ, 'web/css/app.css'), 'utf8')
-  // Anclado al bloque del deck y no al primer 720px que aparezca: hay varios y
-  // el primero es otro.
-  const i = css.indexOf('@media (max-width: 720px)', css.indexOf('FOCUS DECK'))
-  assert.ok(i > -1, 'no hay reglas propias para el teléfono')
-  const bloque = css.slice(i, i + 2600)
+  // Anclado al bloque del editor y no al primer 720px que aparezca: hay varios
+  // y el primero es otro.
+  const i = css.indexOf('@media (max-width: 720px)', css.indexOf(MOBILE))
+  assert.ok(css.indexOf(MOBILE) > -1 && i > -1, 'no hay reglas propias para el teléfono')
+  const bloque = css.slice(i)
   assert.ok(/position:\s*fixed/.test(bloque),
-    'la vista previa volvió a sticky: con el teclado de iOS se corre y parece irse para atrás')
+    'la capa volvió a sticky: con el teclado de iOS se corre y parece irse para atrás')
+  assert.ok(/height:\s*var\(--vv-alto/.test(bloque),
+    'el alto sale de otro lado que no es visualViewport: 100vh no achica con el teclado')
   assert.ok(bloque.includes('.editor-vista'), 'falta el bloque de la vista previa en mobile')
   assert.ok(i > css.indexOf('\n.editor-vista {'),
     'las reglas del teléfono están antes que las base: no se aplican')
+})
+
+// Un paso, una cosa. Con varios campos por paso la banda crece, el teclado se
+// lleva el resto y la placa vuelve a ser la miniatura ilegible de antes.
+test('los pasos del teléfono se mueven con una sola barra', () => {
+  const editor = readFileSync(join(RAIZ, 'web/js/editor.js'), 'utf8')
+  assert.ok(/const secciones = \[\]/.test(editor),
+    'los pasos volvieron a estar fijos: no se pueden repartir de a un campo')
+  assert.ok(!/editor-paso-footer/.test(editor),
+    'volvió un pie por paso: sus bordes se leen como rayas sueltas entre los campos')
+  const css = readFileSync(join(RAIZ, 'web/css/app.css'), 'utf8')
+  const bloque = css.slice(css.indexOf(MOBILE))
+  assert.ok(/\.paso-atras\[hidden\]/.test(bloque),
+    'sin esto el botón oculto se sigue dibujando: display de clase le gana a hidden')
 })
 
 // La placa entra en unos 110 píxeles: alcanza para ver la composición pero no
@@ -1267,17 +1283,17 @@ test('la placa chica se puede abrir en grande', () => {
   assert.ok(/marco\.cloneNode/.test(editor), 'la lupa vuelve a renderizar en vez de clonar')
 })
 
-// La columna pegada se mide contra el documento, no contra lo que se ve: con el
-// teclado abierto el navegador desplaza la página y la placa queda arriba de lo
-// visible, que es volver al problema original por otra puerta.
-test('la vista previa sigue al teclado', () => {
+// `100vh` y `sticky` se miden contra el viewport de maquetación, que iOS no
+// achica al abrir el teclado: la capa quedaba más alta que la pantalla y la
+// banda de escritura terminaba abajo de las teclas.
+test('la capa se mide contra lo que se ve, no contra la maquetación', () => {
   const editor = readFileSync(join(RAIZ, 'web/js/editor.js'), 'utf8')
-  assert.ok(/visualViewport/.test(editor), 'nadie mira si el teclado corrió la página')
-  const css = readFileSync(join(RAIZ, 'web/css/app.css'), 'utf8')
-  assert.ok(/--tope-placa/.test(css), 'el tope que calcula el JS no llega al CSS')
-  // Y el formulario tiene que reservar el lugar: la placa dejó de ocupar sitio
-  // en el flujo, así que sin esto sus primeros campos quedan debajo.
-  assert.ok(/--alto-placa/.test(css), 'el formulario no reserva el alto de la placa')
+  assert.ok(/visualViewport/.test(editor), 'nadie mira cuánto se ve de verdad')
+  for (const v of ['--vv-alto', '--vv-tope']) {
+    assert.ok(editor.includes(v), `el JS no publica ${v}`)
+    assert.ok(readFileSync(join(RAIZ, 'web/css/app.css'), 'utf8').includes(v),
+      `${v} no llega al CSS`)
+  }
 })
 
 // Entrando con Google en una máquina, el navegador manda el token de Firebase
@@ -1335,8 +1351,8 @@ test('los campos del editor no piden autorrelleno', () => {
 // teléfono, con el teclado abierto, hacen la diferencia entre ver la placa y no.
 test('la barra de arriba no está mientras se edita en el teléfono', () => {
   const css = readFileSync(join(RAIZ, 'web/css/app.css'), 'utf8')
-  const i = css.indexOf('FOCUS DECK')
-  assert.ok(/body:has\(\.editor\) \.barra \{ display: none/.test(css.slice(i, i + 1600)),
+  const i = css.indexOf(MOBILE)
+  assert.ok(/body:has\(\.editor\) \.barra \{ display: none/.test(css.slice(i, i + 2200)),
     'la barra volvió a ocupar alto en el editor del teléfono')
 })
 
@@ -1344,7 +1360,7 @@ test('la barra de arriba no está mientras se edita en el teléfono', () => {
 // dejaba de pegarse y se dibujaba encima de la cabecera del formulario.
 test('la vista previa declara su posición una sola vez', () => {
   const css = readFileSync(join(RAIZ, 'web/css/app.css'), 'utf8')
-  const i = css.indexOf('.editor-vista {', css.indexOf('FOCUS DECK'))
+  const i = css.indexOf('.editor-vista {', css.indexOf(MOBILE))
   const regla = css.slice(i, css.indexOf('}', i))
   const veces = (regla.match(/position:/g) || []).length
   assert.equal(veces, 1, 'la vista previa vuelve a declarar position dos veces')

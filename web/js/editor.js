@@ -265,15 +265,10 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
       }
     }
     ajustarEscala()
-    // Se miran las dos cajas: cuando el panel se compacta lo que cambia de alto
-    // es la vista, y la zona no se entera si nada la vuelve a medir.
-    const observador = new ResizeObserver(() => {
-      ajustarEscala()
-      // El formulario reserva arriba lo que mide la placa. Cambia al compactarse
-      // con el teclado, así que se publica en cada medición.
-      document.documentElement.style.setProperty(
-        '--alto-placa', `${Math.round(vista.getBoundingClientRect().height)}px`)
-    })
+    // Se miran las dos cajas: cuando la banda de escritura crece o se achica,
+    // lo que cambia de alto es la vista, y la zona no se entera si nada la
+    // vuelve a medir.
+    const observador = new ResizeObserver(() => ajustarEscala())
     observador.observe(zona)
     observador.observe(vista)
 
@@ -310,8 +305,21 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
      * que consume cuota— y recién después aparecen las de guardar. Antes el
      * botón decía "Bajar el PNG" y lo que hacía era generar; el usuario creía
      * estar descargando algo y en realidad estaba gastando el plan. */
+    /* Lo que sale de generar no puede quedar adentro del panel de la placa.
+     *
+     * En el teléfono ese panel es la capa oscura donde vive la pieza, con el
+     * alto justo y el desborde oculto: el aviso salía verde sobre negro, la
+     * placa se encogía a una estampilla y el botón de guardar quedaba abajo de
+     * la banda. Va en su propia caja, que en la computadora se dibuja donde
+     * estaba y en el teléfono se abre como pantalla completa. */
     const errorBajar = el('div', { style: 'margin-top:12px' })
     const salida = el('div', { style: 'margin-top:12px' })
+    const cajaSalida = el('div.editor-salida', {},
+      el('button.btn.texto.chico.salida-cerrar', {
+        type: 'button',
+        onclick: () => { vaciar(salida); vaciar(errorBajar); cajaSalida.classList.remove('abierta') },
+      }, '← Seguir editando'),
+      errorBajar, salida)
     const rotuloGenerar = () => st.placas.length > 1
       ? `Generar las ${st.placas.length} placas`
       : 'Generar la placa'
@@ -352,9 +360,11 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
               ` de un diseñador o community manager`) : null,
             bloqueDeGuardado(r.archivos, cuenta?.marca?.nombre || cuenta?.nombre || '')
           )
+          cajaSalida.classList.add('abierta')
         } catch (e) {
           errorBajar.append(aviso(
             e.codigo === 'cuota_excedida' ? e.message : `No se pudieron generar: ${e.message}`, 'malo'))
+          cajaSalida.classList.add('abierta')
         } finally {
           generar.disabled = false
           generar.textContent = rotuloGenerar()
@@ -380,7 +390,7 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
       el('span.rotulo', { style: 'display:block;margin-bottom:10px' }, 'Vista previa'),
       zona, liveBadge, verGrande, errorVista,
       el('div.editor-vista-generar', {}, generar),
-      errorBajar, salida, medidor
+      cajaSalida, medidor
     )
 
     /* — barra de placas del carrusel — */
@@ -428,11 +438,14 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
     // así los dos hacen exactamente lo mismo: en feed vuelve a elegir post o
     // carrusel, y en historia y cuadrada a elegir el formato. Esta pantalla era
     // la única del editor sin una salida a la vista.
+    //
+    // Los estilos van en la hoja y no en línea: en el teléfono esta cabecera se
+    // convierte en una barra fina fija arriba de todo, y un estilo en línea no
+    // se puede alcanzar desde una media query.
     form.append(
-      el('div', { style: 'margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--color-rule);' },
-        el('button.btn.texto.chico', {
+      el('div.editor-cabecera', {},
+        el('button.btn.texto.chico.editor-volver', {
           type: 'button',
-          style: 'margin-bottom:10px;padding-left:0',
           onclick: irAtras,
         }, '← Volver'),
         // En un carrusel se dice qué papel cumple la placa: la primera y la
@@ -440,67 +453,48 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
         el('div.rotulo', {}, esCarrusel
           ? `Carrusel · placa ${st.activa + 1} de ${st.placas.length}${PAPEL[plantillaSegunPosicion(p.plantilla, st.activa, st.placas.length)] || ''}`
           : F.rotulo),
-        el('h2', { style: 'margin:2px 0 0;' }, 'Escribí tu placa')
+        el('h2', {}, 'Escribí tu placa')
       )
     )
 
-    /* — pasos de edición mobile (Focus Deck) —
+    /* — el editor, en pasos —
      *
-     * En computadora los cuatro pasos se muestran continuos en la columna de la
-     * izquierda (.editor-paso { display: contents }). En el teléfono se muestran
-     * de a uno con su barra de progreso y botones de avance, mientras la vista
-     * previa permanece fija arriba en tamaño real. */
-    const pasoNav = el("div.editor-pasos-nav", {},
-      el("div.stepper-dots-wrap", {},
-        el("div.stepper-dot-seg.activo"),
-        el("div.stepper-dot-seg"),
-        el("div.stepper-dot-seg"),
-        el("div.stepper-dot-seg")
-      ),
-      el("div.paso-label-mobile", {},
-        "PASO ", el("b.paso-num-txt", {}, "1"), " DE 4 · ", el("span.paso-nom-txt", {}, "Plantilla")
-      )
-    )
-
-    const paso1 = el("div.editor-paso.activo", { "data-paso": "1" })
-    const paso2 = el("div.editor-paso", { "data-paso": "2" })
-    const paso3 = el("div.editor-paso", { "data-paso": "3" })
-    const paso4 = el("div.editor-paso", { "data-paso": "4" })
-
-    const cambiarPasoMobile = (n) => {
-      [paso1, paso2, paso3, paso4].forEach((pnl, idx) => {
-        pnl.classList.toggle("activo", idx + 1 === n)
-      })
-      pasoNav.querySelectorAll(".stepper-dot-seg").forEach((d, idx) => {
-        d.classList.toggle("activo", idx + 1 === n)
-        d.classList.toggle("completado", idx + 1 < n)
-      })
-      const numTxt = pasoNav.querySelector(".paso-num-txt")
-      const nomTxt = pasoNav.querySelector(".paso-nom-txt")
-      if (numTxt) numTxt.textContent = n
-      const NOMS = { 1: "Plantilla", 2: "Título & Mensaje", 3: "Bajada & Detalles", 4: "Generar" }
-      if (nomTxt) nomTxt.textContent = NOMS[n]
+     * En computadora los pasos se muestran continuos en la columna del
+     * formulario (`.editor-paso { display: contents }`) y nada de esto se ve.
+     * En el teléfono se muestra uno por vez, en una banda apoyada al pie de la
+     * placa, y la placa se queda con todo lo demás.
+     *
+     * Un paso, una cosa. Con varios campos por paso la banda crece, el teclado
+     * se lleva el resto y la placa vuelve a ser una miniatura ilegible: es
+     * exactamente lo que había antes. Por eso los campos principales se
+     * reparten de a uno, salvo los que la placa dibuja adentro de un mismo
+     * recuadro —el de la oferta—, que se preguntan juntos porque juntos se ven.
+     */
+    const secciones = []
+    const seccion = (nom, ...nodos) => {
+      const utiles = nodos.filter(Boolean)
+      if (utiles.length) secciones.push({ nom, nodos: utiles })
     }
 
-    /* — selector de plantilla visual con chips — */
+    /* — plantilla — */
     // Portada y cierre no se ofrecen: son la primera y la última del carrusel.
     const disponibles = Object.entries(ROTULOS)
 
     const ICONOS_PLANTILLA = {
-      texto: "📝",
-      pasos: "🔢",
-      oferta: "🏷️",
-      frase: "💬",
-      manifiesto: "💡",
-      foto: "📸",
+      texto: '📝',
+      pasos: '🔢',
+      oferta: '🏷️',
+      frase: '💬',
+      manifiesto: '💡',
+      foto: '📸',
     }
 
-    const explicacion = el("span.ayuda.ayuda-plantilla", {}, PLANTILLAS[p.plantilla].para)
+    const explicacion = el('span.ayuda.ayuda-plantilla', {}, PLANTILLAS[p.plantilla].para)
     const mostrarPara = id => { explicacion.textContent = PLANTILLAS[id].para }
 
-    const grillaPlantillas = el("div.pestanas", { style: "margin-top:6px;gap:8px;" })
+    const grillaPlantillas = el('div.pestanas', { style: 'margin-top:6px;gap:8px;' })
     disponibles.forEach(([id, def]) => {
-      const btn = el("button.pestana" + (id === p.plantilla ? ".activa" : ""), {
+      const btn = el('button.pestana' + (id === p.plantilla ? '.activa' : ''), {
         onmouseenter: () => mostrarPara(id),
         onfocus: () => mostrarPara(id),
         onmouseleave: () => mostrarPara(p.plantilla),
@@ -512,117 +506,111 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
           st.placas[st.activa] = { ...vacia(id), ...conservar }
           editarDeNuevo()
         }
-      }, `${ICONOS_PLANTILLA[id] || "📄"} ${def.label}`)
+      }, `${ICONOS_PLANTILLA[id] || '📄'} ${def.label}`)
       grillaPlantillas.append(btn)
     })
 
-    paso1.append(el("div.campo", {},
-      el("label", {}, "Tipo de plantilla"),
+    seccion('Plantilla', el('div.campo', {},
+      el('label', {}, 'Tipo de plantilla'),
       explicacion,
       grillaPlantillas
     ))
 
-    // Disposición
+    /* — cómo se acomoda — */
     if (catalogo?.disposiciones?.length) {
-      const deLaMarca = cuenta?.marca?.disposicion || "clasica"
-      const nombreDeLaMarca = catalogo.disposiciones.find(d => d.id === deLaMarca)?.label || ""
+      const deLaMarca = cuenta?.marca?.disposicion || 'clasica'
+      const nombreDeLaMarca = catalogo.disposiciones.find(d => d.id === deLaMarca)?.label || ''
 
       const opciones = [
         {
-          id: "",
-          label: "La de tu marca",
+          id: '',
+          label: 'La de tu marca',
           esquema: deLaMarca,
           pie: nombreDeLaMarca,
-          descripcion: `La que elegiste al armar tu marca${nombreDeLaMarca ? `: ${nombreDeLaMarca}` : ""}. Si no querés pensarlo, dejala.`,
+          descripcion: `La que elegiste al armar tu marca${nombreDeLaMarca ? `: ${nombreDeLaMarca}` : ''}. Si no querés pensarlo, dejala.`,
         },
         ...catalogo.disposiciones,
       ]
-      const grilla = el("div.disp-grilla")
+      const grilla = el('div.disp-grilla')
       for (const d of opciones) {
-        const boton = el("button.disp-opcion", {
-          type: "button",
+        const boton = el('button.disp-opcion', {
+          type: 'button',
           title: d.descripcion,
-          "aria-pressed": String((p.disposicion || "") === d.id),
+          'aria-pressed': String((p.disposicion || '') === d.id),
           onclick: () => {
             p.disposicion = d.id || null
-            elegirEnGrupo(grilla, boton, "elegida")
-            for (const b of grilla.children) b.setAttribute("aria-pressed", String(b === boton))
+            elegirEnGrupo(grilla, boton, 'elegida')
+            for (const b of grilla.children) b.setAttribute('aria-pressed', String(b === boton))
             refrescarDemorado()
           },
         },
           esquemaDeDisposicion(d.esquema ?? d.id, Boolean(d.esquema)),
-          el("span.disp-nombre", {}, d.label),
-          d.pie ? el("span.disp-pie", {}, d.pie) : null
+          el('span.disp-nombre', {}, d.label),
+          d.pie ? el('span.disp-pie', {}, d.pie) : null
         )
-        if ((p.disposicion || "") === d.id) boton.classList.add("elegida")
+        if ((p.disposicion || '') === d.id) boton.classList.add('elegida')
         grilla.append(boton)
       }
-      paso1.append(el("div.campo", {},
-        el("label", {}, "Cómo se acomoda"),
-        el("span.ayuda", {}, "Dónde se apoya el texto en esta placa."),
+      seccion('Composición', el('div.campo', {},
+        el('label', {}, 'Cómo se acomoda'),
+        el('span.ayuda', {}, 'Dónde se apoya el texto en esta placa.'),
         grilla
       ))
     }
 
-    paso1.append(
-      el("div.editor-paso-footer", {},
-        el("button.btn.btn-paso-siguiente", { type: "button", onclick: () => cambiarPasoMobile(2) }, "Siguiente: Mensaje →")
-      )
-    )
-
-    /* — paso 2: campos principales — */
-    if (p.plantilla === "foto" && !p.foto) {
-      const a = aviso("Esta plantilla va sobre una imagen. Mientras no elijas una, la vista previa muestra un fondo liso.")
-      a.classList.add("aviso-sin-foto")
-      paso2.append(a)
-    }
+    /* — los campos principales, uno por paso — */
+    // La plantilla de foto sobre imagen: mientras no haya foto elegida, la
+    // vista previa muestra un fondo liso y conviene decirlo donde se elige.
+    const avisoSinFoto = p.plantilla === 'foto' && !p.foto
+      ? (() => { const a = aviso('Esta plantilla va sobre una imagen. Mientras no elijas una, la vista previa muestra un fondo liso.'); a.classList.add('aviso-sin-foto'); return a })()
+      : null
 
     const grupo = GRUPOS[p.plantilla]
-    let cajaGrupo = null
+    const yaEnElGrupo = new Set()
     for (const campo of CAMPOS_PRINCIPALES[p.plantilla] || PLANTILLAS[p.plantilla].campos) {
       if (grupo?.campos.includes(campo)) {
-        if (!cajaGrupo) {
-          cajaGrupo = el("div.campo-grupo", {}, el("span.campo-grupo-titulo", {}, grupo.titulo))
-          paso2.append(cajaGrupo)
+        if (yaEnElGrupo.size) { yaEnElGrupo.add(campo); continue }
+        // Todos los del recuadro, juntos y en un solo paso.
+        const caja = el('div.campo-grupo', {}, el('span.campo-grupo-titulo', {}, grupo.titulo))
+        for (const c of grupo.campos) {
+          if (!(CAMPOS_PRINCIPALES[p.plantilla] || []).includes(c)) continue
+          caja.append(armarCampo(c, p, refrescarDemorado, medidor))
+          yaEnElGrupo.add(c)
         }
-        cajaGrupo.append(armarCampo(campo, p, refrescarDemorado, medidor))
+        seccion(grupo.titulo, caja)
         continue
       }
-      paso2.append(armarCampo(campo, p, refrescarDemorado, medidor))
+      seccion(CAMPOS[campo]?.label || campo,
+        campo === 'imagen' ? avisoSinFoto : null,
+        armarCampo(campo, p, refrescarDemorado, medidor))
     }
 
-    paso2.append(
-      el("div.editor-paso-footer", {},
-        el("button.btn.texto.btn-paso-anterior", { type: "button", onclick: () => cambiarPasoMobile(1) }, "← Anterior"),
-        el("button.btn.btn-paso-siguiente", { type: "button", onclick: () => cambiarPasoMobile(3) }, "Siguiente: Bajada →")
-      )
-    )
-
-    /* — paso 3: campos secundarios / bajada — */
+    /* — detalles opcionales — */
     const opcionales = camposSecundarios(p.plantilla)
-    const tieneAlgo = c => c === "imagen" ? Boolean(p.foto) : Boolean(p[c])
-    const abiertos = new Set(opcionales.filter(tieneAlgo))
+    const detalles = []
     if (opcionales.length) {
-      const zona = el("div", { style: "display:flex;flex-direction:column;gap:18px" })
-      const botones = el("div", { style: "display:flex;gap:8px;flex-wrap:wrap" })
+      const tieneAlgo = c => c === 'imagen' ? Boolean(p.foto) : Boolean(p[c])
+      const abiertos = new Set(opcionales.filter(tieneAlgo))
+      const zonaOpc = el('div.opcionales-abiertos')
+      const botones = el('div.opcionales-botones')
       const repintarOpcionales = () => {
-        vaciar(zona); vaciar(botones)
+        vaciar(zonaOpc); vaciar(botones)
         for (const campo of opcionales) {
-          if (abiertos.has(campo)) { zona.append(armarCampo(campo, p, refrescarDemorado, medidor)); continue }
-          botones.append(el("button.btn.fantasma.chico", {
-            type: "button",
+          if (abiertos.has(campo)) { zonaOpc.append(armarCampo(campo, p, refrescarDemorado, medidor)); continue }
+          botones.append(el('button.btn.fantasma.chico', {
+            type: 'button',
             onclick: () => { abiertos.add(campo); repintarOpcionales() },
           }, `＋ ${CAMPOS[campo].agregar || CAMPOS[campo].label}`))
         }
       }
       repintarOpcionales()
-      paso3.append(zona, botones)
+      detalles.push(zonaOpc, botones)
     }
 
-    if (esHistoria && p.plantilla !== "foto") {
+    if (esHistoria && p.plantilla !== 'foto') {
       const selFoto = selectorDeImagen({
         cuentaId: cuenta.id,
-        orientacion: "vertical",
+        orientacion: 'vertical',
         inicial: p.foto,
         onElegir: img => {
           p.foto = img
@@ -630,52 +618,87 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
           refrescarDemorado()
         },
       })
-      paso3.append(el("div.campo", {},
-        el("label", {}, "📸 Foto de fondo"),
-        el("span.ayuda", {}, "Opcional. Sin foto la historia usa el color de tu marca como fondo."),
-        !p.foto ? el("div.aviso", { style: "margin-bottom:10px" }, "Sin foto, la placa usa el color de tu marca de fondo. Podés dejarlo así.") : null,
+      detalles.push(el('div.campo', {},
+        el('label', {}, '📸 Foto de fondo'),
+        el('span.ayuda', {}, 'Opcional. Sin foto la historia usa el color de tu marca como fondo.'),
+        !p.foto ? el('div.aviso', { style: 'margin-bottom:10px' }, 'Sin foto, la placa usa el color de tu marca de fondo. Podés dejarlo así.') : null,
         selFoto.nodo
       ))
     }
+    seccion('Detalles', ...detalles)
 
-    paso3.append(
-      el("div.editor-paso-footer", {},
-        el("button.btn.texto.btn-paso-anterior", { type: "button", onclick: () => cambiarPasoMobile(2) }, "← Anterior"),
-        el("button.btn.btn-paso-siguiente", { type: "button", onclick: () => cambiarPasoMobile(4) }, "Siguiente: Generar →")
-      )
-    )
-
-    /* — paso 4: revisión y generación — */
-    const paso4GenerarBtn = el("button.btn.grande", {
-      style: "width:100%;margin-top:10px;",
+    /* — revisión y generación — */
+    const botonGenerarPaso = el('button.btn.grande.generar-paso', {
       onclick: () => generar.click()
     }, rotuloGenerar())
 
-    paso4.append(
-      el("div.campo", {},
-        el("label", {}, "Revisá y generá tu publicación"),
-        el("span.ayuda", {}, "Tu placa está lista. Presioná para generar los archivos en alta resolución.")
+    seccion('Generar',
+      el('div.campo', {},
+        el('label', {}, 'Revisá y generá tu publicación'),
+        el('span.ayuda', {}, 'Tu placa está lista. Presioná para generar los archivos en alta resolución.')
       ),
-      el("div.editor-paso-resumen", { style: "background:var(--color-paper-2);border:1px solid var(--color-rule);border-radius:12px;padding:12px;margin:8px 0;" },
-        el("p", { style: "font-size:0.88rem;margin:0 0 4px;font-weight:700;" }, `Formato: ${F.rotulo}`),
-        el("p", { style: "font-size:0.8rem;color:var(--color-muted);margin:0;" }, "2160 píxeles de ancho en alta resolución.")
+      el('div.editor-paso-resumen', {},
+        el('p.resumen-formato', {}, `Formato: ${F.rotulo}`),
+        el('p.resumen-detalle', {}, '2160 píxeles de ancho en alta resolución.')
       ),
-      paso4GenerarBtn,
-      el("div.editor-paso-footer", {},
-        el("button.btn.texto.btn-paso-anterior", { type: "button", onclick: () => cambiarPasoMobile(3) }, "← Volver a editar")
-      )
+      botonGenerarPaso
     )
 
-    form.append(pasoNav, paso1, paso2, paso3, paso4)
-
-    /* Con el teclado abierto la placa se compacta.
+    /* — la barra que mueve los pasos —
      *
-     * Acá solo se marca que el teclado está: el desfase de la columna pegada lo
-     * lleva seguirAlTeclado(), que es lo único que lo escribe. Los dos ponían
-     * `--desfase-teclado` con valores distintos —este el alto del teclado, unos
-     * 300 píxeles, y el otro cuánto se corrió la página— y ganaba el que
-     * atendiera último. Usar el alto del teclado como tope empujaba la placa
-     * fuera de la pantalla, que es el salto raro que se veía al escribir. */
+     * Una sola, al pie de la banda, en vez de un pie por paso. Con uno por paso
+     * había dos bordes seguidos —el de abajo de la barra de progreso y el de
+     * arriba del pie— y en pantalla se leían como rayas sueltas entre los
+     * campos, sin separar nada. */
+    const pasos = secciones.map(({ nodos }, i) =>
+      el(`div.editor-paso${i === 0 ? '.activo' : ''}`, { 'data-paso': String(i + 1) }, ...nodos))
+
+    const segmentos = secciones.map(() => el('div.stepper-dot-seg'))
+    const nomPaso = el('span.paso-nom-txt')
+    const cuentaPaso = el('span.paso-cuenta')
+    const atras = el('button.btn.texto.chico.paso-atras', {
+      type: 'button', onclick: () => irAPaso(activo - 1),
+    }, '← Anterior')
+    const adelante = el('button.btn.paso-adelante', {
+      type: 'button', onclick: () => irAPaso(activo + 1),
+    }, 'Siguiente →')
+
+    const pasoNav = el('div.editor-pasos-nav', {},
+      el('div.stepper-dots-wrap', {}, ...segmentos),
+      el('div.paso-fila', {},
+        atras,
+        el('span.paso-label-mobile', {}, nomPaso, el('span.paso-cuenta-sep', {}, ' · '), cuentaPaso),
+        adelante)
+    )
+
+    let activo = 0
+    function irAPaso(n) {
+      activo = Math.max(0, Math.min(secciones.length - 1, n))
+      pasos.forEach((pnl, i) => pnl.classList.toggle('activo', i === activo))
+      segmentos.forEach((s, i) => {
+        s.classList.toggle('activo', i === activo)
+        s.classList.toggle('completado', i < activo)
+      })
+      nomPaso.textContent = secciones[activo].nom
+      cuentaPaso.textContent = `${activo + 1} de ${secciones.length}`
+      atras.hidden = activo === 0
+      adelante.hidden = activo === secciones.length - 1
+      form.scrollTop = 0
+      // La banda cambia de alto al cambiar de paso y la placa se queda con lo
+      // que sobra: hay que volver a medirla, pero recién cuando el navegador
+      // terminó de reacomodar el flex.
+      requestAnimationFrame(ajustarEscala)
+    }
+
+    form.append(...pasos, pasoNav)
+    irAPaso(0)
+
+    /* Que el teclado esté abierto se marca en el body.
+     *
+     * No mueve nada por su cuenta —de la medida de la capa se ocupa
+     * seguirAlTeclado(), que es lo único que escribe esas variables—: sirve
+     * para apretar los márgenes de la banda, que con media pantalla menos
+     * valen más que la prolijidad. */
     if (window.visualViewport) {
       const alAbrirseElTeclado = () => {
         const abierto = window.visualViewport.height < window.innerHeight * 0.75
@@ -910,28 +933,30 @@ function abrirLupa(marco, F) {
 }
 
 /**
- * Que la vista previa no se esconda detrás del teclado.
+ * De qué tamaño es lo que se ve.
  *
- * La columna de la placa está pegada con `position: sticky`, y sticky se mide
- * contra el documento, no contra lo que se ve. Al abrirse el teclado, el
- * navegador desplaza la página hacia arriba: la placa queda pegada a un tope
- * que ya no está en pantalla. `visualViewport` dice cuánto se corrió, y esa
- * distancia se le suma al tope para devolverla adentro.
+ * En el teléfono el editor es una capa fija: la placa arriba y la banda de
+ * escritura al pie, sin scroll de página. Para eso hace falta saber cuánto mide
+ * lo que se ve de verdad, y `100vh` no lo dice: iOS no achica el viewport de
+ * maquetación al abrir el teclado —solo el visual— así que la capa quedaba más
+ * alta que la pantalla y la banda terminaba abajo del teclado.
+ *
+ * `visualViewport.height` es esa medida, y `offsetTop` cuánto corrió el
+ * navegador la página por debajo: sumado al tope devuelve la capa adentro
+ * cuando iOS desplaza para dejar a la vista el campo enfocado.
  */
 function seguirAlTeclado() {
   const vv = window.visualViewport
   const raiz = document.documentElement
   if (!vv) return
   const ajustar = () => {
-    // `offsetTop` es cuánto se corrió la página por debajo de lo que se ve. Con
-    // el teclado abierto iOS desplaza la página sin cambiar el viewport de
-    // maquetación: sumarlo devuelve la placa adentro de la pantalla.
-    raiz.style.setProperty('--tope-placa', `${Math.round(vv.offsetTop) + 4}px`)
+    raiz.style.setProperty('--vv-alto', `${Math.round(vv.height)}px`)
+    raiz.style.setProperty('--vv-tope', `${Math.round(vv.offsetTop)}px`)
   }
   vv.addEventListener('resize', ajustar)
   vv.addEventListener('scroll', ajustar)
   // Y también en el scroll de la página: iOS avisa por visualViewport solo a
-  // veces, y entre aviso y aviso la placa se quedaba corrida.
+  // veces, y entre aviso y aviso la capa se quedaba corrida.
   addEventListener('scroll', ajustar, { passive: true })
   ajustar()
 }

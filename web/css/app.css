@@ -4586,23 +4586,27 @@ html.con-sesion .arranque { display: block; }
 
 /* ── El editor en el teléfono ───────────────────────────────
  *
- * Las mismas dos columnas de la computadora, encogidas: los campos a la
- * izquierda y la placa a la derecha, pegada arriba.
+ * La placa manda y la escritura se apoya sobre ella.
  *
- * Antes se apilaban y la vista previa quedaba estática arriba del formulario:
- * apenas se bajaba a escribir el título, la placa se iba de la pantalla. Se
- * escribía a ciegas, se subía a mirar y se volvía a bajar. Apilar en el
- * teléfono es el reflejo, pero acá lo que hay que conservar es justamente lo
- * que se pierde al apilar.
+ * Hubo tres intentos antes de este y todos se rompían por lo mismo: la placa
+ * arriba y el formulario abajo, los dos peleando por un alto que con el teclado
+ * abierto son quinientos píxeles. Quedaban seis cosas apiladas —la placa, un
+ * campo, la barra de pasos, otro campo, la barra de autorrelleno de iOS y el
+ * teclado— y ninguna entraba entera.
  *
- * La placa queda chica —unos 120 píxeles— y eso se asume: alcanza para ver la
- * composición, dónde cae el título y si el texto desborda. Para leerla está el
- * botón que la abre a pantalla completa.
+ * Ahora el editor es una capa fija del alto de lo que se ve, sin scroll de
+ * página: arriba la placa, tan grande como quede, y al pie una banda con una
+ * sola cosa para escribir. Los pasos avanzan de a uno.
+ *
+ * Nada de esto se apoya en `100vh` ni en `sticky`. Las dos se miden contra el
+ * viewport de maquetación, que iOS no achica al abrir el teclado: la capa
+ * quedaba más alta que la pantalla y la banda terminaba abajo de las teclas.
+ * El alto lo publica el JS desde `visualViewport`, que es la única medida que
+ * dice lo que de verdad se ve.
  */
-/* ══ REGLAS DE ESCRITORIO (FOCUS DECK OCULTO EN DESKTOP) ══ */
+/* ══ En computadora nada de esto existe: los pasos van seguidos ══ */
 @media (min-width: 721px) {
   .editor-pasos-nav,
-  .editor-paso-footer,
   .placa-live-badge {
     display: none !important;
   }
@@ -4611,131 +4615,129 @@ html.con-sesion .arranque { display: block; }
   }
 }
 
-/* ══ 5. EXPERIENCIA MOBILE: FOCUS DECK CON PLACA PROTAGONISTA EN VIVO ══ */
+/* ══ La capa del teléfono ══ */
 @media (max-width: 720px) {
-  .editor {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 14px !important;
-    padding: 8px 0 80px !important;
-    max-width: 100% !important;
-  }
+  /* La página no scrollea mientras se edita: scrollea la banda, que es un
+     contenedor de verdad y no depende de cómo iOS corra el documento. */
+  body:has(.editor) { overflow: hidden !important; --bar-h: 0px; }
 
-  /* La barra de arriba se va mientras se edita en el teléfono.
+  /* La barra de arriba se va.
    *
    * Acompaña el scroll y se lleva 70 píxeles de alto que acá valen más que en
-   * ningún lado: son los que le faltan a la placa cuando el teclado ya se comió
-   * media pantalla. Adentro del editor no hace falta —la vuelta se hace con el
-   * "Volver" del formulario— y vuelve sola al salir. */
-  body:has(.editor) .barra { display: none; }
-  body:has(.editor) { --bar-h: 0px; }
+   * ningún lado. Adentro del editor no hace falta —la vuelta se hace con el
+   * "Volver" de la cabecera— y vuelve sola al salir. */
+  body:has(.editor) .barra { display: none !important; }
 
-  /* Stage superior: la pieza gráfica arriba, pegada. */
+  .editor {
+    position: fixed !important;
+    top: var(--vv-tope, 0px) !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: var(--vv-alto, 100dvh) !important;
+    max-width: none !important;
+    margin: 0 !important;
+    /* Lo que reserva la cabecera, que va fija sobre la capa. */
+    padding: 42px 0 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    /* La grilla de la computadora trae `align-items: start`, y en una columna
+       flex eso hace que los hijos se encojan a lo que mida su contenido: la
+       placa quedaba en una tira de veinte píxeles contra el borde izquierdo. */
+    align-items: stretch !important;
+    gap: 0 !important;
+    background: var(--color-paper) !important;
+    overflow: hidden !important;
+    z-index: 20 !important;
+  }
+
+  /* — la cabecera, una barra fina — */
+  .editor-cabecera {
+    position: fixed !important;
+    top: var(--vv-tope, 0px) !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 42px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    margin: 0 !important;
+    padding: 0 12px !important;
+    border-bottom: none !important;
+    background: var(--color-paper) !important;
+    z-index: 21 !important;
+  }
+  /* En 42 píxeles entra el volver y de qué formato es la placa. El título de la
+     pantalla no: ya se sabe dónde está. */
+  .editor-cabecera h2 { display: none !important; }
+  .editor-cabecera .editor-volver { margin: 0 !important; padding: 6px 2px !important; }
+  .editor-cabecera .rotulo {
+    margin-left: auto !important;
+    font-size: 0.6rem !important;
+    text-align: right !important;
+    line-height: 1.2 !important;
+  }
+
+  /* — la placa, que es lo que se está haciendo — */
   .editor-vista {
     order: -1 !important;
-    /* Una sola declaración de position. Estaba dos veces —sticky arriba y
-       relative al final de la misma regla— y ganaba la última: la placa dejaba
-       de pegarse y, con z-index 35, se dibujaba encima de la cabecera del
-       formulario. Eso es el efecto de "adelante y atrás". */
-    /* Fija y ubicada por JS, no sticky.
-     *
-     * `sticky` se mide contra el viewport de maquetación, y con el teclado
-     * abierto iOS no lo cambia: solo achica el viewport visual y desplaza la
-     * página por debajo. La placa quedaba pegada a un tope que ya no estaba en
-     * pantalla, así que al scrollear parecía irse para atrás. Sumarle el
-     * desfase tampoco alcanza, porque el navegador reposiciona el sticky en
-     * momentos que no coinciden con los avisos de visualViewport.
-     *
-     * Fija, con el tope que le dicta `--tope-placa` desde visualViewport, la
-     * posición es siempre la que se ve. */
-    position: fixed !important;
-    top: var(--tope-placa, 4px) !important;
-    left: 8px !important;
-    right: 8px !important;
+    position: relative !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
     width: auto !important;
-    z-index: 30 !important;
-    background: var(--color-paper-2) !important;
-    border: 1px solid var(--color-rule) !important;
-    border-radius: var(--r-card, 20px) !important;
-    box-shadow: 0 16px 36px -12px oklch(20% 0.012 250 / 0.18) !important;
-    padding: 10px 12px 12px !important;
+    max-width: none !important;
+    max-height: none !important;
+    margin: 0 !important;
+    /* Abajo hay más aire del que se ve: ahí se apoya la banda, que sube sobre
+       la capa con un margen negativo. Sin esta reserva la banda le comería el
+       borde de abajo a la placa. */
+    padding: 8px 10px 22px !important;
+    background: var(--color-ink) !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
-    width: 100% !important;
-    max-height: 48vh !important;
-    min-height: 200px !important;
-    transition: max-height 0.25s cubic-bezier(0.16, 1, 0.3, 1), padding 0.25s !important;
+    /* La vista previa tiene nueve hijos y casi todos están vacíos —los huecos de
+       error, la salida, el medidor—, pero el gap se cobra igual entre cada par:
+       ochenta píxeles de aire entre cosas que no existen. */
+    gap: 0 !important;
     overflow: hidden !important;
-  }
-
-  /* Al abrir el teclado del teléfono: el stage se compacta para no tapar nada */
-  body.teclado-abierto .editor-vista {
-    max-height: 28vh !important;
-    min-height: 155px !important;
-    padding: 4px 8px !important;
   }
 
   .editor-vista .lienzo-zona {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
     width: 100% !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    flex: 1 !important;
-    min-height: 0 !important;
   }
 
   .editor-vista .lienzo {
-    box-shadow: 0 12px 32px -8px rgba(0,0,0,0.25) !important;
-    border-radius: 12px !important;
-    overflow: hidden !important;
     margin: 0 auto !important;
+    border: none !important;
+    border-radius: 10px !important;
+    box-shadow: 0 12px 32px -6px rgba(0, 0, 0, 0.5) !important;
   }
 
+  /* Sobre fondo oscuro no hace falta rotularla, ni ofrecer el generar dos
+     veces: el de verdad está en el último paso. Y "ver grande" tampoco: la
+     placa ya se ve grande, que era todo el punto. */
   .editor-vista > .rotulo,
-  .editor-vista > .medidor {
-    display: none !important;
-  }
-
-  /* Sin separación entre elementos.
-   *
-   * La vista previa tiene nueve hijos y casi todos están vacíos —los huecos de
-   * error, la salida, el medidor—, pero el gap se cobra igual entre cada par:
-   * ochenta píxeles de aire entre cosas que no existen, sacados del único alto
-   * que le importa a la placa. */
-  .editor-vista { gap: 0 !important; }
-
-  /* Los campos de una línea son textarea —es la única forma de que iOS no abra
-     su barra de autorrelleno— y hay que impedir que se estiren o se agranden. */
-  .editor-form textarea[rows="1"] {
-    resize: none;
-    overflow: hidden;
-    min-height: 0;
-    height: auto;
-  }
+  .editor-vista > .medidor,
+  .editor-vista-generar,
+  .btn-ver-grande { display: none !important; }
   .editor-vista > *:empty { display: none !important; }
 
-  /* Ocultamos el botón "Ver grande" en mobile: ya se ve en grande */
-  .btn-ver-grande {
-    display: none !important;
-  }
-
-  /* Ocultamos el botón generar flotante de la vista previa en mobile para usar el del paso 4 */
-  .editor-vista-generar {
-    display: none !important;
-  }
-
-  /* El badge se ubicaba contra el `position: relative` que había que sacar. La
-     vista previa ya es contenedor de posicionamiento por ser sticky, así que
-     sigue anclado igual. */
   .placa-live-badge {
     position: absolute !important;
-    bottom: 8px !important;
-    right: 12px !important;
-    background: rgba(0,0,0,0.7) !important;
+    bottom: 34px !important;
+    right: 14px !important;
+    background: rgba(0, 0, 0, 0.7) !important;
     backdrop-filter: blur(8px) !important;
-    border: 1px solid rgba(255,255,255,0.18) !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
     color: var(--color-mint) !important;
     font-family: var(--font-label) !important;
     font-size: 0.62rem !important;
@@ -4760,118 +4762,182 @@ html.con-sesion .arranque { display: block; }
     100% { transform: scale(0.9); opacity: 0.5; }
   }
 
-  /* Formulario inferior (Focus Deck) */
+  /* — la banda: acá se escribe — */
   .editor-form {
     order: 2 !important;
+    flex: 0 0 auto !important;
     width: 100% !important;
-    background: var(--color-paper) !important;
-    border: 1px solid var(--color-rule) !important;
-    border-radius: var(--r-card, 20px) !important;
-    box-shadow: var(--shadow-card) !important;
-    /* Arriba se reserva lo que mide la placa: dejó de ocupar lugar en el flujo
-       al pasar a posición fija, y sin esto sus primeros campos quedan debajo.
-       El alto lo publica el JS, que es quien sabe cuánto mide en cada momento
-       —cambia al compactarse con el teclado—. */
-    padding: calc(var(--alto-placa, 210px) + 14px) 14px 24px !important;
+    /* Hasta acá crece y después scrollea ella sola. Más que esto y la placa
+       vuelve a ser una miniatura, que es de lo que veníamos escapando. */
+    max-height: 52% !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+    /* Se apoya sobre la placa: sube los 22 píxeles que la vista dejó libres
+       abajo, así se lee como una banda al pie de la pieza y no como otro
+       panel más. */
+    margin: -18px 0 0 !important;
+    background: var(--color-paper-2) !important;
+    border: none !important;
+    border-radius: 18px 18px 0 0 !important;
+    box-shadow: 0 -12px 26px -16px rgba(0, 0, 0, 0.45) !important;
+    padding: 12px 14px 0 !important;
     display: flex !important;
     flex-direction: column !important;
-    gap: 12px !important;
+    gap: 0 !important;
+    position: relative !important;
+    z-index: 22 !important;
   }
 
-  /* Stepper de navegación de pasos */
-  .editor-pasos-nav {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    padding: 0 0 12px !important;
-    margin-bottom: 6px !important;
-    border-bottom: 1px solid var(--color-rule) !important;
-  }
-  .stepper-dots-wrap {
-    display: flex !important;
+  /* — con el teclado abierto —
+   *
+   * Quedan unos quinientos píxeles para todo. La banda se queda con lo que
+   * hace falta para escribir —el rótulo, el campo y la barra de pasos— y suelta
+   * lo que se lee antes de empezar: la explicación del campo se leyó al llegar
+   * al paso, y mientras se tipea solo le está sacando alto a la placa. */
+  body.teclado-abierto .editor-form { padding: 8px 14px 0 !important; }
+  body.teclado-abierto .editor-paso.activo { gap: 8px !important; }
+  body.teclado-abierto .editor-paso .ayuda { display: none !important; }
+  body.teclado-abierto .campo > label { margin-bottom: 2px !important; }
+  body.teclado-abierto .editor-pasos-nav {
     gap: 6px !important;
-    flex: 1 !important;
-    max-width: 160px !important;
+    padding: 7px 0 calc(7px + env(safe-area-inset-bottom, 0px)) !important;
   }
-  .stepper-dot-seg {
-    height: 4px !important;
-    flex: 1 !important;
-    background: var(--color-rule) !important;
-    border-radius: var(--r-pill) !important;
-    transition: background 0.25s ease !important;
-  }
-  .stepper-dot-seg.activo {
-    background: var(--color-mint) !important;
-    box-shadow: 0 0 6px var(--color-mint) !important;
-  }
-  .stepper-dot-seg.completado {
-    background: var(--color-mint-deep) !important;
-  }
-  .paso-label-mobile {
-    font-family: var(--font-label) !important;
-    font-size: 0.68rem !important;
-    font-weight: 700 !important;
-    color: var(--color-muted) !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.06em !important;
-  }
-  .paso-label-mobile b { color: var(--color-ink) !important; }
+  body.teclado-abierto .paso-adelante { padding: 7px 14px !important; }
 
-  /* Pasos del formulario */
-  .editor-paso {
-    display: none !important;
+  /* — la placa ya está hecha —
+   *
+   * Deja de ser una pantalla de edición: lo único que queda por hacer es
+   * guardarla. Se abre encima de todo, con su propia salida hacia atrás. */
+  .editor-salida:not(.abierta) { display: none !important; }
+  .editor-salida.abierta {
+    position: fixed !important;
+    top: var(--vv-tope, 0px) !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: var(--vv-alto, 100dvh) !important;
+    z-index: 40 !important;
+    background: var(--color-paper) !important;
+    overflow-y: auto !important;
+    padding: 14px 14px calc(24px + env(safe-area-inset-bottom, 0px)) !important;
+    text-align: left !important;
   }
+  .editor-salida.abierta .salida-cerrar {
+    /* `.editor-vista .btn` los estira al ancho del panel y el rótulo queda en
+       el medio: acá es una vuelta atrás, no una acción principal. */
+    display: inline-flex !important;
+    width: auto !important;
+    justify-content: flex-start !important;
+    padding-left: 0 !important;
+    margin-bottom: 6px !important;
+  }
+
+  /* Un paso por vez. */
+  .editor-paso { display: none !important; }
   .editor-paso.activo {
     display: flex !important;
     flex-direction: column !important;
     gap: 12px !important;
-    animation: pasoFadeMobile 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    padding-bottom: 8px !important;
+    animation: pasoFadeMobile 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
   }
   @keyframes pasoFadeMobile {
-    from { opacity: 0; transform: translateY(6px); }
+    from { opacity: 0; transform: translateY(5px); }
     to { opacity: 1; transform: translateY(0); }
   }
 
-  /* Footers de navegación entre pasos */
-  .editor-paso-footer {
+  /* — la barra que mueve los pasos —
+   *
+   * Pegada al pie de la banda, que es un contenedor con scroll propio: acá
+   * `sticky` sí es de fiar, porque no se mide contra el viewport.
+   *
+   * Sin bordes. La versión anterior tenía el borde de abajo de la barra de
+   * progreso y el de arriba del pie de cada paso, y en pantalla se leían como
+   * rayas sueltas entre los campos, sin separar nada. La sombra alcanza. */
+  .editor-pasos-nav {
+    position: sticky !important;
+    bottom: 0 !important;
+    margin-top: auto !important;
     display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    padding-top: 14px !important;
-    margin-top: 8px !important;
-    border-top: 1px solid var(--color-rule) !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    padding: 10px 0 calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+    background: var(--color-paper-2) !important;
+    box-shadow: 0 -10px 14px -12px rgba(0, 0, 0, 0.35) !important;
+    border: none !important;
+    z-index: 3 !important;
   }
-  .btn-paso-siguiente {
+  .stepper-dots-wrap {
+    display: flex !important;
+    gap: 4px !important;
+    max-width: none !important;
+  }
+  .stepper-dot-seg {
+    height: 3px !important;
+    flex: 1 1 0 !important;
+    background: var(--color-rule) !important;
+    border-radius: var(--r-pill) !important;
+    transition: background 0.25s ease !important;
+  }
+  .stepper-dot-seg.activo { background: var(--color-mint) !important; }
+  .stepper-dot-seg.completado { background: var(--color-mint-deep) !important; }
+
+  .paso-fila {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+  }
+  .paso-label-mobile {
+    font-family: var(--font-label) !important;
+    font-size: 0.66rem !important;
+    font-weight: 700 !important;
+    color: var(--color-muted) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    text-align: center !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+  .paso-atras { flex: none !important; padding: 8px 4px !important; }
+  .paso-adelante {
+    flex: none !important;
     background: var(--color-mint) !important;
     color: #0b2518 !important;
+    border: none !important;
     font-weight: 800 !important;
-    padding: 8px 18px !important;
+    font-size: 0.82rem !important;
+    padding: 9px 16px !important;
     border-radius: var(--r-pill) !important;
     box-shadow: 0 3px 0 var(--color-mint-deep) !important;
-    margin-left: auto !important;
-    border: none !important;
-    font-size: 0.82rem !important;
-    cursor: pointer !important;
   }
-  .btn-paso-siguiente:active {
+  .paso-adelante:active {
     transform: translateY(2px) !important;
     box-shadow: 0 1px 0 var(--color-mint-deep) !important;
   }
-  .btn-paso-anterior {
-    color: var(--color-muted) !important;
-    font-weight: 700 !important;
-    font-size: 0.8rem !important;
-    padding: 8px 6px !important;
-  }
+  /* `hidden` no gana contra un display en una regla de clase: hay que decirlo. */
+  .paso-atras[hidden], .paso-adelante[hidden] { display: none !important; }
 
-  /* Ajuste de inputs y campos */
-  .editor-form .campo { margin-bottom: 8px; }
+  /* — los campos, apretados a lo que hay — */
+  .editor-form .campo { margin-bottom: 0; }
   .editor-form input, .editor-form textarea, .editor-form select { font-size: 0.95rem; }
+  /* Los campos de una línea son textarea —es la única forma de que iOS no abra
+     su barra de autorrelleno— y hay que impedir que se estiren. */
+  .editor-form textarea[rows="1"] {
+    resize: none;
+    overflow: hidden;
+    min-height: 0;
+    height: auto;
+  }
   .disp-grilla { max-width: none; gap: 6px; }
   .disp-nombre { font-size: 0.68rem; }
   .disp-pie { font-size: 0.55rem; }
   .campo-herramientas { flex-wrap: wrap; gap: 6px !important; }
   .campo-herramientas > span[style*="margin-left"] { margin-left: 0 !important; }
+  .tira-placas { margin-bottom: 10px; }
 }
 
 /* La placa a pantalla completa, para leerla. */
@@ -4907,9 +4973,26 @@ html.con-sesion .arranque { display: block; }
 }
 
 
-/* Clases auxiliares para Stepper y Focus Deck */
-.paso-num-txt { font-weight: 800; color: var(--color-ink); }
+/* ── Piezas del editor que se estilan igual en los dos lados ──
+ *
+ * Estaban en línea, sobre el nodo. Un estilo en línea no lo alcanza ninguna
+ * media query, así que la cabecera no se podía convertir en la barra fina del
+ * teléfono sin duplicar el marcado. */
+.editor-cabecera {
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--color-rule);
+}
+.editor-cabecera .editor-volver { margin-bottom: 10px; padding-left: 0; }
+.editor-cabecera h2 { margin: 2px 0 0; }
+
 .paso-nom-txt { color: var(--color-ink-2); }
+.paso-cuenta { color: var(--color-muted); }
+.paso-cuenta-sep { opacity: 0.5; }
+
+.opcionales-abiertos { display: flex; flex-direction: column; gap: 18px; }
+.opcionales-botones { display: flex; gap: 8px; flex-wrap: wrap; }
+
 .editor-paso-resumen {
   background: var(--color-paper-2);
   border: 1px solid var(--color-rule);
@@ -4917,5 +5000,14 @@ html.con-sesion .arranque { display: block; }
   padding: 12px;
   margin: 8px 0;
 }
+.resumen-formato { font-size: 0.88rem; margin: 0 0 4px; font-weight: 700; }
+.resumen-detalle { font-size: 0.8rem; color: var(--color-muted); margin: 0; }
+.generar-paso { width: 100%; margin-top: 10px; }
+
 .stepper-dot-seg.completado { background: var(--color-mint-deep); }
 .editor-vista-generar { margin-top: 10px; }
+
+/* Lo que sale de generar: acá abajo de la placa, como siempre. El botón de
+   cerrar es del teléfono, donde esto se abre como pantalla completa. */
+.editor-salida { width: 100%; }
+.salida-cerrar { display: none; }
