@@ -194,7 +194,8 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
 
     const form = el('div.editor-form')
     const vista = el('div.editor-vista')
-    contenedor.append(el('div.editor', {}, form, vista))
+    const cajaEditor = el('div.editor', {}, form, vista)
+    contenedor.append(cajaEditor)
 
     /* — vista previa —
      *
@@ -225,11 +226,27 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
      * que la caja colapsa a cero. Se aplica la escala por ancho, se mira cuánto
      * se pasó el panel de su tope —scrollHeight contra clientHeight— y se
      * descuenta esa diferencia. Dos mediciones y ningún número mágico. */
-    const aplicar = escala => {
+    const aplicar = (escala, dx, dy) => {
       lienzo.style.width = `${Math.round(F.w * escala)}px`
       lienzo.style.height = `${Math.round(F.h * escala)}px`
       marco.style.transform = `scale(${escala})`
+      // Acercada a un campo, la placa es más grande que la ventana y hay que
+      // decirle qué pedazo se ve. Sin desplazamiento la vuelve a centrar el
+      // flex de la zona, que es lo que corresponde cuando entra entera.
+      const corrida = dx !== undefined
+      lienzo.style.position = corrida ? 'absolute' : ''
+      lienzo.style.left = corrida ? `${Math.round(dx)}px` : ''
+      lienzo.style.top = corrida ? `${Math.round(dy)}px` : ''
     }
+
+    /* La escala con la que la placa entra entera, y el campo que se está
+       escribiendo encima de ella —si hay alguno—. */
+    let escalaBase = 0
+    let campoEnLaPlaca = null
+    // Hasta que los pasos existan no hay modo que revisar: la vista previa se
+    // mide antes de que estén armados.
+    let pasosListos = false
+    const enElTelefono = () => window.matchMedia('(max-width: 720px)').matches
 
     let ajustando = false
     const ajustarEscala = () => {
@@ -248,8 +265,10 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
          * como si estuviera por detrás. La corrección por desborde tampoco
          * servía acá, justamente porque con el desborde oculto no hay nada que
          * medir. */
-        if (window.matchMedia('(max-width: 720px)').matches && zona.clientHeight > 40) {
-          aplicar(Math.min(disponible / F.w, zona.clientHeight / F.h))
+        if (enElTelefono() && zona.clientHeight > 40) {
+          escalaBase = Math.min(disponible / F.w, zona.clientHeight / F.h)
+          if (campoEnLaPlaca) acercarAlCampo()
+          else aplicar(escalaBase)
           return
         }
 
@@ -260,15 +279,20 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
           escala = Math.max(0.05, (F.h * escala - sobra) / F.h)
           aplicar(escala)
         }
+        escalaBase = escala
       } finally {
         ajustando = false
       }
     }
     ajustarEscala()
+    // Cada vez que el motor devuelve HTML nuevo el iframe se recarga entero: el
+    // elemento que tenía el campo encima ya no es el mismo, y hay que volver a
+    // medirlo y a marcarlo.
+    marco.addEventListener('load', () => ajustarEscala())
     // Se miran las dos cajas: cuando la banda de escritura crece o se achica,
     // lo que cambia de alto es la vista, y la zona no se entera si nada la
     // vuelve a medir.
-    const observador = new ResizeObserver(() => ajustarEscala())
+    const observador = new ResizeObserver(() => { revisarModo(); ajustarEscala() })
     observador.observe(zona)
     observador.observe(vista)
 
@@ -381,6 +405,14 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
       onclick: () => abrirLupa(marco, F),
     }, 'Ver grande')
 
+    /* Resaltar, negrita y el contador del campo que se está escribiendo.
+       Viven en su `.campo`, y cuando el campo se va a la placa se vienen con
+       él: son los mismos nodos, así que los botones siguen andando.
+
+       Van al pie, con la barra de pasos, y no flotando sobre la pieza: una
+       pastilla encima de la placa tapa justo la parte que se está mirando. */
+    const tiraHerramientas = el('div.tira-herramientas')
+
     const liveBadge = el('div.placa-live-badge', {},
       el('span.live-dot'),
       el('span', {}, 'EN VIVO')
@@ -392,6 +424,133 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
       el('div.editor-vista-generar', {}, generar),
       cajaSalida, medidor
     )
+
+    /* — escribir sobre la placa —
+     *
+     * Acercar la placa al campo que se está escribiendo.
+     *
+     * Con la placa entera en un teléfono, el cuerpo se escribe en letra de once
+     * píxeles: se ve dónde va a quedar el texto, pero no se lee lo que se
+     * escribe. La placa se acerca hasta que la columna del campo llena el ancho
+     * de la ventana y se corre para dejarlo a la vista. En el título, que ya se
+     * lee, la cuenta da uno y no se acerca nada. */
+    function acercarAlCampo() {
+      const doc = marco.contentDocument
+      const nodo = doc?.body ? nodoDelCampo(doc, campoEnLaPlaca.campo) : null
+      // El motor no dibuja un bloque vacío, y en la vista previa tampoco: si el
+      // elemento no está, no hay dónde apoyar el campo.
+      if (!nodo) { aplicar(escalaBase); return }
+
+      traerLasFuentesDeLaPlaca(doc)
+
+      const caja = nodo.getBoundingClientRect()
+      // La tipografía se copia con el elemento sin marcar. La marca de edición
+      // pone el color en transparente, así que leerla con la marca puesta —al
+      // entrar al campo la primera vez no está, pero en cada nueva medición sí—
+      // dejaba el campo escribiendo en tinta invisible.
+      nodo.removeAttribute('data-editando')
+      const cs = doc.defaultView.getComputedStyle(nodo)
+      const tipo = {
+        fontFamily: cs.fontFamily, fontSize: cs.fontSize, fontWeight: cs.fontWeight,
+        fontStyle: cs.fontStyle, lineHeight: cs.lineHeight, letterSpacing: cs.letterSpacing,
+        textAlign: cs.textAlign, textTransform: cs.textTransform, color: cs.color,
+      }
+      // Con el campo vacío, lo que se ve en la placa es el ejemplo que pone la
+      // vista previa. Ese mismo texto es el que va de consigna adentro del
+      // campo: el ejemplo largo del formulario no entra en la caja del título.
+      const { entrada } = campoEnLaPlaca
+      if (!entrada.value.trim()) entrada.placeholder = nodo.textContent.trim()
+      marcarLoQueSeEscribe(doc, nodo)
+
+      /* Cuánto se acerca, decidido al entrar al campo y no tocado después: la
+       * etiqueta crece con lo que se escribe, y recalculando en cada letra la
+       * placa se movía sola mientras uno tipea.
+       *
+       * Se acerca lo justo para que la letra se lea, y nunca tanto como para
+       * cortar la línea: acercarse más allá de eso deja al que escribe sin ver
+       * dónde termina el renglón. En el título no hace falta ninguna de las dos
+       * cosas —a placa entera ya mide veintiséis píxeles— y la cuenta da uno. */
+      // Se rehace, eso sí, cuando cambia la escala con la que la placa entra
+      // entera: al entrar al campo el panel de abajo todavía estaba dibujado, y
+      // la placa se quedaba con el tamaño chico que tenía debajo de él.
+      if (campoEnLaPlaca.base !== escalaBase) {
+        campoEnLaPlaca.base = escalaBase
+        const paraLeerlo = MINIMO_LEGIBLE / parseFloat(tipo.fontSize)
+        const paraQueEntreLaLinea = zona.clientWidth / Math.max(caja.width, 1)
+        campoEnLaPlaca.escala = Math.min(
+          escalaBase * ACERCAMIENTO_MAXIMO,
+          Math.max(escalaBase, Math.min(paraLeerlo, paraQueEntreLaLinea)))
+      }
+      const e = campoEnLaPlaca.escala
+
+      // Qué pedazo se ve: el campo en el medio, pero sin dejar borde vacío. Si
+      // la placa entra entera en esa dirección, va centrada.
+      const encuadrar = (medida, ventana, centro) => medida <= ventana
+        ? (ventana - medida) / 2
+        : Math.min(0, Math.max(ventana - medida, ventana / 2 - centro))
+      aplicar(e,
+        encuadrar(F.w * e, zona.clientWidth, (caja.left + caja.width / 2) * e),
+        encuadrar(F.h * e, zona.clientHeight, (caja.top + caja.height / 2) * e))
+
+      calzarSobreLaPlaca(entrada, tipo, caja, e)
+    }
+
+    /** Sacar el campo del panel de abajo y apoyarlo sobre la placa. */
+    function escribirEnLaPlaca(seccion, paso, conFoco = true) {
+      const entrada = paso.querySelector('textarea')
+      if (!entrada) return false
+      campoEnLaPlaca = {
+        campo: seccion.campo,
+        entrada,
+        herramientas: paso.querySelector('.campo-herramientas'),
+        caja: entrada.closest('.campo'),
+        escala: 0,
+        base: 0,
+        consigna: entrada.placeholder,
+        crecer: () => crecerConLoQueSeEscribe(entrada, 0),
+      }
+      entrada.addEventListener('input', campoEnLaPlaca.crecer)
+      lienzo.append(entrada)
+      if (campoEnLaPlaca.herramientas) tiraHerramientas.append(campoEnLaPlaca.herramientas)
+      cajaEditor.classList.add('en-la-placa')
+      acercarAlCampo()
+      // El foco va acá adentro y no en un tiempo aparte: iOS solo abre el
+      // teclado si el foco sale del mismo toque que lo pidió.
+      if (conFoco) entrada.focus({ preventScroll: true })
+      return true
+    }
+
+    /* Cruzar el corte de los 720 píxeles —girar el teléfono, agrandar la
+     * ventana— cambia dónde tiene que estar el campo. Sin esto, al pasar a
+     * computadora el campo se quedaba apoyado sobre la placa y desaparecía del
+     * formulario, que en esa pantalla es el único lugar donde se escribe. */
+    function revisarModo() {
+      if (!pasosListos) return
+      const s = secciones[activo]
+      const corresponde = Boolean(enElTelefono() && s?.campo && DONDE_CAE[s.campo])
+      if (campoEnLaPlaca && !corresponde) soltarLaPlaca()
+      // Al volver, sin robar el foco: nadie pidió el teclado girando el teléfono.
+      else if (!campoEnLaPlaca && corresponde) escribirEnLaPlaca(s, pasos[activo], false)
+    }
+
+    /** Devolver el campo a su lugar y volver a mostrar la placa entera. */
+    function soltarLaPlaca() {
+      if (!campoEnLaPlaca) return
+      const { entrada, herramientas, caja, consigna, crecer } = campoEnLaPlaca
+      entrada.removeEventListener('input', crecer)
+      entrada.placeholder = consigna
+      entrada.removeAttribute('style')
+      // El orden del campo es rótulo, ayuda, entrada y herramientas: los dos
+      // que se habían ido vuelven en ese orden y queda como estaba.
+      caja?.append(entrada)
+      if (herramientas) caja?.append(herramientas)
+      for (const n of marco.contentDocument?.querySelectorAll('[data-editando]') || []) {
+        n.removeAttribute('data-editando')
+      }
+      campoEnLaPlaca = null
+      cajaEditor.classList.remove('en-la-placa')
+      aplicar(escalaBase)
+    }
 
     /* — barra de placas del carrusel — */
     if (esCarrusel) {
@@ -474,6 +633,17 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
     const seccion = (nom, ...nodos) => {
       const utiles = nodos.filter(Boolean)
       if (utiles.length) secciones.push({ nom, nodos: utiles })
+    }
+    /** Un paso con un solo campo de texto: es el que se escribe sobre la placa. */
+    const seccionDeCampo = (campo, ...nodos) => {
+      const utiles = nodos.filter(Boolean)
+      if (!utiles.length) return
+      secciones.push({
+        nom: CAMPOS[campo]?.label || campo,
+        ayuda: CAMPOS[campo]?.ayuda || '',
+        campo,
+        nodos: utiles,
+      })
     }
 
     /* — plantilla — */
@@ -580,7 +750,7 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
         seccion(grupo.titulo, caja)
         continue
       }
-      seccion(CAMPOS[campo]?.label || campo,
+      seccionDeCampo(campo,
         campo === 'imagen' ? avisoSinFoto : null,
         armarCampo(campo, p, refrescarDemorado, medidor))
     }
@@ -656,6 +826,9 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
     const segmentos = secciones.map(() => el('div.stepper-dot-seg'))
     const nomPaso = el('span.paso-nom-txt')
     const cuentaPaso = el('span.paso-cuenta')
+    // Escribiendo sobre la placa el campo no lleva su rótulo al lado: la ayuda
+    // se dice acá, que es lo único que queda del formulario.
+    const ayudaPaso = el('div.paso-ayuda')
     const atras = el('button.btn.texto.chico.paso-atras', {
       type: 'button', onclick: () => irAPaso(activo - 1),
     }, '← Anterior')
@@ -665,6 +838,8 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
 
     const pasoNav = el('div.editor-pasos-nav', {},
       el('div.stepper-dots-wrap', {}, ...segmentos),
+      tiraHerramientas,
+      ayudaPaso,
       el('div.paso-fila', {},
         atras,
         el('span.paso-label-mobile', {}, nomPaso, el('span.paso-cuenta-sep', {}, ' · '), cuentaPaso),
@@ -673,25 +848,41 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
 
     let activo = 0
     function irAPaso(n) {
+      soltarLaPlaca()
       activo = Math.max(0, Math.min(secciones.length - 1, n))
+      const paso = secciones[activo]
       pasos.forEach((pnl, i) => pnl.classList.toggle('activo', i === activo))
       segmentos.forEach((s, i) => {
         s.classList.toggle('activo', i === activo)
         s.classList.toggle('completado', i < activo)
       })
-      nomPaso.textContent = secciones[activo].nom
+      nomPaso.textContent = paso.nom
       cuentaPaso.textContent = `${activo + 1} de ${secciones.length}`
       atras.hidden = activo === 0
       adelante.hidden = activo === secciones.length - 1
       form.scrollTop = 0
+
+      // Un campo de texto suelto se escribe encima de la placa, donde va a
+      // quedar. Lo que no es un texto en un lugar —los pasos, los precios, la
+      // foto, elegir plantilla— sigue en el panel de abajo: ahí no hay nada que
+      // apoyar sobre la pieza.
+      ayudaPaso.textContent = ''
+      if (enElTelefono() && paso.campo && DONDE_CAE[paso.campo] &&
+          escribirEnLaPlaca(paso, pasos[activo])) {
+        ayudaPaso.textContent = paso.ayuda || ''
+      }
       // La banda cambia de alto al cambiar de paso y la placa se queda con lo
       // que sobra: hay que volver a medirla, pero recién cuando el navegador
       // terminó de reacomodar el flex.
       requestAnimationFrame(ajustarEscala)
     }
 
-    form.append(...pasos, pasoNav)
+    form.append(...pasos)
+    // La barra de pasos es de la capa, no del panel: escribiendo sobre la placa
+    // el panel no se dibuja y la barra tiene que seguir estando.
+    cajaEditor.append(pasoNav)
     irAPaso(0)
+    pasosListos = true
 
     /* Que el teclado esté abierto se marca en el body.
      *
@@ -749,6 +940,138 @@ function campoDeUnaLinea(props = {}) {
   const n = el('textarea', { rows: 1, ...COMO_SE_ESCRIBE, ...props })
   n.addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault() })
   return n
+}
+
+/* ── escribir sobre la placa ─────────────────────────────── */
+
+/**
+ * Dónde cae cada campo dentro del HTML que devuelve el motor.
+ *
+ * Se prueban en orden y gana el primero que exista: la misma clave se dibuja
+ * distinto según la plantilla —la etiqueta es una línea suelta en "texto", la
+ * chapita del recuadro en "oferta" y una píldora en el cierre— y el editor no
+ * tiene por qué saber cuál de las tres le tocó.
+ *
+ * Los campos que no están acá no se escriben sobre la placa. Los pasos, los
+ * precios, la foto y la fuente no son un texto en un lugar: son varias cosas, o
+ * una lista, y para eso el panel de abajo sigue siendo mejor.
+ */
+const DONDE_CAE = {
+  kicker: ['.promo-badge', '.pill', '.kick', '.eyebrow'],
+  titulo: ['.title', '.headline', '.l1'],
+  cuerpo: ['.body'],
+  linea2: ['.l2'],
+  emoji: ['.promo-cifra'],
+}
+
+/** Debajo de esto Safari agranda la página entera al enfocar el campo. */
+const MINIMO_COMODO = 16
+
+/** Con menos que esto en pantalla, el campo no se lee mientras se escribe. */
+const MINIMO_LEGIBLE = 15
+
+/** Hasta cuánto se puede acercar la placa para escribir cómodo. */
+const ACERCAMIENTO_MAXIMO = 2.4
+
+function nodoDelCampo(doc, campo) {
+  return (DONDE_CAE[campo] || []).map(s => doc.querySelector(s)).find(Boolean) || null
+}
+
+/**
+ * Las tipografías de la placa, también en la página.
+ *
+ * El campo se dibuja afuera del iframe —ver `calzarSobreLaPlaca`— así que las
+ * fuentes que cargó el motor no le sirven: sin esto el texto que se escribe
+ * sale en la tipografía por defecto y no coincide con lo que hay abajo.
+ */
+function traerLasFuentesDeLaPlaca(doc) {
+  for (const link of doc.querySelectorAll('link[rel="stylesheet"]')) {
+    const url = link.href
+    if (!url || document.querySelector(`link[data-placa="${CSS.escape(url)}"]`)) continue
+    document.head.append(el('link', { rel: 'stylesheet', href: url, 'data-placa': url }))
+  }
+}
+
+/**
+ * El texto de la placa se vuelve invisible, pero no se saca.
+ *
+ * Con `display:none` la caja desaparece y todo lo de abajo sube; con
+ * `visibility:hidden` se van también el fondo de la píldora y la barrita de la
+ * etiqueta, que no son texto y tienen que quedarse. Lo único que sobra son las
+ * letras, porque las está dibujando el campo que se le puso encima.
+ */
+function marcarLoQueSeEscribe(doc, nodo) {
+  if (!doc.getElementById('cm-edicion')) {
+    doc.head.append(Object.assign(doc.createElement('style'), {
+      id: 'cm-edicion',
+      textContent: '[data-editando],[data-editando] *{color:transparent!important;' +
+        '-webkit-text-fill-color:transparent!important}',
+    }))
+  }
+  for (const otro of doc.querySelectorAll('[data-editando]')) otro.removeAttribute('data-editando')
+  nodo.setAttribute('data-editando', '')
+}
+
+/**
+ * Poner el campo donde va a quedar el texto, con la letra de la placa.
+ *
+ * El campo no se dibuja adentro del iframe. El iframe está achicado con un
+ * transform, y escribir ahí adentro —con el cursor y la selección pasando por
+ * esa escala— es pelearse con el navegador. Como el iframe es del mismo origen
+ * se puede medir el elemento y copiarle la caja y la tipografía a un textarea
+ * normal, en la página, apoyado encima del lienzo.
+ *
+ * `k` es el ajuste contra el agrandado automático de Safari: cuando la letra de
+ * la placa mide menos de 16 píxeles en pantalla, el campo se declara de 16 y se
+ * achica con un transform. Para el navegador mide 16 y no agranda la página;
+ * en pantalla mide lo que mide la letra de la placa.
+ */
+function calzarSobreLaPlaca(entrada, tipo, caja, escala) {
+  const enPantalla = parseFloat(tipo.fontSize) * escala
+  const k = enPantalla < MINIMO_COMODO ? enPantalla / MINIMO_COMODO : 1
+  const px = v => `${(parseFloat(v) || 0) * escala / k}px`
+  Object.assign(entrada.style, {
+    position: 'absolute',
+    left: `${caja.left * escala}px`,
+    top: `${caja.top * escala}px`,
+    width: `${caja.width * escala / k}px`,
+    height: `${caja.height * escala / k}px`,
+    transform: k === 1 ? '' : `scale(${k})`,
+    transformOrigin: '0 0',
+    margin: '0',
+    padding: '0',
+    border: 'none',
+    background: 'transparent',
+    boxShadow: 'none',
+    outline: 'none',
+    resize: 'none',
+    overflow: 'hidden',
+    zIndex: '4',
+    fontFamily: tipo.fontFamily,
+    fontSize: `${Math.max(enPantalla, MINIMO_COMODO)}px`,
+    fontWeight: tipo.fontWeight,
+    fontStyle: tipo.fontStyle,
+    lineHeight: tipo.lineHeight === 'normal' ? 'normal' : px(tipo.lineHeight),
+    letterSpacing: tipo.letterSpacing === 'normal' ? 'normal' : px(tipo.letterSpacing),
+    textAlign: tipo.textAlign,
+    textTransform: tipo.textTransform,
+    color: tipo.color,
+    caretColor: tipo.color,
+  })
+  crecerConLoQueSeEscribe(entrada, caja.height * escala / k)
+}
+
+/**
+ * El campo crece con el texto.
+ *
+ * La caja que se copió es la del último render, y entre render y render se
+ * siguen escribiendo letras: sin esto, la tercera línea de un título de dos
+ * quedaba cortada por el `overflow: hidden` hasta que la placa se dibujara de
+ * nuevo.
+ */
+function crecerConLoQueSeEscribe(entrada, minimo) {
+  entrada.style.height = 'auto'
+  entrada.style.height = `${Math.max(minimo, entrada.scrollHeight)}px`
 }
 
 function armarCampo(campo, p, alEscribir, medidor) {

@@ -70,6 +70,16 @@ mostraba la leyenda cabeza abajo y no coincidía con el PNG. Lo mismo con los
 campos de cada plantilla, que ahora salen de `content/plantillas.mjs` en vez de
 estar declarados aparte en el editor.
 
+**En el teléfono el editor escribe sobre la placa.** Los campos de texto suelto
+—título, cuerpo— no se escriben en un formulario abajo: el campo se apoya
+encima del elemento de la pieza, con su tipografía y su tamaño. Para eso mide
+el HTML que devolvió el motor y le copia la caja y el estilo, y el mapa de qué
+clase dibuja cada campo está en `DONDE_CAE`, en `editor.js`. Si un template le
+cambia el nombre a `.title` o a `.body`, el campo se queda sin dónde apoyarse
+—hay una prueba de humo que lo verifica—. El campo va afuera del iframe: el
+iframe está achicado con un transform y escribir ahí adentro, con el cursor
+pasando por esa escala, es pelearse con el navegador.
+
 **`core/service.mjs` es la puerta de entrada.** La CLI y la API HTTP son
 cáscaras finitas encima. Si agregás una funcionalidad, va ahí y las dos
 cáscaras la exponen — no la escribas dos veces.

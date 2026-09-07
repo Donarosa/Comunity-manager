@@ -1366,5 +1366,52 @@ test('la vista previa declara su posición una sola vez', () => {
   assert.equal(veces, 1, 'la vista previa vuelve a declarar position dos veces')
 })
 
+// En el teléfono los campos de texto suelto se escriben sobre la placa, en el
+// lugar donde va a quedar el texto. El campo se dibuja afuera del iframe —está
+// achicado con un transform y escribir ahí adentro es pelearse con el
+// navegador— y le copia la caja y la tipografía al elemento de la pieza.
+test('los campos de texto suelto saben dónde caen en la placa', () => {
+  const js = readFileSync(join(RAIZ, 'web/js/editor.js'), 'utf8')
+  const desde = js.indexOf('const DONDE_CAE = {')
+  assert.ok(desde > -1, 'no hay mapa de dónde cae cada campo en la placa')
+  const mapa = js.slice(desde, js.indexOf('}', desde))
+  for (const campo of ['titulo', 'cuerpo', 'kicker']) {
+    assert.ok(mapa.includes(`${campo}:`), `${campo} se quedó sin lugar donde apoyarse en la placa`)
+  }
+  // Y las clases tienen que ser las que dibuja el motor: si un template le
+  // cambia el nombre a una, el campo no encuentra dónde apoyarse y se cae al
+  // panel de abajo sin que nadie se entere.
+  const templates = ['flat', 'vector', 'foto']
+    .map(t => readFileSync(join(RAIZ, `core/render/templates/${t}.mjs`), 'utf8')).join('\n')
+  for (const clase of [...mapa.matchAll(/'\.([\w-]+)'/g)].map(m => m[1])) {
+    assert.ok(templates.includes(clase), `.${clase} no la dibuja ningún template`)
+  }
+})
+
+// Pasó dos veces: al entrar al campo y en cada medición nueva. La marca de
+// edición pone el color del texto en transparente —para que lo dibuje el campo
+// que se le apoyó encima— y leída con la marca puesta, el campo escribía en
+// tinta invisible sobre la placa.
+test('la tipografía se copia con el texto de la placa todavía visible', () => {
+  const js = readFileSync(join(RAIZ, 'web/js/editor.js'), 'utf8')
+  const cuerpo = js.slice(js.indexOf('function acercarAlCampo'), js.indexOf('function escribirEnLaPlaca'))
+  const limpia = cuerpo.indexOf("removeAttribute('data-editando')")
+  const lee = cuerpo.indexOf('getComputedStyle(nodo)')
+  const marca = cuerpo.indexOf('marcarLoQueSeEscribe(')
+  assert.ok(limpia > -1 && lee > -1 && marca > -1, 'cambió cómo se apoya el campo sobre la placa')
+  assert.ok(limpia < lee, 'el estilo se lee con la marca puesta: el campo escribe en transparente')
+  assert.ok(lee < marca, 'se marca antes de copiar la tipografía: el campo escribe en transparente')
+})
+
+// Girar el teléfono o agrandar la ventana cruza el corte de los 720 píxeles: el
+// campo se quedaba apoyado sobre la placa y desaparecía del formulario, que en
+// computadora es el único lugar donde se escribe.
+test('al pasar a computadora el campo vuelve al formulario', () => {
+  const js = readFileSync(join(RAIZ, 'web/js/editor.js'), 'utf8')
+  assert.ok(/function revisarModo\(\)/.test(js), 'nadie mira si el ancho cruzó el corte del teléfono')
+  assert.ok(/new ResizeObserver\(\(\) => \{ revisarModo\(\)/.test(js),
+    'revisarModo no corre al cambiar de tamaño: el campo se queda sobre la placa')
+})
+
 // El resumen va último: si se agrega un bloque abajo, tiene que contarlo.
 console.log(`\n${ok} pruebas OK${process.exitCode ? ' — con fallas' : ''}\n`)

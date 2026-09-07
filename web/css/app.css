@@ -4607,6 +4607,8 @@ html.con-sesion .arranque { display: block; }
 /* ══ En computadora nada de esto existe: los pasos van seguidos ══ */
 @media (min-width: 721px) {
   .editor-pasos-nav,
+  .tira-herramientas,
+  .paso-ayuda,
   .placa-live-badge {
     display: none !important;
   }
@@ -4713,6 +4715,10 @@ html.con-sesion .arranque { display: block; }
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+    /* Acercada a un campo, la placa es más grande que esta caja: el JS la ubica
+       adentro con `position: absolute` y lo que sobra se recorta acá. */
+    position: relative !important;
+    overflow: hidden !important;
   }
 
   .editor-vista .lienzo {
@@ -4781,7 +4787,7 @@ html.con-sesion .arranque { display: block; }
     border: none !important;
     border-radius: 18px 18px 0 0 !important;
     box-shadow: 0 -12px 26px -16px rgba(0, 0, 0, 0.45) !important;
-    padding: 12px 14px 0 !important;
+    padding: 12px 14px !important;
     display: flex !important;
     flex-direction: column !important;
     gap: 0 !important;
@@ -4795,7 +4801,8 @@ html.con-sesion .arranque { display: block; }
    * hace falta para escribir —el rótulo, el campo y la barra de pasos— y suelta
    * lo que se lee antes de empezar: la explicación del campo se leyó al llegar
    * al paso, y mientras se tipea solo le está sacando alto a la placa. */
-  body.teclado-abierto .editor-form { padding: 8px 14px 0 !important; }
+  body.teclado-abierto .editor-form { padding: 8px 14px !important; }
+  body.teclado-abierto .paso-ayuda { display: none !important; }
   body.teclado-abierto .editor-paso.activo { gap: 8px !important; }
   body.teclado-abierto .editor-paso .ayuda { display: none !important; }
   body.teclado-abierto .campo > label { margin-bottom: 2px !important; }
@@ -4832,6 +4839,37 @@ html.con-sesion .arranque { display: block; }
     margin-bottom: 6px !important;
   }
 
+  /* — escribiendo sobre la placa —
+   *
+   * El campo se fue a la pieza, así que el panel de abajo no tiene qué mostrar
+   * y deja de existir como panel: no queda una tarjeta vacía ocupando alto. La
+   * barra de placas del carrusel sí se queda, que hace falta en cualquier paso.
+   * Y el sello de "en vivo" sobra: se está escribiendo sobre la placa, no hay
+   * nada que avisar. */
+  .editor.en-la-placa .editor-form {
+    background: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  .editor.en-la-placa .editor-paso.activo { display: none !important; }
+  .editor.en-la-placa .tira-placas { margin: 0 !important; padding: 8px 12px 0 !important; }
+  .editor.en-la-placa .placa-live-badge { display: none !important; }
+
+  /* Resaltar, negrita y el contador del campo que se está escribiendo: al pie,
+     con la barra de pasos. Flotando sobre la placa tapaban justo lo que se
+     estaba mirando. */
+  .tira-herramientas:empty { display: none !important; }
+  .tira-herramientas .campo-herramientas {
+    margin: 0 !important;
+    width: 100% !important;
+    flex-wrap: nowrap !important;
+  }
+  .tira-herramientas .medidor { white-space: nowrap !important; }
+
   /* Un paso por vez. */
   .editor-paso { display: none !important; }
   .editor-paso.activo {
@@ -4855,18 +4893,25 @@ html.con-sesion .arranque { display: block; }
    * progreso y el de arriba del pie de cada paso, y en pantalla se leían como
    * rayas sueltas entre los campos, sin separar nada. La sombra alcanza. */
   .editor-pasos-nav {
-    position: sticky !important;
-    bottom: 0 !important;
-    margin-top: auto !important;
+    order: 3 !important;
+    flex: 0 0 auto !important;
     display: flex !important;
     flex-direction: column !important;
-    gap: 8px !important;
-    padding: 10px 0 calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+    gap: 7px !important;
+    padding: 9px 14px calc(9px + env(safe-area-inset-bottom, 0px)) !important;
     background: var(--color-paper-2) !important;
-    box-shadow: 0 -10px 14px -12px rgba(0, 0, 0, 0.35) !important;
+    box-shadow: 0 -10px 16px -13px rgba(0, 0, 0, 0.4) !important;
     border: none !important;
-    z-index: 3 !important;
+    z-index: 24 !important;
   }
+  /* La ayuda del campo. Escribiendo sobre la placa es lo único que queda del
+     formulario, así que acá dice qué se espera en este paso. */
+  .paso-ayuda {
+    font-size: 0.76rem !important;
+    line-height: 1.35 !important;
+    color: var(--color-muted) !important;
+  }
+  .paso-ayuda:empty { display: none !important; }
   .stepper-dots-wrap {
     display: flex !important;
     gap: 4px !important;
