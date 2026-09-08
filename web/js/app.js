@@ -8,6 +8,7 @@ import { iniciarHome, iniciarDashboard } from './dashboard.js'
 import { abrirModalAuth } from './modal-auth.js'
 import { enCambioDeAuth, obtenerUsuario, cerrarSesion } from './auth.js'
 import { frascoCargando } from './frasco.js'
+import { bloqueDeGuardado } from './guardar.js'
 
 const LLAVE = 'cm.cuenta'
 const landing = $('#landing')
@@ -497,14 +498,6 @@ function editorDeTexto(pub) {
   return caja
 }
 
-/** El nombre con el que se baja una placa del plan. Igual criterio que en el
- *  editor: el nombre interno no dice de qué negocio es ni de cuándo. */
-function nombreDeDescarga(pub, i, total) {
-  const hoy = new Date()
-  const fecha = `${String(hoy.getDate()).padStart(2, '0')}-${String(hoy.getMonth() + 1).padStart(2, '0')}`
-  const base = [cuenta?.marca?.nombre || cuenta?.nombre || '', fecha].filter(Boolean).join(' ')
-  return total > 1 ? `${base} (${i + 1} de ${total}).png` : `${base}.png`
-}
 
 function mostrarPlan(cont, r) {
   vaciar(cont)
@@ -537,13 +530,30 @@ function mostrarPlan(cont, r) {
       a.startsWith('/') ? a : `/piezas/${cuenta.id}/${r.carpeta.split('/').pop()}/${a}`)
 
     if (urls.length) {
-      der.append(el('span.rotulo', { style: 'display:block;text-align:center;margin-bottom:10px' },
-        urls.length > 1 ? `${urls.length} placas` : 'Tu placa'))
+      /* El mismo bloque de guardado que el editor.
+       *
+       * Acá no había ninguno: las placas se veían, cada una envuelta en un
+       * enlace con `download` y `target="_blank"` —que juntos no bajan nada,
+       * abren la imagen en otra pestaña— y sin ningún botón a la vista. El
+       * trabajo estaba hecho y no había forma de sacarlo del sitio, que en un
+       * teléfono es todo el punto: ahí no se "descarga", se guarda en la
+       * galería con la hoja de compartir.
+       *
+       * Va arriba de las placas y no debajo: en un carrusel son cuatro o cinco
+       * apiladas, y al pie de esa columna el botón queda a una pantalla de
+       * distancia de donde uno lo busca. */
+      der.append(
+        el('span.rotulo', { style: 'display:block;text-align:center;margin-bottom:10px' },
+          urls.length > 1 ? `${urls.length} placas` : 'Tu placa'),
+        bloqueDeGuardado(
+          urls.map((url, i) => ({ url, name: (pub.archivos || [])[i] || `${i + 1}.png` })),
+          cuenta?.marca?.nombre || cuenta?.nombre || '')
+      )
       // En un carrusel se ven todas, una debajo de otra: son las que se suben
       // en ese orden y conviene revisarlas en el mismo.
       for (const [i, url] of urls.entries()) {
         der.append(el('a.resultado-placa', {
-          href: url, target: '_blank', download: nombreDeDescarga(pub, i, urls.length),
+          href: url, target: '_blank', rel: 'noopener',
           title: 'Abrir en tamaño real',
         }, el('img', { src: url, alt: `Placa ${i + 1}`, loading: 'lazy' })))
       }

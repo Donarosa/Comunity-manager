@@ -4,6 +4,7 @@
 import { api } from './api.js'
 import { el, vaciar, aviso } from './ui.js'
 import { obtenerUsuario, cerrarSesion } from './auth.js'
+import { bloqueDeGuardado } from './guardar.js'
 
 /**
  * Vista de Inicio (Home):
@@ -384,7 +385,7 @@ function renderizarDashboardView({
 
     const grilla = el('div.dash-galeria-grid', {})
     for (const p of pubsFiltradas) {
-      grilla.append(tarjetaPublicacion(p, cuenta.id))
+      grilla.append(tarjetaPublicacion(p, cuenta.id, marca?.nombre || cuenta.nombre))
     }
     cuerpoTab.append(grilla)
   }
@@ -506,9 +507,11 @@ function colorBadge(etiqueta, hex, estiloExtra = '') {
   )
 }
 
-function tarjetaPublicacion(p, cuentaId) {
+function tarjetaPublicacion(p, cuentaId, marca = '') {
   const archivos = p.archivos || []
-  const imgUrl = archivos[0] ? (archivos[0].startsWith('http') || archivos[0].startsWith('/') ? archivos[0] : `/piezas/${cuentaId}/${archivos[0]}`) : null
+  const url = a => (a.startsWith('http') || a.startsWith('/') ? a : `/piezas/${cuentaId}/${a}`)
+  const urls = archivos.map(url)
+  const imgUrl = urls[0] || null
   const fechaTxt = p.fecha ? new Date(p.fecha).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' }) : ''
 
   const card = el('div.dash-pub-card', {},
@@ -525,12 +528,15 @@ function tarjetaPublicacion(p, cuentaId) {
       ),
       el('h4.dash-pub-titulo', {}, p.titulo || 'Publicación'),
       p.caption ? el('p.dash-pub-caption', {}, p.caption) : null,
-      imgUrl ? el('a.btn.fantasma.chico', {
-        href: imgUrl,
-        download: (p.titulo || 'placa').replace(/\s+/g, '_') + '.png',
-        target: '_blank',
-        style: 'margin-top:10px;text-align:center;display:block;',
-      }, 'Descargar PNG') : null
+      /* El mismo bloque de guardado que el editor y el plan.
+       *
+       * Acá había un enlace que declaraba `download` y `target="_blank"` a la
+       * vez —que juntos no bajan nada, abren la imagen en otra pestaña— y que
+       * además apuntaba solo al primer archivo: de un carrusel de cuatro se
+       * podía sacar una sola placa y las otras tres no tenían salida por
+       * ninguna parte. */
+      urls.length ? bloqueDeGuardado(
+        urls.map((u, i) => ({ url: u, name: archivos[i] })), marca, p.fecha) : null
     )
   )
   return card

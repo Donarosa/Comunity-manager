@@ -1020,13 +1020,41 @@ test('el texto del posteo se puede editar', () => {
 // de iOS: 'feed-mtk6bc67' no dice ni de qué negocio es ni de cuándo, y con
 // varias guardadas no se distinguen.
 test('el archivo que se guarda lleva un nombre que se entiende', () => {
-  const editor = readFileSync(join(RAIZ, 'web/js/editor.js'), 'utf8')
-  assert.ok(/function nombreDeArchivo\(/.test(editor), 'no hay nombre para el archivo')
+  const guardar = readFileSync(join(RAIZ, 'web/js/guardar.js'), 'utf8')
+  assert.ok(/export function nombreDeArchivo\(/.test(guardar), 'no hay nombre para el archivo')
   // No puede volver a usarse el nombre interno para lo que baja el usuario.
-  const usosCrudos = editor.match(/download: `\$\{a\.name\}\.png`/g) || []
+  const usosCrudos = guardar.match(/download: `\$\{a\.name\}\.png`/g) || []
   assert.deepEqual(usosCrudos, [], 'una descarga sigue usando el nombre interno')
-  assert.ok(!/new File\(\[blob\], `\$\{a\.name\}\.png`/.test(editor),
+  assert.ok(!/new File\(\[blob\], `\$\{a\.name\}\.png`/.test(guardar),
     'lo que se comparte sigue con el nombre interno')
+})
+
+// Las placas del carrusel sugerido se veían y no había con qué bajarlas: cada
+// una era un enlace con `download` y `target="_blank"` a la vez —que juntos no
+// bajan nada, abren la imagen en otra pestaña— y no había ningún botón. El
+// bloque de guardado es uno y lo usan las dos pantallas que terminan con placas
+// hechas.
+test('las placas sugeridas se pueden guardar', () => {
+  for (const archivo of ['web/js/editor.js', 'web/js/app.js', 'web/js/dashboard.js']) {
+    const js = readFileSync(join(RAIZ, archivo), 'utf8')
+    assert.ok(/import \{ bloqueDeGuardado.*\} from '\.\/guardar\.js'/.test(js),
+      `${archivo} no trae el bloque de guardado`)
+    assert.ok(/bloqueDeGuardado\(/.test(js.replace(/^import.*$/gm, '')),
+      `${archivo} importa el bloque de guardado y no lo usa`)
+  }
+  // Y ninguna pantalla puede volver al enlace que declara las dos cosas: con
+  // `download` y `target="_blank"` juntos el navegador abre la imagen en otra
+  // pestaña y no baja nada.
+  for (const archivo of ['web/js/app.js', 'web/js/dashboard.js']) {
+    const js = readFileSync(join(RAIZ, archivo), 'utf8')
+    assert.ok(!/download:[\s\S]{0,90}target: '_blank'|target: '_blank',[\s\S]{0,90}download:/.test(js),
+      `${archivo}: volvió el enlace que declara download y target a la vez`)
+  }
+  // El panel ofrecía solo el primer archivo: de un carrusel de cuatro salía una
+  // placa y las otras tres no tenían salida por ninguna parte.
+  const dash = readFileSync(join(RAIZ, 'web/js/dashboard.js'), 'utf8')
+  assert.ok(/urls\.map\(\(u, i\) => \(\{ url: u/.test(dash),
+    'el panel volvió a ofrecer una sola placa de la publicación')
 })
 
 // La disposición se elegía en un desplegable con los nombres sueltos: nadie
