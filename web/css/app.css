@@ -94,7 +94,13 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 html, body { margin: 0; }
-html { overflow-x: clip; scroll-behavior: smooth; }
+/* Sin rebote y sin "volver a cargar".
+ *
+ * Arrastrando hacia abajo, Chrome dispara su recarga por gesto y rebota la
+ * página. En una aplicación que se usa desde el mostrador eso no es una
+ * comodidad: es perder lo que se estaba escribiendo por haber arrastrado un
+ * dedo de más. Recargar sigue estando en el navegador, donde corresponde. */
+html { overflow-x: clip; scroll-behavior: smooth; overscroll-behavior-y: none; }
 
 body {
   background: var(--color-paper);
@@ -4635,7 +4641,11 @@ html.con-sesion .arranque { display: block; }
     top: var(--vv-tope, 0px) !important;
     left: 0 !important;
     right: 0 !important;
-    height: var(--vv-alto, 100dvh) !important;
+    /* `100svh` es el alto con la barra del navegador a la vista, y no cambia.
+       `--vv-alto` solo aparece con el teclado abierto: midiendo el viewport
+       visual en cada aviso, la capa se re-medía a cada rebote del scroll y la
+       placa se re-escalaba sola, que es el efecto de agrandarse. */
+    height: var(--vv-alto, 100svh) !important;
     max-width: none !important;
     margin: 0 !important;
     /* Lo que reserva la cabecera, que va fija sobre la capa. */
@@ -4650,6 +4660,9 @@ html.con-sesion .arranque { display: block; }
     background: var(--color-paper) !important;
     overflow: hidden !important;
     z-index: 20 !important;
+    /* Sin el retardo del doble toque para agrandar: acá no hay nada que
+       agrandar y esos 300 milisegundos se sienten en cada botón. */
+    touch-action: manipulation !important;
   }
 
   /* — la cabecera, una barra fina — */
@@ -4670,6 +4683,11 @@ html.con-sesion .arranque { display: block; }
   }
   /* En 42 píxeles entra el volver y de qué formato es la placa. El título de la
      pantalla no: ya se sabe dónde está. */
+  .editor-cabecera,
+  .editor-pasos-nav {
+    user-select: none !important;
+    -webkit-user-select: none !important;
+  }
   .editor-cabecera h2 { display: none !important; }
   .editor-cabecera .editor-volver { margin: 0 !important; padding: 6px 2px !important; }
   .editor-cabecera .rotulo {
@@ -4706,6 +4724,20 @@ html.con-sesion .arranque { display: block; }
        ochenta píxeles de aire entre cosas que no existen. */
     gap: 0 !important;
     overflow: hidden !important;
+    /* La placa es un lienzo, no una superficie que se arrastra: un dedo encima
+       no scrollea nada ni ofrece "guardar imagen". Lo que sí se puede es
+       escribir, y para eso el campo se exceptúa abajo. */
+    touch-action: none !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -webkit-touch-callout: none !important;
+  }
+  /* Menos el campo, que sí se selecciona. `touch-action` no se puede devolver
+     desde acá —lo que el ancestro prohíbe queda prohibido— pero eso no estorba:
+     lo que bloquea son los gestos del navegador, no escribir. */
+  .editor-vista textarea {
+    user-select: text !important;
+    -webkit-user-select: text !important;
   }
 
   .editor-vista .lienzo-zona {
@@ -4777,7 +4809,10 @@ html.con-sesion .arranque { display: block; }
        vuelve a ser una miniatura, que es de lo que veníamos escapando. */
     max-height: 52% !important;
     overflow-y: auto !important;
+    /* El panel scrollea solo hacia adentro: llegado al final no le pasa el
+       gesto a la página ni al navegador. */
     overscroll-behavior: contain !important;
+    touch-action: pan-y !important;
     -webkit-overflow-scrolling: touch !important;
     /* Se apoya sobre la placa: sube los 22 píxeles que la vista dejó libres
        abajo, así se lee como una banda al pie de la pieza y no como otro

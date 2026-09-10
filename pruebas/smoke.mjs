@@ -1431,6 +1431,38 @@ test('la tipografía se copia con el texto de la placa todavía visible', () => 
   assert.ok(lee < marca, 'se marca antes de copiar la tipografía: el campo escribe en transparente')
 })
 
+// Arrastrando con el dedo, la capa entera se deslizaba y volvía: el navegador
+// estira la página, `offsetTop` deja de ser cero y `position: fixed` en Chrome
+// ya se mide contra lo que se ve, así que la corrección se sumaba dos veces. Y
+// midiendo el alto en cada aviso, la placa se re-escalaba a cada rebote.
+test('el viewport se mide solo con el teclado abierto', () => {
+  const js = readFileSync(join(RAIZ, 'web/js/editor.js'), 'utf8')
+  const cuerpo = js.slice(js.indexOf('function seguirAlTeclado'))
+  assert.ok(/vv\.height < window\.innerHeight/.test(cuerpo),
+    'no hay condición: se vuelve a corregir la capa en cada rebote del scroll')
+  // Y con el teclado cerrado las dos variables se sacan, para que el alto lo
+  // ponga el CSS con una medida que no cambia.
+  for (const v of ['--vv-alto', '--vv-tope']) {
+    assert.ok(cuerpo.includes(`removeProperty('${v}')`), `${v} no se suelta al cerrarse el teclado`)
+  }
+  const css = readFileSync(join(RAIZ, 'web/css/app.css'), 'utf8')
+  assert.ok(/height: var\(--vv-alto, 100svh\)/.test(css),
+    'el alto de reposo volvió a depender del viewport visual')
+})
+
+// Arrastrar hacia abajo disparaba la recarga por gesto de Chrome: perder lo que
+// se estaba escribiendo por haber arrastrado un dedo de más.
+test('el gesto de arrastrar no recarga ni rebota', () => {
+  const css = readFileSync(join(RAIZ, 'web/css/app.css'), 'utf8')
+  assert.ok(/^html \{[^}]*overscroll-behavior-y: none/m.test(css),
+    'volvió el rebote y la recarga por gesto')
+  const i = css.indexOf('══ La capa del teléfono')
+  const bloque = css.slice(i)
+  // La placa es un lienzo: un dedo encima no arrastra la página.
+  assert.ok(/touch-action: none/.test(bloque), 'la placa volvió a ser una superficie que se arrastra')
+  assert.ok(/touch-action: pan-y/.test(bloque), 'el panel de escritura no declara cómo se scrollea')
+})
+
 // Girar el teléfono o agrandar la ventana cruza el corte de los 720 píxeles: el
 // campo se quedaba apoyado sobre la placa y desaparecía del formulario, que en
 // computadora es el único lugar donde se escribe.

@@ -1242,31 +1242,42 @@ function abrirLupa(marco, F) {
 }
 
 /**
- * De qué tamaño es lo que se ve.
+ * De qué tamaño es lo que se ve, y solo cuando hace falta preguntarlo.
  *
- * En el teléfono el editor es una capa fija: la placa arriba y la banda de
- * escritura al pie, sin scroll de página. Para eso hace falta saber cuánto mide
- * lo que se ve de verdad, y `100vh` no lo dice: iOS no achica el viewport de
- * maquetación al abrir el teclado —solo el visual— así que la capa quedaba más
- * alta que la pantalla y la banda terminaba abajo del teclado.
+ * En el teléfono el editor es una capa fija: la placa arriba y la escritura al
+ * pie, sin scroll de página. Con el teclado abierto `100svh` ya no sirve —iOS
+ * no achica el viewport de maquetación, solo el visual, así que la capa quedaba
+ * más alta que la pantalla y la barra de pasos terminaba abajo de las teclas— y
+ * ahí sí hay que medir `visualViewport`.
  *
- * `visualViewport.height` es esa medida, y `offsetTop` cuánto corrió el
- * navegador la página por debajo: sumado al tope devuelve la capa adentro
- * cuando iOS desplaza para dejar a la vista el campo enfocado.
+ * Con el teclado cerrado no se mide nada. Midiendo siempre, cada rebote del
+ * scroll movía y re-medía la capa: `offsetTop` deja de ser cero mientras el
+ * navegador estira la página, y `position: fixed` en Chrome ya se mide contra
+ * lo que se ve, así que la corrección se sumaba dos veces y la capa se
+ * deslizaba sola. Con el alto pasaba lo mismo: se re-escalaba la placa a cada
+ * rebote y parecía agrandarse.
+ *
+ * Que el teclado esté abierto se reconoce sin preguntar qué navegador es. iOS
+ * achica el viewport visual y deja el de maquetación igual, y esa diferencia es
+ * exactamente lo que hay que compensar; Chrome achica los dos, así que la resta
+ * da cero y no hay nada que corregir.
  */
 function seguirAlTeclado() {
   const vv = window.visualViewport
   const raiz = document.documentElement
   if (!vv) return
   const ajustar = () => {
-    raiz.style.setProperty('--vv-alto', `${Math.round(vv.height)}px`)
-    raiz.style.setProperty('--vv-tope', `${Math.round(vv.offsetTop)}px`)
+    const conTeclado = vv.height < window.innerHeight - 1
+    if (conTeclado) {
+      raiz.style.setProperty('--vv-alto', `${Math.round(vv.height)}px`)
+      raiz.style.setProperty('--vv-tope', `${Math.round(vv.offsetTop)}px`)
+      return
+    }
+    raiz.style.removeProperty('--vv-alto')
+    raiz.style.removeProperty('--vv-tope')
   }
   vv.addEventListener('resize', ajustar)
   vv.addEventListener('scroll', ajustar)
-  // Y también en el scroll de la página: iOS avisa por visualViewport solo a
-  // veces, y entre aviso y aviso la capa se quedaba corrida.
-  addEventListener('scroll', ajustar, { passive: true })
   ajustar()
 }
 seguirAlTeclado()
