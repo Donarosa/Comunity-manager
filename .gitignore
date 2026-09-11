@@ -22,3 +22,9 @@ web/capturas/
 .wrangler/
 .vercel
 .env*.local
+
+# El comercial renderizado y sus fuentes pesadas: se regeneran con
+# `node video/render.mjs` y no tienen por qué viajar en el repositorio.
+video/comercial.mp4
+video/assets/
+Recursos video/
