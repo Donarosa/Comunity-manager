@@ -3890,8 +3890,62 @@ body { overflow-x: clip; }
   from { opacity: 0; transform: translate(-50%, 14px); }
   to   { opacity: 1; transform: translate(-50%, 0); }
 }
+/* De las dos acciones, una es la que conviene probar primero.
+ *
+ * "Escribir yo" pide saber qué escribir; "Sugerime" no pide nada. El que abre
+ * la aplicación sin una idea en la cabeza es justo el que no toca ninguno de
+ * los dos, así que el botón se mueve solo: pega un salto corto, el mismo que
+ * haría al pasarle el dedo por encima, y vuelve a quedarse quieto.
+ *
+ * El salto dura medio segundo de cada cuatro. Un movimiento continuo en la
+ * esquina de la pantalla cansa a los dos minutos y termina siendo algo que se
+ * aprende a ignorar, que es lo contrario de lo que se busca.
+ *
+ * Se corta apenas hay un dedo o un cursor encima: ahí el botón ya tiene la
+ * atención y su propio estado de apoyo es el que tiene que mandar. */
+.btn-sugerime {
+  animation: sugerime-salta 4s var(--ease-soft) 1.4s infinite;
+}
+.btn-sugerime:hover,
+.btn-sugerime:active,
+.btn-sugerime:focus-visible { animation: none; }
+
+@keyframes sugerime-salta {
+  0%, 70%, 100% {
+    transform: translateY(0);
+    box-shadow: 0 4px 0 0 var(--btn-edge), 0 6px 14px -3px var(--btn-cast);
+  }
+  /* El borde de abajo crece con el salto: es la cara lateral del botón, y si se
+     queda quieta el botón se despega de su base en vez de levantarse. */
+  76% {
+    transform: translateY(-3px);
+    box-shadow: 0 7px 0 0 var(--btn-edge), 0 13px 22px -4px var(--btn-cast);
+  }
+  84% {
+    transform: translateY(1px);
+    box-shadow: 0 3px 0 0 var(--btn-edge), 0 4px 10px -3px var(--btn-cast);
+  }
+  92% {
+    transform: translateY(0);
+    box-shadow: 0 4px 0 0 var(--btn-edge), 0 6px 14px -3px var(--btn-cast);
+  }
+}
+
+/* La chispa titila con el salto, en el mismo ciclo: dos movimientos sueltos se
+   leen como dos cosas pasando y el conjunto queda inquieto. */
+.chispa {
+  display: inline-block;
+  animation: chispea 4s var(--ease-soft) 1.4s infinite;
+}
+@keyframes chispea {
+  0%, 70%, 100% { transform: scale(1) rotate(0deg); }
+  78% { transform: scale(1.28) rotate(14deg); }
+  88% { transform: scale(1) rotate(0deg); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .dock-acciones { animation: none; }
+  .btn-sugerime, .chispa { animation: none; }
 }
 
 /* El dock tapa una franja del pie: la pantalla que lo muestra termina con aire

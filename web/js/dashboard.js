@@ -259,7 +259,10 @@ function renderizarHome({
   const barraAcciones = marca
     ? el('div.dock-acciones', {},
         el('button.btn', { onclick: onAbrirEditor }, '✎ Escribir yo'),
-        el('button.btn.cyan', { onclick: onAbrirPlan }, '✨ Sugerime'))
+        // La chispa va en su propio nodo para que titile con el salto del botón:
+        // dentro del texto no hay forma de animarla sola.
+        el('button.btn.cyan.btn-sugerime', { onclick: onAbrirPlan },
+          el('span.chispa', {}, '✨'), 'Sugerime'))
     : el('div.dock-acciones', {},
         el('button.btn', { onclick: onAbrirWizard }, 'Armar mi marca para empezar'))
 

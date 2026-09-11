@@ -1431,6 +1431,27 @@ test('la tipografía se copia con el texto de la placa todavía visible', () => 
   assert.ok(lee < marca, 'se marca antes de copiar la tipografía: el campo escribe en transparente')
 })
 
+// De las dos acciones del dock, "Sugerime" es la que no pide tener una idea en
+// la cabeza, y el que abre la aplicación sin idea es justo el que no toca
+// ninguna de las dos. El botón se mueve solo para desempatar.
+test('el botón de sugerir se mueve solo, y se queda quieto si lo tocan', () => {
+  const css = readFileSync(join(RAIZ, 'web/css/app.css'), 'utf8')
+  assert.ok(/\.btn-sugerime \{[^}]*animation: sugerime-salta/.test(css),
+    'el botón de sugerir dejó de moverse')
+  // Sin esto la animación le gana al estado de apoyo y el botón no responde al
+  // dedo: las animaciones mandan sobre las reglas normales.
+  assert.ok(/\.btn-sugerime:hover[\s\S]{0,90}animation: none/.test(css),
+    'el salto no se corta al tocarlo: le pisa el estado de apoyo')
+  // El salto ocupa medio segundo de cada cuatro: un movimiento continuo en la
+  // esquina cansa y se aprende a ignorar.
+  const ciclo = /animation: sugerime-salta (\d+(?:\.\d+)?)s/.exec(css)
+  assert.ok(ciclo && Number(ciclo[1]) >= 3, 'el ciclo se acortó: queda temblando en la esquina')
+  assert.ok(/prefers-reduced-motion: reduce\)? \{[\s\S]{0,220}\.btn-sugerime/.test(css),
+    'el salto no respeta a quien pidió menos movimiento')
+  const dash = readFileSync(join(RAIZ, 'web/js/dashboard.js'), 'utf8')
+  assert.ok(/btn-sugerime/.test(dash), 'el botón perdió la clase que lo anima')
+})
+
 // Arrastrando con el dedo, la capa entera se deslizaba y volvía: el navegador
 // estira la página, `offsetTop` deja de ser cero y `position: fixed` en Chrome
 // ya se mide contra lo que se ve, así que la corrección se sumaba dos veces. Y
