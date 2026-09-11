@@ -1,0 +1,143 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>El frasco, para el GIF</title>
+
+<!--
+  El frasco de la espera, preparado para salir en GIF.
+  ───────────────────────────────────────────────────
+  Es el mismo SVG y las mismas dos animaciones que usa la aplicación
+  (`web/js/frasco.js` y el bloque `.frasco-*` de `web/css/app.css`). Lo único
+  que cambia son las duraciones.
+
+  Y cambian por una razón: en la aplicación los cuatro ciclos duran 3,4 · 2,6 ·
+  4,1 y 2,9 segundos, que no tienen múltiplo común corto. En una pantalla eso no
+  se nota —la animación no termina nunca—, pero un GIF vuelve al principio, y si
+  el ciclo no cierra se ve el salto cada vuelta, para siempre.
+
+  Acá las cuatro duraciones dividen los 3,6 segundos del bucle: 1,2 · 1,8 · 3,6
+  y 1,8. Al final del bucle todo está exactamente donde arrancó y la costura no
+  existe. Las proporciones se respetan —la onda de atrás sigue yendo más lenta
+  que la de adelante, que es lo que impide que se lean como una sola—.
+
+  El tiempo no lo lleva el reloj: lo pone `pintar(t)` moviendo el `currentTime`
+  de cada animación. Un cuadro que tarda en dibujarse se espera, no se saltea.
+
+  Con `?fondo=no` sale sobre transparente, para la versión con alfa.
+-->
+
+<style>
+  :root {
+    --papel: oklch(97% 0.012 95);
+    --menta-clara: #85D88D;
+    --menta-honda: #5CBA68;
+  }
+  * { margin: 0; padding: 0; }
+  html, body { background: #000; }
+  body { display: grid; place-items: center; min-height: 100vh; }
+
+  #lienzo {
+    width: 512px;
+    height: 512px;
+    display: grid;
+    place-items: center;
+    background: var(--papel);
+  }
+  body.sin-fondo #lienzo { background: transparent; }
+  body.sin-fondo, body.sin-fondo html { background: transparent; }
+
+  .frasco-espera { width: 420px; height: 420px; display: block; }
+
+  /* Las mismas reglas de la aplicación, con las duraciones que cierran el bucle. */
+  .frasco-liquido { animation: frasco-respira 3.6s ease-in-out infinite; }
+  .frasco-onda { animation: frasco-corre 1.2s linear infinite; }
+  /* La de atrás va más lenta: dos ondas al mismo ritmo se leen como una sola. */
+  .frasco-onda--fondo { animation-duration: 1.8s; }
+  /* Más opacas que en la aplicación. Ahí el frasco mide 168 píxeles y son un
+     detalle que se intuye; acá el frasco es todo lo que hay, y blanco al 50 %
+     sobre el verde claro directamente no se ve. */
+  .frasco-burbuja { animation: frasco-sube 1.8s ease-out infinite; opacity: 0; }
+
+  @keyframes frasco-corre { to { transform: translateX(-120px); } }
+  @keyframes frasco-respira {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(5px); }
+  }
+  @keyframes frasco-sube {
+    0%   { transform: translateY(0)      scale(.7); opacity: 0; }
+    18%  { opacity: .92; }
+    75%  { opacity: .8; }
+    100% { transform: translateY(-118px) scale(1);  opacity: 0; }
+  }
+</style>
+
+<div id="lienzo"></div>
+
+<script type="module">
+import { frascoCargando } from '../web/js/frasco.js'
+
+/* El SVG sale del mismo módulo que usa la aplicación. Copiarlo acá sería tener
+   dos frascos que se van separando: el día que a uno le cambie la curva del
+   vidrio, el GIF sigue mostrando el de antes. */
+const frasco = frascoCargando('gif')
+
+/* El encuadre.
+ *
+ * El lienzo de la marca es de 512 y el frasco ocupa el centro: bien para un
+ * ícono, desperdiciado para un GIF, donde lo único que hay es el frasco. Se
+ * recorta a su caja más un margen. */
+frasco.setAttribute('viewBox', '106 148 300 300')
+
+/* Y la máscara, con bordes escritos.
+ *
+ * Una `mask` sin x/y/width/height toma -10% / 120% del viewport, y ese
+ * porcentaje se resuelve contra el tamaño del viewport pero con origen en cero,
+ * no en el `viewBox`. Achicando el encuadre a 300, la máscara pasó a cubrir de
+ * -30 a 330 y le cortó al líquido todo lo que estaba más abajo: el frasco se
+ * veía con una banda verde flotando y el resto vacío. Con los cuatro valores
+ * puestos a mano, la máscara deja de depender del encuadre. */
+const mascara = frasco.querySelector('mask')
+mascara.setAttribute('x', '0')
+mascara.setAttribute('y', '0')
+mascara.setAttribute('width', '512')
+mascara.setAttribute('height', '512')
+
+/* Los retardos, en negativo.
+ *
+ * El módulo los escribe positivos —`animation-delay: 0.9s`— y así una burbuja
+ * pasa el principio del bucle todavía esperando, con la animación sin aplicar.
+ * A los 3,6 segundos, en cambio, ya está a mitad de camino: el cuadro final no
+ * es igual al primero y el GIF salta en cada vuelta, para siempre.
+ *
+ * Con el retardo en negativo la animación arranca ya empezada y no hay fase de
+ * espera: la burbuja está en la misma altura al principio y al final, y la
+ * costura desaparece. En pantalla se ve exactamente igual. */
+for (const b of frasco.querySelectorAll('.frasco-burbuja')) {
+  const espera = parseFloat(b.style.animationDelay) || 0
+  b.style.animationDelay = `${-espera}s`
+}
+
+document.getElementById('lienzo').append(frasco)
+
+if (new URLSearchParams(location.search).get('fondo') === 'no') {
+  document.body.classList.add('sin-fondo')
+}
+
+/** Cuánto dura una vuelta. Las cuatro duraciones de arriba lo dividen. */
+const BUCLE = 3600
+
+window.DURACION = BUCLE
+window.pintar = t => {
+  for (const a of document.getAnimations()) {
+    a.pause()
+    a.currentTime = t
+  }
+}
+window.pintar(0)
+
+// Para mirarlo a ojo.
+if (new URLSearchParams(location.search).has('vivo')) {
+  const arranque = performance.now()
+  const tic = ahora => { window.pintar((ahora - arranque) % BUCLE); requestAnimationFrame(tic) }
+  requestAnimationFrame(tic)
+}
+</script>

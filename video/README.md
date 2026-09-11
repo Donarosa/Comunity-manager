@@ -21,6 +21,47 @@ Y para mirarlo a ojo: abrir `video/comercial.html?vivo=1` en el navegador.
 
 ---
 
+## El frasco suelto, en GIF
+
+El mismo frasco que burbujea en la pantalla de espera, para usar donde haga
+falta: una historia, una firma de correo, una presentación.
+
+```bash
+node video/frasco.mjs        # → video/frasco.gif  y  video/frasco.png
+ANCHO=320 node video/frasco.mjs
+```
+
+| Archivo | Qué es | Para qué |
+| --- | --- | --- |
+| `video/frasco.gif` | 480×480 · 3,6 s · 90 cuadros | Donde no se acepta otra cosa: WhatsApp, Instagram, Slack |
+| `video/frasco.png` | APNG, mismo tamaño, con transparencia real | Una web, una presentación — fondo transparente de verdad |
+
+Son dos porque el alfa del GIF es de un bit: no sabe hacer transparencia a
+medias, y el borde curvo del vidrio contra un fondo que no conoce sale recortado
+a dientes. El APNG sí tiene alfa real, pero no lo aceptan ni Instagram ni
+WhatsApp. Uno para cada cosa.
+
+El SVG lo importa del mismo módulo que usa la aplicación —`web/js/frasco.js`—,
+así que no hay dos frascos que se vayan separando.
+
+### Por qué las duraciones no son las de la aplicación
+
+En la aplicación los cuatro ciclos duran 3,4 · 2,6 · 4,1 y 2,9 segundos y no
+tienen múltiplo común corto. En una pantalla eso no se nota, porque la animación
+no termina nunca. Un GIF vuelve al principio: si el ciclo no cierra, se ve el
+salto en cada vuelta, para siempre.
+
+Acá las cuatro duraciones dividen los 3,6 segundos del bucle —1,2 · 1,8 · 3,6 y
+1,8— y los retardos de las burbujas van en negativo, para que ninguna pase el
+principio del bucle todavía esperando. El cuadro del final es idéntico al del
+principio, píxel por píxel: está verificado comparando las dos huellas.
+
+Las burbujas también van más opacas que en la aplicación. Ahí el frasco mide 168
+píxeles y son un detalle que se intuye; acá el frasco es todo lo que hay, y
+blanco al 50 % sobre el verde claro directamente no se ve.
+
+---
+
 ## El guion
 
 | Tiempo | Escena | Qué se ve | Qué dice |
