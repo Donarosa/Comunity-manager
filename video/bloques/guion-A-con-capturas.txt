@@ -1,0 +1,64 @@
+Sos director de video publicitario. Te paso el guion completo de un aviso de 30 segundos para Instagram, vertical 9:16 (1080×1920), dividido en 8 planos de 3 a 4 segundos. Generá cada plano por separado con el prompt en inglés que te doy, en ese orden y sin fusionarlos: ningún modelo sostiene un cambio de escena adentro de una sola generación sin deformar algo.
+
+MARCA
+Alquimia, una aplicación que le arma el contenido de Instagram a negocios chicos. Tono: documental cinematográfico, cálido y sobrio. La estética es lo contrario del flyer de IA genérico: nada de violeta, neón ni degradados brillantes, salvo en los planos 1 y 2, donde eso es justamente lo que el aviso critica.
+
+TRES REGLAS QUE NO SE NEGOCIAN
+1. Los flyers feos de los planos 1 y 2 son inventados. No reproduzcas el aviso de ningún negocio real: nada de nombres, teléfonos, logotipos ni direcciones.
+2. Ningún plano muestra cifras de ventas ni de dinero.
+3. No generes texto legible en ninguna pantalla. Los modelos de video escriben mal y en el aviso de una herramienta que compone texto eso contradice el producto. Los textos los agrego yo después.
+
+TÉCNICA, PARA LOS 8 PLANOS
+- 9:16, 1080×1920. 24 fps narrativo, 60 fps para los planos en cámara lenta.
+- Cámara: ARRI Alexa Mini LF o Sony FX3. Óptica: Cooke Anamorphic 50mm T2.3 o Leica Summicron 35mm f/2.0. Diafragma f/1.8 a f/2.8, profundidad de campo corta.
+- Movimientos permitidos: push-in lento, orbit suave de 10 a 15 grados, travelling rasante, cámara fija con movimiento atmosférico.
+- Prohibidos: cámara en mano temblorosa, giros de 360°, whip pan, snap zoom.
+
+NEGATIVE PROMPT, el mismo en los 8:
+cartoon, 3D animated CGI render, Pixar style, oversaturated neon, fake plastic skin, distorted hands, extra fingers, deformed limbs, creepy smile, corporate stock photo cliché, suit and tie boardroom, futuristic cyberpunk dystopia, glitching, morphing artifacts, fast erratic camera shakes, low resolution, pixelated, washed out colors, overexposed highlights, cheesy 90s graphics, watermark, text overlay errors, unreadable garbled text, fake user interface text, lorem ipsum
+
+IMPORTANTE SOBRE LOS PLANOS 4, 5 Y 7
+En esos tres, la pantalla del teléfono y las tarjetas van en VERDE CROMA PLANO, uniforme, sin contenido, sin reflejos y sin brillo. Después les incrusto capturas reales de la aplicación. Es a propósito: no las llenes con una interfaz inventada.
+
+═══ LOS 8 PLANOS ═══
+
+PLANO 1 · 0:00–0:03,5 · El hartazgo
+Extreme close-up of a human thumb scrolling rapidly and dismissively through an endless vertical feed of garish purple and magenta neon promotional flyers on a smartphone screen. Every flyer looks identical in style: heavy condensed display type, glowing gradients, loud starbursts. The screen light reflects cold violet onto the fingertip. Dark ambient room, single soft practical lamp far in the background, deep shadows. Shot on Sony FX3, Leica Summicron 35mm, f/2.0, shallow depth of field, macro framing. Camera holds static on a tripod while the content blurs past with motion blur. Moody, saturated violet color cast, cinematic documentary realism, 35mm film grain.
+
+PLANO 2 · 0:03,5–0:06,5 · El que lo sufre
+Medium close-up of a small business owner in her early forties standing behind the counter of a warm artisan bakery at dusk. She holds a smartphone at chest height and looks down at it with quiet fatigue and mild resignation, not anger. Cold violet screen light from the phone competes against the warm amber tungsten light of the shop. Flour dust floats in the air. She wears a worn linen apron. Shot on ARRI Alexa Mini LF, Cooke Anamorphic 50mm T2.3, f/2.3, shallow depth of field, creamy bokeh of bread shelves behind her. Extremely slow push-in toward her face. Authentic human emotion, photorealistic skin texture, cinematic documentary style, 35mm film look.
+
+PLANO 3 · 0:06,5–0:10 · La marca
+Cinematic macro close-up of a clear crystal Erlenmeyer laboratory flask resting on a dark oiled oak surface in near darkness. Inside, a luminescent mint-green and cyan liquid swirls slowly and releases delicate micro-bubbles that rise and glow. The light from the liquid intensifies and blooms until it fills the frame. Tiny dust motes drift through the beam. Shot on ARRI Alexa Mini LF, 50mm anamorphic lens, f/1.8, 60fps slow motion, extremely shallow depth of field. Ultra-smooth slow micro push-in toward the glass. Elegant, magical yet grounded, premium commercial aesthetic, deep blacks, mint and cyan accents only.
+
+PLANO 4 · 0:10–0:14 · Un toque (PANTALLA EN VERDE)
+Over-the-shoulder medium close-up of the same small business owner sitting at a clean wooden counter in her shop, morning light now instead of dusk. She holds a modern smartphone in one hand. THE PHONE SCREEN IS A FLAT CHROMA GREEN RECTANGLE, completely uniform, no reflections, no glare, no content. Her other hand lifts and taps the screen once with a single deliberate fluid motion, then rests. Soft north-light window illumination at 45 degrees, warm amber highlights on wood, subtle mint rim light separating her shoulder from the background. Shot on Sony FX3, 50mm f/1.8, shallow depth of field, creamy background bokeh. Steady slow dolly-in. Photorealistic, calm, authentic, high-end commercial.
+
+PLANO 5 · 0:14–0:18 · Las placas (CARAS EN VERDE)
+Three vertical rectangular glass cards floating and rotating gently in a dark void of deep navy and obsidian. THE FACE OF EACH CARD IS A FLAT CHROMA GREEN SURFACE, uniform, no content, no text, no reflections on the green itself. The cards emerge from below and fan out elegantly into a staggered arrangement, edges catching soft mint and cyan rim light. Fine golden dust particles drift through the air around them. Shot on ARRI Alexa LF, 50mm, f/2.0, 60fps slow motion, shallow depth of field. Slow gentle orbit of 15 degrees around the arrangement. Premium, weightless, magical, deep blacks, mint accents.
+
+PLANO 6 · 0:18–0:22 · El alivio (EL PLANO MÁS IMPORTANTE)
+Close-up of the same small business owner looking down at her phone, her face now lit by a soft mint-green glow from the screen. Her expression shifts over three seconds from guarded tiredness to quiet surprise and then to a small genuine warm smile — restrained relief, not exaggerated joy. Warm amber practical light behind her, subtle emerald rim light on her hair and shoulder. Bakery interior deeply out of focus. Shot on 35mm film stock, Leica Summicron 35mm, f/2.0, very shallow depth of field. Gentle slow orbital camera movement of 10 degrees around her. Documentary realism, emotionally resonant, photorealistic skin texture, no makeup gloss.
+
+PLANO 7 · 0:22–0:26 · El feed lleno (PANTALLA EN VERDE)
+Top-down medium shot of two hands holding a smartphone over a rustic dark wooden table, a glass of espresso beside it, soft natural window light. THE PHONE SCREEN IS A FLAT CHROMA GREEN RECTANGLE, uniform, no content, no glare. One thumb scrolls slowly and appreciatively, unhurried — the opposite of the first shot. Warm amber wood tones, soft shadows, shallow depth of field. Shot on Sony FX3, 35mm, f/2.0. Slow push-in from above. Calm, warm, photorealistic, high-end lifestyle commercial.
+
+PLANO 8 · 0:26–0:30 · El cierre
+Cinematic macro shot of the crystal Erlenmeyer flask with mint luminescent liquid now settled and still, resting on dark oak, a single last micro-bubble rising slowly. The background falls into deep black. Shot on ARRI Alexa Mini LF, 50mm anamorphic, f/1.8, 60fps slow motion. Camera static on tripod with only the liquid moving. Minimal, calm, premium, deep blacks with a single mint light source.
+
+═══ LOCUCIÓN ═══
+Castellano rioplatense templado. Voz cercana, segura, pausada, sin lunfardo y sin velocidad de locutor de oferta. Una frase por plano:
+1. Todos están usando la misma inteligencia artificial.
+2. Y se nota. Mismo violeta, misma tipografía, mismo todo.
+3. Alquimia hace otra cosa.
+4. Le contás de qué querés hablar. Un toque.
+5. Y salen las placas de tu negocio. Con tu marca, de tu rubro.
+6. Sin diseñador. Sin esperar. Sin pelearte con una plantilla.
+7. Tu feed deja de estar vacío.
+8. Alquimia. Publicá como si tuvieras un diseñador.
+
+═══ MÚSICA ═══
+Neo-clásica electrónica / ambient lo-fi orgánico, en la línea de Ólafur Arnalds, Tycho o Bonobo. Piano con reverberación cálida, pads analógicos, percusión de madera. El único golpe fuerte va en el segundo 6,5, sobre el destello del plano 3: antes de ahí, tensión; después, resuelto.
+
+═══ QUÉ NECESITO DE VOS ═══
+Los 8 clips, uno por plano, en orden y con la duración indicada. Generá tres o cuatro tomas del plano 6: es el que vende el aviso y es donde la expresión falsa se nota. Si alguno no te sale, decímelo antes de seguir y reescribimos ese prompt.

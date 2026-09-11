@@ -17,6 +17,25 @@ se pueden mezclar los dos guiones sin tocar nada.
 
 ---
 
+## Para pegar de una sola vez
+
+Lo de acá abajo está plano por plano, que es como lo piden las herramientas que
+generan un clip por vez —Runway, Kling, Luma, Pika—: ahí no entra un guion
+entero, entra un prompt y nada más.
+
+Para un **chat** —Gemini, ChatGPT, Claude, o el asistente de la herramienta de
+video— el guion entero va en un solo bloque, listo para pegar:
+
+| Archivo | Qué es |
+| :--- | :--- |
+| `video/bloques/guion-A-con-capturas.txt` | 8.700 caracteres |
+| `video/bloques/guion-B-todo-generado.txt` | 10.600 caracteres |
+
+Cada uno trae adentro las reglas, la técnica, el negative prompt, los ocho
+planos, la locución y la música. Se pega uno y se manda.
+
+---
+
 ## Antes de empezar: lo que vale para los dos
 
 ### Ficha técnica
