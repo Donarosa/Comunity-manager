@@ -52,9 +52,8 @@
   .frasco-onda { animation: frasco-corre 1.2s linear infinite; }
   /* La de atrás va más lenta: dos ondas al mismo ritmo se leen como una sola. */
   .frasco-onda--fondo { animation-duration: 1.8s; }
-  /* Más opacas que en la aplicación. Ahí el frasco mide 168 píxeles y son un
-     detalle que se intuye; acá el frasco es todo lo que hay, y blanco al 50 %
-     sobre el verde claro directamente no se ve. */
+  /* Más opacas que en la aplicación: ahí el frasco mide 168 píxeles y las
+     burbujas son un detalle que se intuye; acá el frasco es todo lo que hay. */
   .frasco-burbuja { animation: frasco-sube 1.8s ease-out infinite; opacity: 0; }
 
   @keyframes frasco-corre { to { transform: translateX(-120px); } }
@@ -62,11 +61,18 @@
     0%, 100% { transform: translateY(0); }
     50%      { transform: translateY(5px); }
   }
+  /* El recorrido está medido, no calculado.
+   *
+   * Cuánto sube una burbuja con `translateY(-Npx)` adentro de un SVG depende de
+   * cómo el navegador resuelve esos píxeles contra el `viewBox` y el tamaño en
+   * pantalla, y la cuenta no da lo que uno supone. Se midió sobre los píxeles
+   * del GIF —dónde empieza el verde en cada columna y hasta dónde llega el
+   * cian— y el número salió de ahí. Si cambia el encuadre, se vuelve a medir. */
   @keyframes frasco-sube {
     0%   { transform: translateY(0)      scale(.7); opacity: 0; }
-    18%  { opacity: .92; }
-    75%  { opacity: .8; }
-    100% { transform: translateY(-118px) scale(1);  opacity: 0; }
+    15%  { opacity: 1; }
+    80%  { opacity: .9; }
+    100% { transform: translateY(-22px) scale(1);  opacity: 0; }
   }
 </style>
 

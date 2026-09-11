@@ -4321,9 +4321,14 @@ html.con-sesion .arranque { display: block; }
 }
 @keyframes frasco-sube {
   0%       { transform: translateY(0)      scale(.7); opacity: 0; }
-  18%      { opacity: .6; }
-  75%      { opacity: .5; }
-  100%     { transform: translateY(-118px) scale(1);  opacity: 0; }
+  18%      { opacity: .75; }
+  80%      { opacity: .65; }
+  100%     { transform: translateY(-22px) scale(1);  opacity: 0; }
+}
+  14%      { opacity: .85; }
+  45%      { opacity: .7; }
+  62%      { opacity: 0; }
+  100%     { transform: translateY(-72px) scale(1);  opacity: 0; }
 }
 
 /* Quieto de verdad, no más lento: para quien pidió reducir movimiento, una

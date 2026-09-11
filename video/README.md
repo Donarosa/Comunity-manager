@@ -57,8 +57,29 @@ principio del bucle todavía esperando. El cuadro del final es idéntico al del
 principio, píxel por píxel: está verificado comparando las dos huellas.
 
 Las burbujas también van más opacas que en la aplicación. Ahí el frasco mide 168
-píxeles y son un detalle que se intuye; acá el frasco es todo lo que hay, y
-blanco al 50 % sobre el verde claro directamente no se ve.
+píxeles y son un detalle que se intuye; acá el frasco es todo lo que hay.
+
+### Las burbujas no pueden salirse del líquido
+
+Son cian —el acento secundario de la marca— y no blancas. Una burbuja blanca
+sobre el verde claro es un hueco: se lee como espuma, que es lo que hace
+cualquier líquido. En cian se lee como lo que el frasco está haciendo.
+
+El cambio de color destapó un error que estaba desde siempre y no se veía: la
+burbuja subía hasta cruzar la superficie y quedaba flotando en el vidrio vacío.
+Blanco sobre blanco, invisible; en cian, imposible de no ver.
+
+Acortarle el recorrido no alcanza, y se probó: la onda no es una línea recta y
+se desplaza, así que una burbuja puede quedar por debajo de la cresta y por
+encima de la superficie que le toca a su columna en ese instante. Lo que sí
+alcanza es un `clipPath` en `y=322` —debajo del punto más bajo que alcanza la
+onda, los 310 de la onda de atrás más los 5 que respira el líquido—. Es
+geometría fija: no depende del encuadre, ni del momento del ciclo, ni de
+volver a medir nada. Y como la burbuja se desvanece mientras sube, el corte no
+se lee como corte.
+
+Está verificado sobre los píxeles del GIF, columna por columna y en los noventa
+cuadros: dónde empieza el verde en cada x y hasta dónde llega el cian.
 
 ---
 
