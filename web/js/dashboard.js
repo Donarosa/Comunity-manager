@@ -258,11 +258,17 @@ function renderizarHome({
   /* ── 5. Acciones directas (Dock flotante sin botón de dashboard duplicado) ── */
   const barraAcciones = marca
     ? el('div.dock-acciones', {},
-        el('button.btn', { onclick: onAbrirEditor }, '✎ Escribir yo'),
-        // La chispa va en su propio nodo para que titile con el salto del botón:
-        // dentro del texto no hay forma de animarla sola.
-        el('button.btn.cyan.btn-sugerime', { onclick: onAbrirPlan },
-          el('span.chispa', {}, '✨'), 'Sugerime'))
+        /* Sugerir va primero y con el color principal.
+         *
+         * De las dos, es la que no pide nada: escribir uno mismo supone tener
+         * ya el tema pensado. Poniéndola segunda y en el color secundario se
+         * leía como la alternativa, cuando es por donde conviene empezar.
+         *
+         * La chispa va en su propio nodo para poder animarla sola: dentro del
+         * texto del botón no hay a qué agarrarse. */
+        el('button.btn.btn-sugerime', { onclick: onAbrirPlan },
+          el('span.chispa', {}, '✨'), 'Sugerime'),
+        el('button.btn.cyan', { onclick: onAbrirEditor }, '✎ Escribir yo'))
     : el('div.dock-acciones', {},
         el('button.btn', { onclick: onAbrirWizard }, 'Armar mi marca para empezar'))
 
@@ -346,8 +352,8 @@ function renderizarDashboardView({
       )
     ),
     el('div.dash-acciones-top', { style: 'display:flex;gap:8px;' },
-      el('button.btn.chico', { onclick: onAbrirEditor }, '+ Nueva placa'),
-      el('button.btn.cyan.chico', { onclick: onAbrirPlan }, '✨ Sugerir')
+      el('button.btn.chico', { onclick: onAbrirPlan }, '✨ Sugerir'),
+      el('button.btn.cyan.chico', { onclick: onAbrirEditor }, '+ Nueva placa')
     )
   )
 

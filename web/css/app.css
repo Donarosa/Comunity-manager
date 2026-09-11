@@ -3890,57 +3890,55 @@ body { overflow-x: clip; }
   from { opacity: 0; transform: translate(-50%, 14px); }
   to   { opacity: 1; transform: translate(-50%, 0); }
 }
-/* De las dos acciones, una es la que conviene probar primero.
+/* El botón de sugerir no se queda quieto.
  *
- * "Escribir yo" pide saber qué escribir; "Sugerime" no pide nada. El que abre
- * la aplicación sin una idea en la cabeza es justo el que no toca ninguno de
- * los dos, así que el botón se mueve solo: pega un salto corto, el mismo que
- * haría al pasarle el dedo por encima, y vuelve a quedarse quieto.
+ * Es la acción por la que conviene empezar —escribir uno mismo supone tener ya
+ * el tema pensado— y el que abre la aplicación sin una idea en la cabeza es
+ * justo el que no toca ninguno de los dos botones. Así que flota: sube tres
+ * píxeles y baja, sin parar, con la misma curva de ida y de vuelta.
  *
- * El salto dura medio segundo de cada cuatro. Un movimiento continuo en la
- * esquina de la pantalla cansa a los dos minutos y termina siendo algo que se
- * aprende a ignorar, que es lo contrario de lo que se busca.
+ * Flotar y no dar saltitos. Un movimiento suave y continuo se lee como que la
+ * cosa está viva; uno entrecortado se lee como que algo anda mal, y encima
+ * engancha la vista en cada tirón en vez de acompañarla.
  *
  * Se corta apenas hay un dedo o un cursor encima: ahí el botón ya tiene la
- * atención y su propio estado de apoyo es el que tiene que mandar. */
+ * atención y su propio estado de apoyo es el que tiene que mandar. Sin esto la
+ * animación le gana —las animaciones pisan a las reglas normales— y el botón
+ * dejaría de responder al toque. */
 .btn-sugerime {
-  animation: sugerime-salta 4s var(--ease-soft) 1.4s infinite;
+  animation: sugerime-flota 2.2s ease-in-out 900ms infinite;
 }
 .btn-sugerime:hover,
 .btn-sugerime:active,
 .btn-sugerime:focus-visible { animation: none; }
 
-@keyframes sugerime-salta {
-  0%, 70%, 100% {
+@keyframes sugerime-flota {
+  /* El borde de abajo sube con el botón: es la cara lateral, y quieta lo hace
+     flotar despegado de su base en vez de levantarse. */
+  0%, 100% {
     transform: translateY(0);
     box-shadow: 0 4px 0 0 var(--btn-edge), 0 6px 14px -3px var(--btn-cast);
   }
-  /* El borde de abajo crece con el salto: es la cara lateral del botón, y si se
-     queda quieta el botón se despega de su base en vez de levantarse. */
-  76% {
+  50% {
     transform: translateY(-3px);
     box-shadow: 0 7px 0 0 var(--btn-edge), 0 13px 22px -4px var(--btn-cast);
   }
-  84% {
-    transform: translateY(1px);
-    box-shadow: 0 3px 0 0 var(--btn-edge), 0 4px 10px -3px var(--btn-cast);
-  }
-  92% {
-    transform: translateY(0);
-    box-shadow: 0 4px 0 0 var(--btn-edge), 0 6px 14px -3px var(--btn-cast);
-  }
 }
 
-/* La chispa titila con el salto, en el mismo ciclo: dos movimientos sueltos se
-   leen como dos cosas pasando y el conjunto queda inquieto. */
+/* La chispa titila en su propio ciclo, más largo que el del botón.
+ *
+ * A propósito no coinciden: con los dos en el mismo compás el conjunto queda
+ * mecánico, siempre el mismo golpe en el mismo lugar. Desfasados, el botón
+ * nunca repite dos veces la misma combinación y se lee como algo vivo y no
+ * como un bucle. */
 .chispa {
   display: inline-block;
-  animation: chispea 4s var(--ease-soft) 1.4s infinite;
+  animation: chispea 3.4s ease-in-out 900ms infinite;
 }
 @keyframes chispea {
-  0%, 70%, 100% { transform: scale(1) rotate(0deg); }
-  78% { transform: scale(1.28) rotate(14deg); }
-  88% { transform: scale(1) rotate(0deg); }
+  0%, 62%, 100% { transform: scale(1) rotate(0deg); }
+  72% { transform: scale(1.3) rotate(14deg); }
+  84% { transform: scale(1) rotate(0deg); }
 }
 
 @media (prefers-reduced-motion: reduce) {

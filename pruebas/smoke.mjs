@@ -1431,25 +1431,43 @@ test('la tipografía se copia con el texto de la placa todavía visible', () => 
   assert.ok(lee < marca, 'se marca antes de copiar la tipografía: el campo escribe en transparente')
 })
 
-// De las dos acciones del dock, "Sugerime" es la que no pide tener una idea en
-// la cabeza, y el que abre la aplicación sin idea es justo el que no toca
-// ninguna de las dos. El botón se mueve solo para desempatar.
-test('el botón de sugerir se mueve solo, y se queda quieto si lo tocan', () => {
+// De las dos acciones, sugerir es la que no pide nada: escribir uno mismo supone
+// tener ya el tema pensado. Va primera, con el color principal, y no se queda
+// quieta — el que abre la aplicación sin una idea en la cabeza es justo el que
+// no toca ninguno de los dos botones.
+test('el botón de sugerir flota, y se queda quieto si lo tocan', () => {
   const css = readFileSync(join(RAIZ, 'web/css/app.css'), 'utf8')
-  assert.ok(/\.btn-sugerime \{[^}]*animation: sugerime-salta/.test(css),
+  assert.ok(/\.btn-sugerime \{[^}]*animation: sugerime-flota/.test(css),
     'el botón de sugerir dejó de moverse')
   // Sin esto la animación le gana al estado de apoyo y el botón no responde al
   // dedo: las animaciones mandan sobre las reglas normales.
   assert.ok(/\.btn-sugerime:hover[\s\S]{0,90}animation: none/.test(css),
-    'el salto no se corta al tocarlo: le pisa el estado de apoyo')
-  // El salto ocupa medio segundo de cada cuatro: un movimiento continuo en la
-  // esquina cansa y se aprende a ignorar.
-  const ciclo = /animation: sugerime-salta (\d+(?:\.\d+)?)s/.exec(css)
-  assert.ok(ciclo && Number(ciclo[1]) >= 3, 'el ciclo se acortó: queda temblando en la esquina')
+    'el movimiento no se corta al tocarlo: le pisa el estado de apoyo')
+  // Ida y vuelta con la misma curva: un movimiento entrecortado se lee como que
+  // algo anda mal y engancha la vista en cada tirón.
+  assert.ok(/animation: sugerime-flota [\d.]+s ease-in-out[^;]*infinite/.test(css),
+    'el flotado dejó de ser continuo y parejo')
+  // La chispa va en otro compás: con los dos iguales el conjunto queda mecánico.
+  const ciclo = r => Number(new RegExp(`animation: ${r} ([\\d.]+)s`).exec(css)?.[1])
+  assert.ok(ciclo('sugerime-flota') !== ciclo('chispea'),
+    'la chispa y el botón laten en el mismo compás: se lee como un bucle')
   assert.ok(/prefers-reduced-motion: reduce\)? \{[\s\S]{0,220}\.btn-sugerime/.test(css),
-    'el salto no respeta a quien pidió menos movimiento')
+    'el movimiento no respeta a quien pidió menos movimiento')
+})
+
+// Sugerir primero y con el color principal; escribir, segundo y en el
+// secundario. Al revés se leía como la alternativa lo que es el camino corto.
+test('sugerir va primero y con el color principal', () => {
   const dash = readFileSync(join(RAIZ, 'web/js/dashboard.js'), 'utf8')
-  assert.ok(/btn-sugerime/.test(dash), 'el botón perdió la clase que lo anima')
+  const dock = dash.slice(dash.indexOf('dock-acciones'), dash.indexOf('dock-acciones') + 1200)
+  const sugerir = dock.indexOf('btn-sugerime')
+  const escribir = dock.indexOf('Escribir yo')
+  assert.ok(sugerir > -1 && escribir > -1, 'cambiaron los botones del dock')
+  assert.ok(sugerir < escribir, 'escribir volvió a ir primero')
+  assert.ok(/el\('button\.btn\.btn-sugerime'/.test(dash),
+    'sugerir volvió a un color secundario')
+  assert.ok(/el\('button\.btn\.cyan', \{ onclick: onAbrirEditor \}/.test(dash),
+    'escribir no quedó en el color secundario')
 })
 
 // Arrastrando con el dedo, la capa entera se deslizaba y volvía: el navegador
