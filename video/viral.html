@@ -1,0 +1,478 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Alquimia — viral</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&family=Anton&display=swap" rel="stylesheet">
+
+<!--
+  Cuatro partes: el problema, Alquimia, el resultado, la invitación.
+  ─────────────────────────────────────────────────────────────────
+  Todo lo dibuja `pintar(t)` desde un milisegundo. Ninguna animación de CSS y
+  ningún `requestAnimationFrame`: el render pide un cuadro por vez y un cuadro
+  que tarda se espera en vez de saltearse.
+
+  Las pantallas del teléfono son capturas de la aplicación de verdad, sacadas
+  por `capturar-flujo.mjs`, y las posiciones donde cae el dedo salen medidas de
+  esa misma corrida (`flujo.json`). Si un botón se mueve, se vuelve a correr la
+  captura y el dedo lo sigue solo.
+
+  Para mirarlo a ojo: `viral.html?vivo=1`.
+-->
+
+<style>
+  :root {
+    --tinta:  #070B16;
+    --papel:  #F5F2EA;
+    --papel2: #FFFFFF;
+    --menta:  #3FCC72;
+    --menta-h:#1C8F49;
+    --azul:   #0076B3;
+    --ink:    #14181C;
+    --gris:   #6A7078;
+    --font:   'Plus Jakarta Sans', system-ui, sans-serif;
+    --mono:   'JetBrains Mono', ui-monospace, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { background: #000; overflow: hidden; }
+  body { display: grid; place-items: center; min-height: 100vh; }
+
+  #escena {
+    position: relative; width: 1080px; height: 1920px; overflow: hidden;
+    background: var(--papel); font-family: var(--font); color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  .capa { position: absolute; inset: 0; }
+  .oscura { background: var(--tinta); color: var(--papel); }
+
+  .titular { font-weight: 800; letter-spacing: -.035em; line-height: .96; text-wrap: balance; }
+  .rotulo {
+    font-family: var(--mono); font-weight: 700; font-size: 26px;
+    letter-spacing: .22em; text-transform: uppercase;
+  }
+
+  /* ── 1 · el problema ── */
+  #gancho { display: grid; place-items: center; padding: 0 90px; text-align: center; }
+  #gancho .titular { font-size: 112px; }
+  #gancho .acc { color: #FF7A7A; }
+
+  #ruido { overflow: hidden; }
+  #grilla {
+    position: absolute; left: 50%; top: 0; width: 1012px; margin-left: -506px;
+    display: grid; grid-template-columns: repeat(3, 320px); gap: 26px;
+  }
+  .flyer {
+    height: 420px; border-radius: 16px; padding: 24px 20px; position: relative; overflow: hidden;
+    display: flex; flex-direction: column; justify-content: space-between;
+    background: linear-gradient(160deg, #2B0B4F 0%, #6B14A8 55%, #A21CAF 100%);
+    border: 2px solid rgba(236,72,153,.55);
+    box-shadow: 0 0 34px rgba(168,30,200,.45), inset 0 0 40px rgba(0,0,0,.5);
+  }
+  .flyer::after {
+    content: ''; position: absolute; inset: -50% -10% auto -10%; height: 120%;
+    background: radial-gradient(ellipse at 50% 0%, rgba(255,0,200,.35), transparent 65%);
+  }
+  .flyer .cinta {
+    align-self: flex-start; position: relative; z-index: 2;
+    font-family: var(--mono); font-size: 15px; font-weight: 800; letter-spacing: .12em;
+    padding: 5px 12px; border-radius: 4px; background: #FACC15; color: #2B0B4F;
+  }
+  .flyer .grito {
+    position: relative; z-index: 2; font-family: 'Anton', var(--font);
+    font-size: 54px; line-height: .92; color: #fff;
+    text-shadow: 0 0 22px rgba(255,0,200,.8), 0 3px 0 #C026D3;
+  }
+  .flyer .grito em { font-style: normal; color: #FDE047; }
+  .flyer .pie { position: relative; z-index: 2; font-family: var(--mono); font-size: 14px; letter-spacing: .1em; color: rgba(255,255,255,.72); }
+
+  #velo-ruido { position: absolute; inset: 0; background: rgba(7,11,22,.84); }
+  #dicho-ruido { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 0 80px; }
+  #dicho-ruido .titular { font-size: 118px; }
+
+  #costos { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 34px; padding: 0 90px; }
+  .costo {
+    width: 100%; display: flex; align-items: center; gap: 28px;
+    background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14);
+    border-radius: 22px; padding: 32px 36px;
+  }
+  .costo b { font-size: 74px; font-weight: 800; letter-spacing: -.03em; color: #FF7A7A; white-space: nowrap; }
+  .costo span { font-size: 34px; color: rgba(245,242,234,.8); line-height: 1.25; }
+
+  /* ── 2 · Alquimia ── */
+  #destello { position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%;
+    background: radial-gradient(circle, #DFFFEC 0%, var(--menta) 58%, var(--menta) 74%, rgba(63,204,114,0) 88%); }
+
+  #marca { display: grid; place-items: center; align-content: center; }
+  #marca .frasco { width: 250px; height: 250px; border-radius: 48px; overflow: hidden; box-shadow: 0 30px 90px -26px rgba(63,204,114,.55); }
+  #marca .frasco img { width: 100%; display: block; }
+  #marca .nom { font-size: 120px; font-weight: 800; letter-spacing: -.04em; margin-top: 44px; }
+  #marca .baj { margin-top: 20px; font-size: 40px; color: var(--gris); text-align: center; }
+
+  /* ── el teléfono con el flujo ── */
+  #flujo { display: grid; place-items: center; align-content: center; }
+  #rot-flujo { position: absolute; top: 150px; left: 0; right: 0; text-align: center; padding: 0 70px; }
+  #rot-flujo .rotulo { color: var(--menta-h); }
+  #rot-flujo .frase { margin-top: 20px; font-size: 64px; font-weight: 800; letter-spacing: -.03em; line-height: 1.02; }
+
+  .telefono {
+    position: relative; width: 600px; height: 1299px; border-radius: 70px;
+    background: #10141A; padding: 13px;
+    box-shadow: 0 50px 120px -34px rgba(20,24,28,.5), 0 0 0 2px rgba(20,24,28,.1);
+  }
+  .vidrio { position: relative; width: 100%; height: 100%; border-radius: 58px; overflow: hidden; background: var(--papel); }
+  .vidrio img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 0; }
+  .muesca { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); width: 160px; height: 32px; border-radius: 20px; background: #10141A; z-index: 6; }
+  #dedo { position: absolute; width: 104px; height: 104px; margin: -52px 0 0 -52px; border-radius: 50%; background: rgba(20,24,28,.22); border: 4px solid rgba(20,24,28,.35); z-index: 8; }
+  #onda { position: absolute; width: 104px; height: 104px; margin: -52px 0 0 -52px; border-radius: 50%; border: 6px solid var(--menta); z-index: 7; }
+
+  /* ── 3 · el carrusel y el resultado ── */
+  #carrusel { display: grid; place-items: center; align-content: center; }
+  .placa-c {
+    position: absolute; left: 50%; top: 50%; width: 420px; border-radius: 22px; overflow: hidden;
+    box-shadow: 0 40px 90px -28px rgba(20,24,28,.45), 0 0 0 1px rgba(20,24,28,.06); background: #fff;
+  }
+  .placa-c img { width: 100%; display: block; }
+  #puntos { position: absolute; left: 0; right: 0; bottom: 430px; display: flex; justify-content: center; gap: 12px; }
+  #puntos i { width: 12px; height: 12px; border-radius: 50%; background: rgba(20,24,28,.22); display: block; }
+  #puntos i.on { background: var(--azul); }
+  #rot-carrusel { position: absolute; left: 0; right: 0; bottom: 240px; text-align: center; padding: 0 80px; }
+  #rot-carrusel .titular { font-size: 70px; }
+  #rot-carrusel .titular b { color: var(--menta-h); font-weight: 800; }
+
+  #posteo { display: grid; place-items: center; align-content: center; }
+  .tarjeta-ig {
+    width: 720px; background: #fff; border-radius: 26px; overflow: hidden;
+    box-shadow: 0 40px 100px -30px rgba(20,24,28,.4); border: 1px solid rgba(20,24,28,.08);
+  }
+  .ig-cab { display: flex; align-items: center; gap: 16px; padding: 20px 22px; }
+  .ig-cab .av { width: 54px; height: 54px; border-radius: 50%; background: var(--azul); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 20px; }
+  .ig-cab .nom { font-weight: 700; font-size: 26px; }
+  .ig-cab .sub { font-size: 20px; color: var(--gris); }
+  .tarjeta-ig > img { width: 100%; display: block; }
+  .ig-pie { padding: 20px 24px 26px; }
+  .ig-iconos { display: flex; gap: 22px; font-size: 38px; }
+  .ig-nums { margin-top: 12px; font-size: 28px; font-weight: 700; }
+  .ig-nums span { color: var(--gris); font-weight: 500; }
+  .chip-sube {
+    position: absolute; display: inline-flex; align-items: center; gap: 14px;
+    padding: 18px 28px; border-radius: 999px; background: var(--papel2); color: var(--ink);
+    font-size: 32px; font-weight: 800; box-shadow: 0 20px 44px -14px rgba(20,24,28,.35);
+    border: 1px solid rgba(20,24,28,.07); white-space: nowrap;
+  }
+
+  /* ── 4 · el cierre ── */
+  #cierre { display: grid; place-items: center; align-content: center; }
+  #cierre .frasco { width: 170px; height: 170px; border-radius: 34px; overflow: hidden; }
+  #cierre .frasco img { width: 100%; display: block; }
+  #cierre .nom { font-size: 104px; font-weight: 800; letter-spacing: -.04em; margin-top: 32px; }
+  #cierre .claim { margin-top: 18px; font-size: 42px; color: var(--gris); text-align: center; }
+  #cierre .cta {
+    margin-top: 54px; background: var(--menta); color: #06220F; font-size: 44px; font-weight: 800;
+    padding: 28px 56px; border-radius: 999px; box-shadow: 0 10px 0 var(--menta-h);
+  }
+  #cierre .url { margin-top: 30px; font-family: var(--mono); font-size: 30px; font-weight: 700; letter-spacing: .08em; color: var(--gris); }
+
+  #grano {
+    position: absolute; inset: 0; z-index: 50; pointer-events: none; opacity: .045;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+</style>
+
+<div id="escena">
+  <div class="capa oscura" id="gancho"><div class="titular" id="gancho-txt"></div></div>
+
+  <div class="capa oscura" id="ruido">
+    <div id="grilla"></div>
+    <div id="velo-ruido"></div>
+    <div id="dicho-ruido"><div class="titular">Todos publican<br>lo <span style="color:#FF7A7A">mismo</span>.</div></div>
+  </div>
+
+  <div class="capa oscura" id="costos-capa">
+    <div id="costos">
+      <div class="costo" data-c="1"><b>3 horas</b><span>peleándote con una plantilla</span></div>
+      <div class="costo" data-c="2"><b>US$10</b><span>lo que cobra un diseñador<br>por una placa suelta</span></div>
+    </div>
+  </div>
+
+  <div class="capa oscura" id="corte"><div id="destello"></div></div>
+
+  <div class="capa" id="marca">
+    <div class="frasco"><img src="assets/logo.svg" alt=""></div>
+    <div class="nom">Alquimia</div>
+    <div class="baj">El Instagram de tu negocio, hecho.</div>
+  </div>
+
+  <div class="capa" id="flujo">
+    <div id="rot-flujo"><div class="rotulo">Así se usa</div><div class="frase" id="frase-flujo"></div></div>
+    <div class="telefono">
+      <div class="vidrio">
+        <img id="pantalla" src="assets/flujo-1-inicio.png" alt="">
+        <div class="muesca"></div>
+      </div>
+      <div id="onda"></div>
+      <div id="dedo"></div>
+    </div>
+  </div>
+
+  <div class="capa" id="carrusel">
+    <div id="rot-carrusel"><div class="titular">Cuatro placas,<br><b>listas para subir</b>.</div></div>
+    <div id="puntos"><i class="on"></i><i></i><i></i><i></i></div>
+  </div>
+
+  <div class="capa" id="posteo">
+    <div class="tarjeta-ig">
+      <div class="ig-cab">
+        <div class="av">PS</div>
+        <div><div class="nom">piletassol</div><div class="sub">Córdoba</div></div>
+      </div>
+      <img src="assets/carrusel-01.png" alt="">
+      <div class="ig-pie">
+        <div class="ig-iconos">♥ 💬 ✈</div>
+        <div class="ig-nums"><b id="megusta">0</b> me gusta · <span id="coment">0 comentarios</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="capa" id="cierre">
+    <div class="frasco"><img src="assets/logo.svg" alt=""></div>
+    <div class="nom">Alquimia</div>
+    <div class="claim">Tu próxima publicación, en un toque.</div>
+    <div class="cta">Probalo gratis</div>
+    <div class="url">alquimia-cm.vercel.app</div>
+  </div>
+
+  <div id="grano"></div>
+</div>
+
+<script type="module">
+const FIN = 28000
+
+const sujeta = v => Math.max(0, Math.min(1, v))
+const tramo = (t, a, b) => sujeta((t - a) / (b - a))
+const frena = p => 1 - Math.pow(1 - p, 3)
+const suave = p => p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2
+const rebota = p => { const c = 2.70158; return 1 + (c + 1) * Math.pow(p - 1, 3) + c * Math.pow(p - 1, 2) }
+const entre = (a, b, p) => a + (b - a) * p
+const asoma = (t, a, b, c, d) => Math.min(tramo(t, a, b), 1 - tramo(t, c, d))
+const $ = s => document.querySelector(s)
+const poner = (n, e) => n && Object.assign(n.style, e)
+
+/* Dónde cae el dedo: medido por `capturar-flujo.mjs` sobre la aplicación real. */
+const FLUJO = await fetch('assets/flujo.json').then(r => r.json())
+
+const GRITOS = [
+  ['OFERTA', 'SABOR<br><em>PERFECTO</em>', 'RESTAURANTES'], ['SOLO HOY', 'TU MEJOR<br><em>VERSIÓN</em>', 'GIMNASIOS'],
+  ['2×1', 'URBAN<br><em>STYLE</em>', 'INDUMENTARIA'], ['NUEVO', 'BELLEZA<br><em>QUE INSPIRA</em>', 'SALONES'],
+  ['PROMO', 'MÁS QUE<br><em>UN CORTE</em>', 'BARBERÍAS'], ['ÚLTIMO DÍA', 'CALIDAD<br><em>Y SERVICIO</em>', 'TODO RUBRO'],
+  ['30% OFF', 'EL SABOR<br><em>DE SIEMPRE</em>', 'PANADERÍAS'], ['HOY', 'TU AUTO<br><em>COMO NUEVO</em>', 'TALLERES'],
+  ['GRATIS', 'ENERGÍA<br><em>NATURAL</em>', 'DIETÉTICAS'], ['APROVECHÁ', 'DISEÑO<br><em>QUE ENAMORA</em>', 'MUEBLERÍAS'],
+  ['IMPERDIBLE', 'MÁS CERCA<br><em>DE VOS</em>', 'SERVICIOS'], ['CONSULTÁ', 'LA MEJOR<br><em>ELECCIÓN</em>', 'TODO RUBRO'],
+]
+for (const [c, g, p] of GRITOS) {
+  const f = document.createElement('div')
+  f.className = 'flyer'
+  f.innerHTML = `<div class="cinta">${c}</div><div class="grito">${g}</div><div class="pie">${p}</div>`
+  $('#grilla').append(f)
+}
+
+const PALABRAS = ['Tu', 'contenido', 'se', 'pierde', 'entre', 'otros', 'mil', '<span class="acc">iguales</span>.']
+$('#gancho-txt').innerHTML = PALABRAS.map((p, i) => `<span data-p="${i}">${p}</span>`).join(' ')
+
+/* Las cuatro placas del carrusel, que son salida real del motor. */
+const PLACAS = [1, 2, 3, 4].map(n => {
+  const d = document.createElement('div')
+  d.className = 'placa-c'
+  d.innerHTML = `<img src="assets/carrusel-0${n}.png" alt="">`
+  $('#carrusel').append(d)
+  return d
+})
+
+const CHIPS = [
+  { t: '♥ 248 me gusta', x: 90, y: 1500, ms: 23200 },
+  { t: '👤 31 seguidores', x: 540, y: 1600, ms: 23700 },
+  { t: '💬 12 consultas', x: 140, y: 1700, ms: 24200 },
+]
+const chips = CHIPS.map(c => {
+  const n = document.createElement('div')
+  n.className = 'chip-sube'
+  n.textContent = c.t
+  $('#posteo').append(n)
+  return n
+})
+
+/* Los cinco pasos del flujo: qué pantalla se ve, qué se dice y dónde toca. */
+const PASOS = [
+  { desde: 9650,  img: 'flujo-1-inicio.png',  frase: 'Abrís y tocás <b>Sugerime</b>.',      toque: FLUJO.toques['1-inicio'] },
+  { desde: 11500, img: 'flujo-2-tema.png',    frase: 'Escribís de qué querés hablar.',       toque: FLUJO.toques['2-tema'] },
+  { desde: 13400, img: 'flujo-3-forma.png',   frase: 'Elegís si va suelto o en carrusel.',   toque: FLUJO.toques['3-forma'] },
+  { desde: 15300, img: 'flujo-4-armando.png', frase: 'Y lo arma solo, con tu marca.',        toque: null },
+  { desde: 17100, img: 'flujo-5-listo.png',   frase: 'Y lo arma solo, con tu marca.',        toque: null },
+]
+const FIN_FLUJO = 19000
+
+function pintar(t) {
+  for (const id of ['#gancho', '#ruido', '#costos-capa', '#corte', '#marca', '#flujo', '#carrusel', '#posteo', '#cierre']) {
+    $(id).style.opacity = 0
+  }
+
+  /* 1 · 0 – 2,4 s · el gancho */
+  $('#gancho').style.opacity = asoma(t, 0, 240, 2150, 2400)
+  PALABRAS.forEach((_, i) => {
+    const n = $(`#gancho-txt [data-p="${i}"]`)
+    const p = frena(tramo(t, 120 + i * 95, 520 + i * 95))
+    poner(n, { display: 'inline-block', opacity: p, transform: `translateY(${entre(24, 0, p)}px)` })
+  })
+
+  /* 2 · 2,3 – 5,6 s · el ruido */
+  {
+    $('#ruido').style.opacity = asoma(t, 2300, 2500, 5300, 5600)
+    const corre = suave(tramo(t, 2300, 5300))
+    const apaga = tramo(t, 4000, 5300)
+    poner($('#grilla'), {
+      transform: `translateY(${entre(260, -1180, corre)}px)`,
+      filter: `saturate(${entre(1, .12, apaga)}) brightness(${entre(1, .5, apaga)})`,
+    })
+    const dicho = asoma(t, 3500, 3800, 5100, 5350)
+    poner($('#velo-ruido'), { opacity: dicho * .95 })
+    poner($('#dicho-ruido'), { opacity: dicho, transform: `scale(${entre(.95, 1, rebota(tramo(t, 3500, 3950)))})` })
+  }
+
+  /* 3 · 5,5 – 8 s · lo que cuesta hoy */
+  {
+    $('#costos-capa').style.opacity = asoma(t, 5500, 5750, 7700, 7950)
+    for (const n of document.querySelectorAll('.costo')) {
+      const i = Number(n.dataset.c) - 1
+      const p = frena(tramo(t, 5700 + i * 450, 6300 + i * 450))
+      poner(n, { opacity: p, transform: `translateY(${entre(34, 0, p)}px)` })
+    }
+  }
+
+  /* 4 · 7,8 – 9,2 s · el corte */
+  {
+    $('#corte').style.opacity = asoma(t, 7800, 7900, 8300, 8650)
+    poner($('#destello'), { transform: `scale(${entre(.3, 62, frena(tramo(t, 7900, 8400)))})` })
+  }
+
+  /* 5 · 8,3 – 9,8 s · la marca.
+   *
+   * Necesita su segundo y medio. Con el destello encima duraba menos que un
+   * parpadeo: el frasco aparecía cuando la pantalla todavía estaba verde. */
+  {
+    $('#marca').style.opacity = asoma(t, 8300, 8600, 9450, 9800)
+    poner($('#marca .frasco'), { transform: `scale(${entre(.55, 1, rebota(tramo(t, 8350, 8950)))})` })
+    const n = frena(tramo(t, 8750, 9200))
+    poner($('#marca .nom'), { opacity: n, transform: `translateY(${entre(22, 0, n)}px)` })
+    poner($('#marca .baj'), { opacity: frena(tramo(t, 9000, 9400)) })
+  }
+
+  /* 6 · 9 – 19 s · el flujo, con la aplicación de verdad */
+  {
+    $('#flujo').style.opacity = asoma(t, 9650, 9950, FIN_FLUJO - 300, FIN_FLUJO)
+    const sube = frena(tramo(t, 9650, 10300))
+    poner($('.telefono'), { transform: `translateY(${entre(300, 0, sube)}px) scale(${entre(.94, 1, sube)})` })
+
+    const paso = PASOS.filter(p => t >= p.desde).pop() || PASOS[0]
+    const img = $('#pantalla')
+    if (!img.src.endsWith(paso.img)) img.src = 'assets/' + paso.img
+    // El cambio de pantalla entra con un empujón corto, como un toque de verdad.
+    const recien = tramo(t, paso.desde, paso.desde + 260)
+    poner(img, { opacity: entre(.4, 1, recien), transform: `translateY(${entre(18, 0, frena(recien))}px)` })
+
+    const f = $('#frase-flujo')
+    if (f.innerHTML !== paso.frase) f.innerHTML = paso.frase
+    const rot = frena(tramo(t, 9950, 10400))
+    poner($('#rot-flujo'), { opacity: Math.min(rot, asoma(t, 9950, 10400, FIN_FLUJO - 400, FIN_FLUJO - 100)) })
+
+    // El dedo baja, aprieta y se va, justo antes de que cambie la pantalla.
+    const vidrio = $('.vidrio')
+    const toque = paso.toque
+    if (toque) {
+      const cuando = paso.desde + 950
+      const x = 13 + vidrio.offsetWidth * toque.x
+      const y = 13 + vidrio.offsetHeight * toque.y
+      const llega = suave(tramo(t, cuando - 700, cuando))
+      const aprieta = tramo(t, cuando, cuando + 180)
+      poner($('#dedo'), {
+        opacity: asoma(t, cuando - 700, cuando - 500, cuando + 320, cuando + 520),
+        left: `${x}px`, top: `${entre(y + 220, y, llega)}px`,
+        transform: `scale(${entre(1, .76, Math.sin(aprieta * Math.PI))})`,
+      })
+      const onda = tramo(t, cuando + 60, cuando + 700)
+      poner($('#onda'), {
+        opacity: onda > 0 && onda < 1 ? (1 - onda) * .9 : 0,
+        left: `${x}px`, top: `${y}px`, transform: `scale(${entre(.5, 3.2, frena(onda))})`,
+      })
+    } else {
+      poner($('#dedo'), { opacity: 0 })
+      poner($('#onda'), { opacity: 0 })
+    }
+  }
+
+  /* 7 · 18,8 – 23,2 s · se despliega el carrusel */
+  {
+    $('#carrusel').style.opacity = asoma(t, 18800, 19100, 22900, 23200)
+    // Salen del teléfono en abanico y después se deslizan como en Instagram.
+    const abanico = [-300, -100, 100, 300]
+    const desliza = suave(tramo(t, 20600, 22600))
+    const cual = Math.min(3, Math.floor(tramo(t, 20600, 22600) * 4))
+    PLACAS.forEach((n, i) => {
+      const sale = rebota(tramo(t, 19000 + i * 170, 19900 + i * 170))
+      const x = entre(0, abanico[i], frena(tramo(t, 19000 + i * 170, 19900 + i * 170))) - desliza * 900
+      poner(n, {
+        zIndex: 4 - i,
+        opacity: sujeta(tramo(t, 19000 + i * 170, 19400 + i * 170) * 1.6),
+        transform: `translate(calc(-50% + ${x}px), calc(-50% + ${entre(420, -120, frena(tramo(t, 19000 + i * 170, 19900 + i * 170)))}px))`
+          + ` rotate(${entre(0, (i - 1.5) * 4, sale)}deg) scale(${entre(.6, 1, sale)})`,
+      })
+    })
+    document.querySelectorAll('#puntos i').forEach((p, i) => p.classList.toggle('on', i === cual))
+    poner($('#puntos'), { opacity: asoma(t, 20400, 20700, 22700, 22900) })
+    const rc = frena(tramo(t, 21000, 21600))
+    poner($('#rot-carrusel'), { opacity: Math.min(rc, asoma(t, 21000, 21600, 22700, 22900)), transform: `translateY(${entre(30, 0, rc)}px)` })
+  }
+
+  /* 8 · 22,9 – 26 s · el posteo publicado */
+  {
+    $('#posteo').style.opacity = asoma(t, 22900, 23200, 25700, 26000)
+    const p = frena(tramo(t, 22900, 23600))
+    poner($('.tarjeta-ig'), { transform: `translateY(${entre(60, 0, p)}px) scale(${entre(.94, 1, p)})` })
+    // Los números suben. Son ilustrativos: el aviso no promete una cifra.
+    const sube = frena(tramo(t, 23300, 25200))
+    $('#megusta').textContent = Math.round(entre(0, 248, sube)).toLocaleString('es-AR')
+    $('#coment').textContent = `${Math.round(entre(0, 12, sube))} comentarios`
+    chips.forEach((n, i) => {
+      const c = CHIPS[i]
+      const a = frena(tramo(t, c.ms, c.ms + 600))
+      const flota = 1 - tramo(t, c.ms + 600, c.ms + 2400)
+      poner(n, {
+        left: `${c.x}px`, top: `${c.y - (1 - flota) * 110}px`,
+        opacity: Math.min(a, flota < .3 ? flota * 3.3 : 1),
+        transform: `scale(${entre(.75, 1, rebota(tramo(t, c.ms, c.ms + 600)))})`,
+      })
+    })
+  }
+
+  /* 9 · 25,8 – 28 s · el cierre */
+  {
+    $('#cierre').style.opacity = tramo(t, 25800, 26100)
+    poner($('#cierre .frasco'), { transform: `scale(${entre(.6, 1, rebota(tramo(t, 25900, 26500)))})` })
+    const n = frena(tramo(t, 26300, 26800))
+    poner($('#cierre .nom'), { opacity: n, transform: `translateY(${entre(24, 0, n)}px)` })
+    const c = frena(tramo(t, 26500, 27000))
+    poner($('#cierre .claim'), { opacity: c })
+    const b = rebota(tramo(t, 26800, 27400))
+    poner($('#cierre .cta'), { opacity: sujeta(b * 2), transform: `scale(${entre(.8, 1, b)})` })
+    poner($('#cierre .url'), { opacity: frena(tramo(t, 27200, 27700)) })
+  }
+}
+
+window.pintar = pintar
+window.DURACION = FIN
+pintar(0)
+
+if (new URLSearchParams(location.search).has('vivo')) {
+  const a = performance.now()
+  const tic = ahora => { pintar((ahora - a) % FIN); requestAnimationFrame(tic) }
+  requestAnimationFrame(tic)
+}
+</script>

@@ -21,6 +21,60 @@ Y para mirarlo a ojo: abrir `video/comercial.html?vivo=1` en el navegador.
 
 ---
 
+## El viral, en cuatro partes
+
+El segundo comercial. La diferencia con el de arriba es que acá **la aplicación
+se ve funcionando**: no son capturas quietas sino el flujo entero, con el dedo
+tocando cada botón.
+
+```bash
+npm run web                    # hace falta para capturar el flujo
+node video/piezas-demo.mjs     # las placas que muestra, hechas con el motor
+node video/capturar-flujo.mjs  # las cinco pantallas, operando la aplicación
+node video/viral.mjs           # → video/viral.mp4
+```
+
+Para revisar un tramo: `DESDE=9000 HASTA=19000 node video/viral.mjs`.
+Para mirarlo a ojo: `video/viral.html?vivo=1`.
+
+| Tiempo | Parte | Qué se ve |
+| --- | --- | --- |
+| 0 – 5,3 s | **El problema** | Un feed de flyers violeta pasando de largo · «Todos publican lo mismo» |
+| 5,5 – 8 s | | Lo que cuesta hoy: 3 horas de plantilla, US$10 la placa a un diseñador |
+| 8,3 – 9,8 s | **Alquimia** | El destello, el frasco, el nombre |
+| 9,6 – 19 s | | El flujo real: tocar Sugerime, escribir el tema, elegir carrusel, el frasco armando, las placas |
+| 19 – 23 s | **El resultado** | Las cuatro placas salen del teléfono y se deslizan como carrusel |
+| 23 – 26 s | | El posteo publicado, con los números subiendo |
+| 26 – 28 s | **La invitación** | Probalo gratis · alquimia-cm.vercel.app |
+
+### Nada de esto está ilustrado
+
+Las cinco pantallas del teléfono las saca `capturar-flujo.mjs` abriendo la
+aplicación y operándola. Las cuatro placas las hace `piezas-demo.mjs` con
+`renderSpec`, el mismo motor que genera los PNG de un cliente. Y **las
+posiciones donde cae el dedo salen medidas de esa misma corrida**, guardadas en
+`flujo.json`: si un botón cambia de lugar, se vuelve a correr la captura y el
+dedo lo sigue solo, sin que haya que retocar el comercial.
+
+Lo único simulado es la respuesta del modelo, y sólo porque en esta máquina no
+hay clave de IA: se intercepta esa llamada y se devuelve un plan armado a mano
+que apunta a placas de verdad. La ruta que las sirve —`/piezas/…`— es la de
+producción.
+
+### Dos cosas del contenido
+
+**Los números del posteo son ilustrativos.** Suben de 0 a 248 me gusta y 12
+comentarios porque un contador quieto no se lee como un resultado, pero en
+ninguna parte se dice que eso sea lo que le va a pasar a quien lo vea. Si
+algún día hay clientes con cifras propias, se cambian por las de ellos y se
+puede afirmar. Antes no.
+
+**«Probalo gratis» es cierto hoy** porque todavía no hay forma de cobrar. El día
+que se implemente el cobro —está anotado en `PENDIENTE.md`— esa línea hay que
+revisarla: con una semana de prueba sigue siendo cierta, con un muro de pago no.
+
+---
+
 ## El frasco suelto, en GIF
 
 El mismo frasco que burbujea en la pantalla de espera, para usar donde haga

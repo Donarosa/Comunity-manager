@@ -32,3 +32,8 @@ Recursos video/
 # La prueba de la historia animada: se regenera con `node video/historia.mjs`
 video/historia.mp4
 video/historia.html
+
+# El viral y sus insumos: se regeneran con los scripts de video/
+video/viral.mp4
+video/assets/flujo-*
+video/assets/carrusel-*
