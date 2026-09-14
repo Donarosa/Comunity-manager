@@ -20,12 +20,15 @@
 
 import { createServer } from 'node:http'
 import { createReadStream, statSync } from 'node:fs'
-import { dirname, extname, join, normalize } from 'node:path'
+import { dirname, extname, join, normalize, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import puppeteer from 'puppeteer-core'
 import { findChrome } from '../core/render/engine.mjs'
 
 const AQUI = dirname(fileURLToPath(import.meta.url))
+// Se sirve la raíz: la página importa `web/js/frasco.js`, el mismo módulo que
+// usa la aplicación, y desde `video/` no se alcanza.
+const RAIZ = resolve(AQUI, '..')
 const PAGINA = process.env.PAGINA || 'viral.html'
 const ALTO = 1920
 const PISO_SUBTITULO = 56        // 5,2 % del alto
@@ -36,8 +39,8 @@ const TIPOS = {
   '.json': 'application/json; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml',
 }
 const servidor = createServer((req, res) => {
-  const f = join(AQUI, normalize(decodeURIComponent(new URL(req.url, 'http://x').pathname)))
-  if (!f.startsWith(AQUI) || !statSync(f, { throwIfNoEntry: false })?.isFile()) return res.writeHead(404).end()
+  const f = join(RAIZ, normalize(decodeURIComponent(new URL(req.url, 'http://x').pathname)))
+  if (!f.startsWith(RAIZ) || !statSync(f, { throwIfNoEntry: false })?.isFile()) return res.writeHead(404).end()
   res.writeHead(200, { 'content-type': TIPOS[extname(f)] || 'application/octet-stream' })
   createReadStream(f).pipe(res)
 })
@@ -49,7 +52,7 @@ const navegador = await puppeteer.launch({
 })
 const p = await navegador.newPage()
 await p.setViewport({ width: 1080, height: ALTO, deviceScaleFactor: 1 })
-await p.goto(`http://127.0.0.1:${servidor.address().port}/${PAGINA}`, { waitUntil: 'networkidle0' })
+await p.goto(`http://127.0.0.1:${servidor.address().port}/video/${PAGINA}`, { waitUntil: 'networkidle0' })
 await p.evaluate(async () => {
   await document.fonts.ready
   await Promise.all([...document.images].map(i => i.complete ? null : new Promise(r => { i.onload = i.onerror = r })))

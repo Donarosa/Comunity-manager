@@ -6,37 +6,53 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&family=Anton&display=swap" rel="stylesheet">
 
 <!--
-  Cuatro partes: el problema, Alquimia, el resultado, la invitación.
-  ─────────────────────────────────────────────────────────────────
-  Todo lo dibuja `pintar(t)` desde un milisegundo. Ninguna animación de CSS y
-  ningún `requestAnimationFrame`: el render pide un cuadro por vez y un cuadro
-  que tarda se espera en vez de saltearse.
+  El aviso, rehecho.
+  ─────────────────
+  No es una edición del anterior: cambian el arranque, el medio y el final. Lo
+  que obligó a rehacerlo son tres reglas de `video-shotcraft/aesthetic-rules.md`
+  que no se podían cumplir parchando:
 
-  Las pantallas del teléfono son capturas de la aplicación de verdad, sacadas
-  por `capturar-flujo.mjs`, y las posiciones donde cae el dedo salen medidas de
-  esa misma corrida (`flujo.json`). Si un botón se mueve, se vuelve a correr la
-  captura y el dedo lo sigue solo.
+    Q5 · el arranque le da UN protagonista con un arco completo. El anterior
+         abría con texto y un muro de doce flyers a la vez, que es un baile de
+         grupo. Ahora abre con un flyer solo que se acerca y se acomoda, y
+         recién después se multiplica.
+    Q8 · el cierre se hace como una foto grupal: todo lo que se vio vuela desde
+         los cuatro lados a rodear el logotipo.
+    P4 · listar las funciones y mapear cada una a un plano. Faltaba la
+         principal, el sistema de marca — y ahora está, no como un diagrama de
+         paletas sino como diez placas de diez negocios cayendo, donde lo único
+         que cambia es la marca y ninguna se parece a otra.
 
-  Para mirarlo a ojo: `viral.html?vivo=1`.
+  Se mantienen las que ya se cumplían: R1 (el nombre de la marca quieto un
+  segundo entero), R2 (la velocidad sale de la aceleración), R3 (la interacción
+  a velocidad de persona) y Q11, que se comprueba con `auditar.mjs`.
+
+  Los flyers del principio están dibujados acá y no son capturas. Es a
+  propósito: los ejemplos que circulan son de gente con nombre y cara, y dos de
+  los que sirvieron de referencia son justamente alguien quejándose de los
+  flyers de IA — usarlos de mal ejemplo sería hacerles decir lo contrario de lo
+  que dicen. Lo que se reconoce no es un flyer puntual sino el molde.
+
+  Todo lo dibuja `pintar(t)`. Para mirarlo a ojo: `viral.html?vivo=1`.
 -->
 
 <style>
   :root {
-    --tinta:  #070B16;
+    --tinta:  #05070E;
     --papel:  #F5F2EA;
     --papel2: #FFFFFF;
     --menta:  #3FCC72;
-    --menta-h:#1C8F49;
+    --menta-h:#177C41;
     --azul:   #0076B3;
     --ink:    #14181C;
-    --gris:   #6A7078;
+    --gris:   #5F666E;
+    --rojo:   #E8614B;
     --font:   'Plus Jakarta Sans', system-ui, sans-serif;
     --mono:   'JetBrains Mono', ui-monospace, monospace;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { background: #000; overflow: hidden; }
   body { display: grid; place-items: center; min-height: 100vh; }
-
   #escena {
     position: relative; width: 1080px; height: 1920px; overflow: hidden;
     background: var(--papel); font-family: var(--font); color: var(--ink);
@@ -44,117 +60,113 @@
   }
   .capa { position: absolute; inset: 0; }
   .oscura { background: var(--tinta); color: var(--papel); }
+  .titular { font-weight: 800; letter-spacing: -.035em; line-height: .98; text-wrap: balance; }
+  .rotulo { font-family: var(--mono); font-weight: 700; font-size: 34px; letter-spacing: .2em; text-transform: uppercase; }
 
-  .titular { font-weight: 800; letter-spacing: -.035em; line-height: .96; text-wrap: balance; }
-  .rotulo {
-    font-family: var(--mono); font-weight: 700; font-size: 34px;
-    letter-spacing: .2em; text-transform: uppercase;
-  }
-
-  /* ── 1 · el problema ── */
-  #gancho { display: grid; place-items: center; padding: 0 90px; text-align: center; }
-  #gancho .titular { font-size: 112px; }
-  #gancho .acc { color: #FF7A7A; }
-
-  #ruido { overflow: hidden; }
-  #grilla {
-    position: absolute; left: 50%; top: 0; width: 1012px; margin-left: -506px;
-    display: grid; grid-template-columns: repeat(3, 320px); gap: 26px;
-  }
+  /* ══ el flyer de IA ══
+     Nueve del mismo molde: azul eléctrico o violeta, texto biselado con contorno
+     grueso, glow por todos lados, chirimbolos, y todo apretado hasta el borde.
+     Las medidas van en porcentaje para que el mismo flyer sirva grande —el del
+     arranque— y chico, en el muro. */
   .flyer {
-    height: 420px; border-radius: 16px; padding: 24px 20px; position: relative; overflow: hidden;
-    display: flex; flex-direction: column; justify-content: space-between;
-    background: linear-gradient(160deg, #2B0B4F 0%, #6B14A8 55%, #A21CAF 100%);
-    border: 2px solid rgba(236,72,153,.55);
-    box-shadow: 0 0 34px rgba(168,30,200,.45), inset 0 0 40px rgba(0,0,0,.5);
+    position: relative; overflow: hidden; border-radius: 10px;
+    display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+    padding: 5% 4%; text-align: center;
+    background: radial-gradient(ellipse at 50% 12%, #3B4BD8 0%, #171B7A 45%, #070A3A 100%);
+    box-shadow: inset 0 0 60px rgba(0,0,0,.55), 0 0 0 2px rgba(0,229,255,.35);
   }
+  .flyer.v2 { background: radial-gradient(ellipse at 50% 20%, #8B2FD8 0%, #4A1080 48%, #1A0435 100%); box-shadow: inset 0 0 60px rgba(0,0,0,.5), 0 0 0 2px rgba(255,0,200,.4); }
+  .flyer.v3 { background: radial-gradient(ellipse at 30% 0%, #0A9CD8 0%, #0B3E8C 50%, #04143A 100%); box-shadow: inset 0 0 60px rgba(0,0,0,.55), 0 0 0 2px rgba(120,255,220,.3); }
   .flyer::after {
-    content: ''; position: absolute; inset: -50% -10% auto -10%; height: 120%;
-    background: radial-gradient(ellipse at 50% 0%, rgba(255,0,200,.35), transparent 65%);
+    content: ''; position: absolute; inset: 0;
+    background:
+      radial-gradient(circle at 18% 78%, rgba(0,229,255,.25), transparent 34%),
+      radial-gradient(circle at 84% 24%, rgba(255,0,200,.22), transparent 36%);
   }
+  .flyer > * { position: relative; z-index: 2; }
   .flyer .cinta {
-    align-self: flex-start; position: relative; z-index: 2;
-    /* Q11 · igual que el rubro: a 15px sobre 1920 esto no se lee, y en amarillo
-       pleno invita a intentarlo. La chapita tiene que leerse como forma, no como
-       palabra — lo que se lee de este muro es el grito, que sí está a 54px. */
-    font-family: var(--mono); font-size: 15px; font-weight: 800; letter-spacing: .12em;
-    padding: 5px 12px; border-radius: 4px; background: #FACC15; color: #2B0B4F;
-    opacity: .5;
+    font-family: var(--mono); font-weight: 800; letter-spacing: .1em;
+    padding: .5em 1em; border-radius: 3px; background: #FFD400; color: #14104A;
+    font-size: .42em; opacity: .5;
   }
   .flyer .grito {
-    position: relative; z-index: 2; font-family: 'Anton', var(--font);
-    font-size: 54px; line-height: .92; color: #fff;
-    text-shadow: 0 0 22px rgba(255,0,200,.8), 0 3px 0 #C026D3;
+    font-family: 'Anton', var(--font); line-height: .88; letter-spacing: .012em;
+    font-size: 1.5em; color: #FFF;
+    text-shadow: 0 0 20px rgba(0,229,255,.9), 0 4px 0 #0B2FA8, 3px 0 0 #0B2FA8, -3px 0 0 #0B2FA8, 0 -3px 0 #0B2FA8;
   }
-  .flyer .grito em { font-style: normal; color: #FDE047; }
-    /* Q11 · el rubro del flyer es textura, no texto para leer.
-     A 14px sobre 1920 nadie lo lee, y a .72 de opacidad igual invita a
-     intentarlo: ese estado intermedio es justo el que la regla prohíbe. Se baja
-     hasta que se lea como ruido, que es lo que tiene que ser. */
-  .flyer .pie { position: relative; z-index: 2; font-family: var(--mono); font-size: 14px; letter-spacing: .1em; color: #fff; opacity: .34; }
-
-  #velo-ruido { position: absolute; inset: 0; background: rgba(7,11,22,.84); }
-  #dicho-ruido { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 0 80px; }
-  #dicho-ruido .titular { font-size: 118px; }
-
-  #costos { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 34px; padding: 0 90px; }
-  .costo {
-    width: 100%; display: flex; align-items: center; gap: 28px;
-    background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14);
-    border-radius: 22px; padding: 32px 36px;
+  .flyer .grito em { font-style: normal; color: #FFD400; text-shadow: 0 0 22px rgba(255,180,0,.9), 0 4px 0 #8A4A00; }
+  .flyer.v2 .grito { text-shadow: 0 0 20px rgba(255,0,200,.9), 0 4px 0 #6B0F8C, 3px 0 0 #6B0F8C, -3px 0 0 #6B0F8C, 0 -3px 0 #6B0F8C; }
+  .flyer.v3 .grito em { color: #6BFFC8; text-shadow: 0 0 22px rgba(60,255,200,.9), 0 4px 0 #046B54; }
+  .flyer .fila { display: flex; gap: .5em; flex-wrap: wrap; justify-content: center; }
+  .flyer .pastilla {
+    font-size: .36em; font-weight: 700; padding: .45em .9em; border-radius: 99px;
+    background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.28); color: #EAF4FF; opacity: .5;
   }
-  .costo b { font-size: 74px; font-weight: 800; letter-spacing: -.03em; color: #FF7A7A; white-space: nowrap; }
-  /* La cifra es el mensaje y la línea la explica. A 34px caía en el estado
-     intermedio: ni textura ni legible. Sube a 42 — arriba del piso auxiliar,
-     abajo del de subtítulo, que es lo que le corresponde a un pie de cifra. */
-  .costo span { font-size: 42px; color: rgba(245,242,234,.86); line-height: 1.22; }
+  .flyer .bichos { font-size: .9em; letter-spacing: .12em; opacity: .7; }
+  .flyer .pie { font-family: var(--mono); font-size: .32em; letter-spacing: .1em; color: #fff; opacity: .3; }
 
-  /* ── 2 · Alquimia ── */
+  #solo { display: grid; place-items: center; }
+  /* El 10 % del alto es la unidad del flyer; adentro todo va en `em`. */
+  #solo .flyer { width: 660px; height: 880px; font-size: 88px; }
+  #gancho-solo { position: absolute; left: 0; right: 0; top: 140px; text-align: center; padding: 0 80px; }
+  #gancho-solo .titular { font-size: 92px; }
+  #gancho-solo .acc { color: var(--rojo); }
+
+  #muro { overflow: hidden; }
+  #grilla { position: absolute; left: 50%; top: 0; width: 1040px; margin-left: -520px; display: grid; grid-template-columns: repeat(3, 330px); gap: 25px; }
+  #grilla .flyer { height: 440px; font-size: 44px; }
+  #velo-muro { position: absolute; inset: 0; background: rgba(5,7,14,.86); }
+  #dicho-muro { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 0 80px; }
+  #dicho-muro .titular { font-size: 104px; }
+  #dicho-muro .acc { color: var(--rojo); }
+
+  #costos { display: grid; place-items: center; align-content: center; gap: 30px; padding: 0 90px; }
+  #titulo-costos { font-size: 92px; text-align: center; margin-bottom: 26px; }
+  .costo { width: 100%; display: flex; align-items: center; gap: 26px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); border-radius: 22px; padding: 30px 34px; }
+  .costo b { font-size: 76px; font-weight: 800; letter-spacing: -.03em; color: var(--rojo); white-space: nowrap; }
+  .costo span { font-size: 42px; color: rgba(245,242,234,.88); line-height: 1.2; }
+
   #destello { position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%;
     background: radial-gradient(circle, #DFFFEC 0%, var(--menta) 58%, var(--menta) 74%, rgba(63,204,114,0) 88%); }
-
   #marca { display: grid; place-items: center; align-content: center; }
-  #marca .frasco { width: 250px; height: 250px; border-radius: 48px; overflow: hidden; box-shadow: 0 30px 90px -26px rgba(63,204,114,.55); }
+  #marca .frasco { width: 250px; height: 250px; border-radius: 48px; overflow: hidden; box-shadow: 0 30px 90px -26px rgba(63,204,114,.5); }
   #marca .frasco img { width: 100%; display: block; }
-  #marca .nom { font-size: 120px; font-weight: 800; letter-spacing: -.04em; margin-top: 44px; }
-  #marca .baj { margin-top: 22px; font-size: 48px; color: var(--gris); text-align: center; }
+  #marca .nom { font-size: 120px; font-weight: 800; letter-spacing: -.04em; margin-top: 42px; }
+  #marca .baj { margin-top: 20px; font-size: 48px; color: var(--gris); text-align: center; }
 
-  /* ── el teléfono con el flujo ── */
   #flujo { display: grid; place-items: center; align-content: center; }
-  #rot-flujo { position: absolute; top: 150px; left: 0; right: 0; text-align: center; padding: 0 70px; }
+  #rot-flujo { position: absolute; top: 140px; left: 0; right: 0; text-align: center; padding: 0 70px; }
   #rot-flujo .rotulo { color: var(--menta-h); }
-  #rot-flujo .frase { margin-top: 20px; font-size: 64px; font-weight: 800; letter-spacing: -.03em; line-height: 1.02; }
-
-  .telefono {
-    position: relative; width: 600px; height: 1299px; border-radius: 70px;
-    background: #10141A; padding: 13px;
-    box-shadow: 0 50px 120px -34px rgba(20,24,28,.5), 0 0 0 2px rgba(20,24,28,.1);
-  }
+  #rot-flujo .frase { margin-top: 18px; font-size: 64px; font-weight: 800; letter-spacing: -.03em; line-height: 1.02; }
+  .telefono { position: relative; width: 600px; height: 1299px; border-radius: 70px; background: #10141A; padding: 13px;
+    box-shadow: 0 50px 120px -34px rgba(20,24,28,.45), 0 0 0 2px rgba(20,24,28,.09); }
   .vidrio { position: relative; width: 100%; height: 100%; border-radius: 58px; overflow: hidden; background: var(--papel); }
   .vidrio img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 0; }
-  .muesca { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); width: 160px; height: 32px; border-radius: 20px; background: #10141A; z-index: 6; }
-  #dedo { position: absolute; width: 104px; height: 104px; margin: -52px 0 0 -52px; border-radius: 50%; background: rgba(20,24,28,.22); border: 4px solid rgba(20,24,28,.35); z-index: 8; }
-  #onda { position: absolute; width: 104px; height: 104px; margin: -52px 0 0 -52px; border-radius: 50%; border: 6px solid var(--menta); z-index: 7; }
+  .muesca { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); width: 160px; height: 32px; border-radius: 20px; background: #10141A; z-index: 8; }
+  /* Lo que se escribe solo, encima del campo real de la aplicación. */
+  #tecleo { position: absolute; z-index: 7; color: var(--ink); text-align: left; white-space: pre-wrap; word-break: break-word; }
+  #cursor { display: inline-block; width: .08em; background: var(--menta-h); vertical-align: -.14em; }
+  #dedo { position: absolute; width: 104px; height: 104px; margin: -52px 0 0 -52px; border-radius: 50%; background: rgba(20,24,28,.2); border: 4px solid rgba(20,24,28,.32); z-index: 9; }
+  #onda { position: absolute; width: 104px; height: 104px; margin: -52px 0 0 -52px; border-radius: 50%; border: 6px solid var(--menta); z-index: 8; }
 
-  /* ── 3 · el carrusel y el resultado ── */
-  #carrusel { display: grid; place-items: center; align-content: center; }
-  .placa-c {
-    position: absolute; left: 50%; top: 50%; width: 420px; border-radius: 22px; overflow: hidden;
-    box-shadow: 0 40px 90px -28px rgba(20,24,28,.45), 0 0 0 1px rgba(20,24,28,.06); background: #fff;
-  }
-  .placa-c img { width: 100%; display: block; }
-  #puntos { position: absolute; left: 0; right: 0; bottom: 430px; display: flex; justify-content: center; gap: 12px; }
-  #puntos i { width: 12px; height: 12px; border-radius: 50%; background: rgba(20,24,28,.22); display: block; }
-  #puntos i.on { background: var(--azul); }
-  #rot-carrusel { position: absolute; left: 0; right: 0; bottom: 240px; text-align: center; padding: 0 80px; }
-  #rot-carrusel .titular { font-size: 70px; }
-  #rot-carrusel .titular b { color: var(--menta-h); font-weight: 800; }
+  #pensando { display: grid; place-items: center; align-content: center; }
+  #pensando .frasco { width: 420px; height: 420px; }
+  #pensando .dice { margin-top: 40px; font-size: 56px; font-weight: 800; letter-spacing: -.02em; }
+  #pensando .puntitos { margin-top: 22px; display: flex; gap: 16px; }
+  #pensando .puntitos i { width: 18px; height: 18px; border-radius: 50%; background: var(--menta); display: block; }
+
+  #lluvia { overflow: hidden; }
+  .gota { position: absolute; width: 300px; border-radius: 16px; overflow: hidden; box-shadow: 0 24px 60px -20px rgba(20,24,28,.4), 0 0 0 1px rgba(20,24,28,.05); background: #fff; }
+  .gota img { width: 100%; display: block; }
+    /* Arriba y abajo la lluvia se disuelve en el papel, y abajo lo hace antes:
+     ahí va el dicho, y una placa cruzándole por detrás lo vuelve ilegible. */
+  #velo-lluvia { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(245,242,234,.96) 0%, rgba(245,242,234,.04) 22%, rgba(245,242,234,.08) 56%, rgba(245,242,234,.93) 78%, rgba(245,242,234,.99) 100%); }
+  #dicho-lluvia { position: absolute; left: 0; right: 0; bottom: 240px; text-align: center; padding: 0 80px; }
+  #dicho-lluvia .titular { font-size: 78px; }
+  #dicho-lluvia b { color: var(--menta-h); }
 
   #posteo { display: grid; place-items: center; align-content: center; }
-  .tarjeta-ig {
-    width: 720px; background: #fff; border-radius: 26px; overflow: hidden;
-    box-shadow: 0 40px 100px -30px rgba(20,24,28,.4); border: 1px solid rgba(20,24,28,.08);
-  }
+  .tarjeta-ig { width: 720px; background: #fff; border-radius: 26px; overflow: hidden; box-shadow: 0 40px 100px -30px rgba(20,24,28,.35); border: 1px solid rgba(20,24,28,.08); }
   .ig-cab { display: flex; align-items: center; gap: 16px; padding: 20px 22px; }
   .ig-cab .av { width: 62px; height: 62px; border-radius: 50%; background: var(--azul); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 24px; opacity: .55; }
   .ig-cab .nom { font-weight: 700; font-size: 34px; }
@@ -164,47 +176,52 @@
   .ig-iconos { display: flex; gap: 22px; font-size: 38px; }
   .ig-nums { margin-top: 14px; font-size: 36px; font-weight: 700; }
   .ig-nums span { color: var(--gris); font-weight: 500; }
-  .chip-sube {
-    position: absolute; display: inline-flex; align-items: center; gap: 14px;
-    padding: 18px 28px; border-radius: 999px; background: var(--papel2); color: var(--ink);
-    font-size: 38px; font-weight: 800; box-shadow: 0 20px 44px -14px rgba(20,24,28,.35);
-    border: 1px solid rgba(20,24,28,.07); white-space: nowrap;
+  .chip-sube { position: absolute; display: inline-flex; align-items: center; gap: 14px; padding: 18px 28px; border-radius: 999px;
+    background: var(--papel2); color: var(--ink); font-size: 38px; font-weight: 800;
+    box-shadow: 0 20px 44px -14px rgba(20,24,28,.32); border: 1px solid rgba(20,24,28,.07); white-space: nowrap; }
+  /* La consulta que llega. Una venta empieza así, y esto sí es verdad:
+     un mensaje pidiendo precio, no una cifra de facturación inventada. */
+  #mensaje {
+    position: absolute; left: 70px; right: 70px; top: 190px;
+    background: var(--papel2); border-radius: 22px; padding: 24px 28px;
+    box-shadow: 0 26px 60px -18px rgba(20,24,28,.4); border: 1px solid rgba(20,24,28,.08);
+    display: flex; gap: 20px; align-items: flex-start;
   }
+  #mensaje .av { width: 68px; height: 68px; border-radius: 50%; background: #C9922F; color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 34px; flex: none; }
+  #mensaje .quien { font-size: 32px; font-weight: 800; }
+  #mensaje .que { font-size: 36px; margin-top: 4px; line-height: 1.24; }
+  #mensaje .cuando { font-family: var(--mono); font-size: 22px; color: var(--gris); margin-top: 10px; letter-spacing: .06em; opacity: .5; }
 
-  /* ── 4 · el cierre ── */
   #cierre { display: grid; place-items: center; align-content: center; }
+  .volando { position: absolute; left: 50%; top: 50%; width: 230px; margin: -144px 0 0 -115px; border-radius: 12px; overflow: hidden;
+    box-shadow: 0 20px 44px -16px rgba(20,24,28,.36); background: #fff; }
+  .volando img { width: 100%; display: block; }
+  #cierre .centro { position: relative; z-index: 5; display: grid; place-items: center; }
   #cierre .frasco { width: 170px; height: 170px; border-radius: 34px; overflow: hidden; }
   #cierre .frasco img { width: 100%; display: block; }
-  #cierre .nom { font-size: 104px; font-weight: 800; letter-spacing: -.04em; margin-top: 32px; }
-  #cierre .claim { margin-top: 20px; font-size: 50px; color: var(--gris); text-align: center; }
-  #cierre .cta {
-    margin-top: 56px; background: var(--menta); color: #06220F; font-size: 60px; font-weight: 800;
-    padding: 32px 64px; border-radius: 999px; box-shadow: 0 10px 0 var(--menta-h);
-  }
-  /* Q11 · «la URL del cierre es la línea que menos debería ser chica». */
-  #cierre .url { margin-top: 32px; font-family: var(--mono); font-size: 40px; font-weight: 700; letter-spacing: .06em; color: var(--ink); }
+  #cierre .nom { font-size: 112px; font-weight: 800; letter-spacing: -.04em; margin-top: 26px; }
+  #cierre .claim { margin-top: 14px; font-size: 44px; color: var(--gris); text-align: center; }
+  #cierre .cta { margin-top: 42px; background: var(--menta); color: #06220F; font-size: 60px; font-weight: 800; padding: 30px 62px; border-radius: 999px; box-shadow: 0 10px 0 var(--menta-h); }
+  #cierre .url { margin-top: 26px; font-family: var(--mono); font-size: 40px; font-weight: 700; letter-spacing: .06em; color: var(--ink); }
 
-  #grano {
-    position: absolute; inset: 0; z-index: 50; pointer-events: none; opacity: .045;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
-  }
+  #grano { position: absolute; inset: 0; z-index: 60; pointer-events: none; opacity: .05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E"); }
 </style>
 
 <div id="escena">
-  <div class="capa oscura" id="gancho"><div class="titular" id="gancho-txt"></div></div>
+  <div class="capa oscura" id="solo"><div id="gancho-solo"><div class="titular" id="gancho-txt"></div></div></div>
 
-  <div class="capa oscura" id="ruido">
+  <div class="capa oscura" id="muro">
     <div id="grilla"></div>
-    <div id="velo-ruido"></div>
-    <div id="dicho-ruido"><div class="titular">Todos publican<br>lo <span style="color:#FF7A7A">mismo</span>.</div></div>
+    <div id="velo-muro"></div>
+    <div id="dicho-muro"><div class="titular">Los hizo el mismo robot<br>que los <span class="acc">de todos</span>.</div></div>
   </div>
 
-  <div class="capa oscura" id="costos-capa">
-    <div id="costos">
-      <div class="costo" data-c="1"><b>3 horas</b><span>peleándote con una plantilla</span></div>
-      <div class="costo" data-c="2"><b>US$10</b><span>lo que cobra un diseñador<br>por una placa suelta</span></div>
-    </div>
-  </div>
+  <div class="capa oscura" id="costos-capa"><div class="capa" id="costos">
+    <div id="titulo-costos" class="titular">Y la alternativa<br>te cuesta esto.</div>
+    <div class="costo" data-c="1"><b>3 horas</b><span>peleándote con una plantilla</span></div>
+    <div class="costo" data-c="2"><b>US$10</b><span>lo que cobra un diseñador<br>por una placa suelta</span></div>
+  </div></div>
 
   <div class="capa oscura" id="corte"><div id="destello"></div></div>
 
@@ -219,6 +236,7 @@
     <div class="telefono">
       <div class="vidrio">
         <img id="pantalla" src="assets/flujo-1-inicio.png" alt="">
+        <div id="tecleo"></div>
         <div class="muesca"></div>
       </div>
       <div id="onda"></div>
@@ -226,186 +244,288 @@
     </div>
   </div>
 
-  <div class="capa" id="carrusel">
-    <div id="rot-carrusel"><div class="titular">Cuatro placas,<br><b>listas para subir</b>.</div></div>
-    <div id="puntos"><i class="on"></i><i></i><i></i><i></i></div>
+  <div class="capa" id="pensando">
+    <div class="frasco" id="frasco-vivo"></div>
+    <div class="dice">Armando tu publicación</div>
+    <div class="puntitos"><i></i><i></i><i></i></div>
+  </div>
+
+  <div class="capa" id="lluvia">
+    <div id="gotas"></div>
+    <div id="velo-lluvia"></div>
+    <div id="dicho-lluvia"><div class="titular">Con tu marca.<br><b>La tuya, no la de todos.</b></div></div>
   </div>
 
   <div class="capa" id="posteo">
     <div class="tarjeta-ig">
-      <div class="ig-cab">
-        <div class="av">PS</div>
-        <div><div class="nom">piletassol</div><div class="sub">Córdoba</div></div>
-      </div>
+      <div class="ig-cab"><div class="av">PS</div><div><div class="nom">piletassol</div><div class="sub">Córdoba</div></div></div>
       <img src="assets/carrusel-01.png" alt="">
       <div class="ig-pie">
         <div class="ig-iconos">♥ 💬 ✈</div>
         <div class="ig-nums"><b id="megusta">0</b> me gusta · <span id="coment">0 comentarios</span></div>
       </div>
     </div>
+    <div id="mensaje">
+      <div class="av">M</div>
+      <div><div class="quien">martina.g</div><div class="que">Hola! Vi el posteo, ¿me pasás precio de la de 6×3?</div><div class="cuando">Ahora</div></div>
+    </div>
   </div>
 
   <div class="capa" id="cierre">
-    <div class="frasco"><img src="assets/logo.svg" alt=""></div>
-    <div class="nom">Alquimia</div>
-    <div class="claim">Tu próxima publicación, en un toque.</div>
-    <div class="cta">Probalo gratis</div>
-    <div class="url">alquimia-cm.vercel.app</div>
+    <div class="centro">
+      <div class="frasco"><img src="assets/logo.svg" alt=""></div>
+      <div class="nom">Alquimia</div>
+      <div class="claim">Tu próxima publicación, en un toque.</div>
+      <div class="cta">Probalo gratis</div>
+      <div class="url">alquimia-cm.vercel.app</div>
+    </div>
   </div>
 
   <div id="grano"></div>
 </div>
 
 <script type="module">
-const FIN = 34000
+import { frascoCargando } from '../web/js/frasco.js'
 
+/* El frasco se trae entero de la aplicación: el dibujo de `frasco.js` y sus
+ * animaciones de `app.css`. Copiarlas acá sería la tercera versión del mismo
+ * frasco, y ya pasó una vez con el sello circular —la copia tenía el arco al
+ * revés—. Se filtran las reglas que lo nombran en vez de cargar la hoja entera,
+ * que redefiniría el `body` de esta página. */
+async function reglasDelFrasco() {
+  const css = await fetch('/web/css/app.css').then(r => r.text())
+  const bloques = []
+  let hondo = 0, desde = 0
+  for (let i = 0; i < css.length; i++) {
+    if (css[i] === '{') { if (hondo++ === 0) { /* abre bloque de primer nivel */ } }
+    else if (css[i] === '}' && --hondo === 0) { bloques.push(css.slice(desde, i + 1)); desde = i + 1 }
+  }
+  return bloques.filter(b => /frasco/.test(b.slice(0, b.indexOf('{')))).join('\n')
+}
+const hoja = document.createElement('style')
+hoja.textContent = await reglasDelFrasco()
+document.head.append(hoja)
+
+const FIN = 34150
 const sujeta = v => Math.max(0, Math.min(1, v))
 const tramo = (t, a, b) => sujeta((t - a) / (b - a))
 const frena = p => 1 - Math.pow(1 - p, 3)
 const suave = p => p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2
-const rebota = p => { const c = 2.70158; return 1 + (c + 1) * Math.pow(p - 1, 3) + c * Math.pow(p - 1, 2) }
+const rebota = p => { const c = 2.2; return 1 + (c + 1) * Math.pow(p - 1, 3) + c * Math.pow(p - 1, 2) }
 const entre = (a, b, p) => a + (b - a) * p
 const asoma = (t, a, b, c, d) => Math.min(tramo(t, a, b), 1 - tramo(t, c, d))
 const $ = s => document.querySelector(s)
 const poner = (n, e) => n && Object.assign(n.style, e)
 
-/* Dónde cae el dedo: medido por `capturar-flujo.mjs` sobre la aplicación real. */
 const FLUJO = await fetch('assets/flujo.json').then(r => r.json())
 
+/* ── los flyers ── */
 const GRITOS = [
-  ['OFERTA', 'SABOR<br><em>PERFECTO</em>', 'RESTAURANTES'], ['SOLO HOY', 'TU MEJOR<br><em>VERSIÓN</em>', 'GIMNASIOS'],
-  ['2×1', 'URBAN<br><em>STYLE</em>', 'INDUMENTARIA'], ['NUEVO', 'BELLEZA<br><em>QUE INSPIRA</em>', 'SALONES'],
-  ['PROMO', 'MÁS QUE<br><em>UN CORTE</em>', 'BARBERÍAS'], ['ÚLTIMO DÍA', 'CALIDAD<br><em>Y SERVICIO</em>', 'TODO RUBRO'],
-  ['30% OFF', 'EL SABOR<br><em>DE SIEMPRE</em>', 'PANADERÍAS'], ['HOY', 'TU AUTO<br><em>COMO NUEVO</em>', 'TALLERES'],
-  ['GRATIS', 'ENERGÍA<br><em>NATURAL</em>', 'DIETÉTICAS'], ['APROVECHÁ', 'DISEÑO<br><em>QUE ENAMORA</em>', 'MUEBLERÍAS'],
-  ['IMPERDIBLE', 'MÁS CERCA<br><em>DE VOS</em>', 'SERVICIOS'], ['CONSULTÁ', 'LA MEJOR<br><em>ELECCIÓN</em>', 'TODO RUBRO'],
+  ['OFERTA', 'SABOR<br><em>PERFECTO</em>', ['Rápido', 'Fácil', 'IA'], '🤖✨', ''],
+  ['SOLO HOY', 'TU MEJOR<br><em>VERSIÓN</em>', ['Gimnasios', 'Ahora'], '💪🔥', 'v2'],
+  ['2×1', 'URBAN<br><em>STYLE</em>', ['Moda', 'Envíos'], '👟⚡', 'v3'],
+  ['NUEVO', 'BELLEZA<br><em>QUE INSPIRA</em>', ['Turnos', 'Promo'], '💅✨', 'v2'],
+  ['PROMO', 'MÁS QUE<br><em>UN CORTE</em>', ['Barbería', 'Reservá'], '💈🤖', ''],
+  ['APRENDÉ', 'AFICHES<br><em>CON IA</em>', ['1 Elegí', '2 Generá', '3 Bajá'], '🎨🚀', 'v3'],
+  ['30% OFF', 'EL SABOR<br><em>DE SIEMPRE</em>', ['Delivery', 'Hoy'], '🍕😋', ''],
+  ['GRATIS', 'AGENTES<br><em>DE IA</em>', ['2026', 'Tendencia'], '🤖🧠', 'v2'],
+  ['CONSULTÁ', 'LA MEJOR<br><em>ELECCIÓN</em>', ['Todo rubro', 'Ya'], '⭐️💡', 'v3'],
 ]
-for (const [c, g, p] of GRITOS) {
+const flyerHTML = ([cinta, grito, pastillas, bichos]) =>
+  `<div class="cinta">${cinta}</div><div class="grito">${grito}</div>`
+  + `<div class="fila">${pastillas.map(p => `<span class="pastilla">${p}</span>`).join('')}</div>`
+  + `<div class="bichos">${bichos}</div><div class="pie">TU NEGOCIO · HECHO CON IA</div>`
+
+const soloFlyer = document.createElement('div')
+soloFlyer.className = 'flyer'
+soloFlyer.innerHTML = flyerHTML(GRITOS[0])
+$('#solo').append(soloFlyer)
+
+for (const g of [...GRITOS, ...GRITOS.slice(3), ...GRITOS.slice(0, 3)]) {
   const f = document.createElement('div')
-  f.className = 'flyer'
-  f.innerHTML = `<div class="cinta">${c}</div><div class="grito">${g}</div><div class="pie">${p}</div>`
+  f.className = ('flyer ' + g[4]).trim()
+  f.innerHTML = flyerHTML(g)
   $('#grilla').append(f)
 }
 
-const PALABRAS = ['Tu', 'contenido', 'se', 'pierde', 'entre', 'otros', 'mil', '<span class="acc">iguales</span>.']
+const PALABRAS = ['Tu', 'flyer', 'parece', 'hecho', 'por', 'un', '<span class="acc">robot</span>.']
 $('#gancho-txt').innerHTML = PALABRAS.map((p, i) => `<span data-p="${i}">${p}</span>`).join(' ')
 
-/* Las cuatro placas del carrusel, que son salida real del motor. */
-const PLACAS = [1, 2, 3, 4].map(n => {
+/* ── la lluvia: diez placas de diez negocios ── */
+const GOTAS = Array.from({ length: 10 }, (_, i) => {
   const d = document.createElement('div')
-  d.className = 'placa-c'
-  d.innerHTML = `<img src="assets/carrusel-0${n}.png" alt="">`
-  $('#carrusel').append(d)
-  return d
+  d.className = 'gota'
+  d.innerHTML = `<img src="assets/lluvia-${String(i + 1).padStart(2, '0')}.png" alt="">`
+  $('#gotas').append(d)
+  // Tres columnas a distinta velocidad: parejas se leerían como una cortina.
+  const col = i % 3
+  return { n: d, x: 62 + col * 340 + (i % 2 ? 24 : -12), col, veloc: [1, 1.26, .84][col] }
+})
+// El desfase se reparte parejo dentro de cada columna. Calculado con el índice
+// global las placas de una misma columna salían apiladas: cuatro cayendo juntas
+// y después medio plano vacío.
+for (const col of [0, 1, 2]) {
+  const suyas = GOTAS.filter(g => g.col === col)
+  suyas.forEach((g, k) => { g.desfase = k / suyas.length })
+}
+
+/* ── el frasco de la espera: el mismo módulo que usa la aplicación ── */
+const frasco = frascoCargando('spot')
+// El tamaño y el margen los pone `.frasco-espera` para la pantalla de espera
+// de la aplicación; acá manda la caja del plano.
+Object.assign(frasco.style, { width: '100%', height: '100%', margin: '0' })
+$('#frasco-vivo').append(frasco)
+
+/* ── el cierre: todo lo visto rodeando el logotipo (Q8) ── */
+const ORBITA = [
+  { img: 'lluvia-01', x: -360, y: -560, giro: -12 }, { img: 'lluvia-05', x: 352, y: -520, giro: 10 },
+  { img: 'lluvia-03', x: -406, y: -60, giro: -7 },   { img: 'lluvia-08', x: 398, y: -10, giro: 8 },
+  { img: 'carrusel-01', x: -344, y: 540, giro: 9 },  { img: 'lluvia-04', x: 350, y: 512, giro: -9 },
+  { img: 'lluvia-06', x: -120, y: -740, giro: 4 },   { img: 'lluvia-09', x: 150, y: 742, giro: -5 },
+]
+const orbita = ORBITA.map(o => {
+  const d = document.createElement('div')
+  d.className = 'volando'
+  d.innerHTML = `<img src="assets/${o.img}.png" alt="">`
+  $('#cierre').prepend(d)
+  return { ...o, n: d }
 })
 
 const CHIPS = [
-  { t: '♥ 248 me gusta', x: 90, y: 1490, ms: 27300 },
-  { t: '👤 31 seguidores', x: 520, y: 1600, ms: 28000 },
-  { t: '💬 12 consultas', x: 140, y: 1710, ms: 28700 },
+  { t: '👀 1.240 cuentas alcanzadas', x: 80, y: 1690, ms: 27850 },
+  { t: '👤 31 seguidores', x: 520, y: 1800, ms: 28550 },
 ]
-const chips = CHIPS.map(c => {
+for (const c of CHIPS) {
   const n = document.createElement('div')
   n.className = 'chip-sube'
   n.textContent = c.t
   $('#posteo').append(n)
-  return n
-})
+}
+const chips = [...document.querySelectorAll('.chip-sube')]
 
-/* Los cinco pasos del flujo: qué pantalla se ve, qué se dice y dónde toca. */
+/* ── los pasos del teléfono ── */
 const PASOS = [
-  { desde: 10500, img: 'flujo-1-inicio.png',  frase: 'Abrís y tocás <b>Sugerime</b>.',      toque: FLUJO.toques['1-inicio'] },
-  { desde: 12900, img: 'flujo-2-tema.png',    frase: 'Escribís de qué querés hablar.',       toque: FLUJO.toques['2-tema'] },
-  { desde: 15300, img: 'flujo-3-forma.png',   frase: 'Elegís si va suelto o en carrusel.',   toque: FLUJO.toques['3-forma'] },
-  { desde: 17700, img: 'flujo-4-armando.png', frase: 'Y lo arma solo, con tu marca.',        toque: null },
-  { desde: 20100, img: 'flujo-5-listo.png',   frase: 'Cuatro placas, con tu marca.',         toque: null },
+  { desde: 12350, img: 'flujo-1-inicio.png', frase: 'Abrís y tocás <b>Sugerime</b>.', toque: FLUJO.toques['1-inicio'] },
+  { desde: 14550, img: 'flujo-2-vacio.png',  frase: 'Escribís qué querés lograr.',    toque: FLUJO.toques['2-tema'], tecleo: true },
+  { desde: 18550, img: 'flujo-3-forma.png',  frase: 'Elegís suelto o carrusel.',      toque: FLUJO.toques['3-forma'] },
 ]
-const FIN_FLUJO = 22500
+const FIN_FLUJO = 20850
+const TEMA = FLUJO.tema
+const CAMPO = FLUJO.campos.tema
 
 function pintar(t) {
-  for (const id of ['#gancho', '#ruido', '#costos-capa', '#corte', '#marca', '#flujo', '#carrusel', '#posteo', '#cierre']) {
+  for (const id of ['#solo','#muro','#costos-capa','#corte','#marca','#flujo','#pensando','#lluvia','#posteo','#cierre']) {
     $(id).style.opacity = 0
   }
 
-  /* 1 · 0 – 2,4 s · el gancho */
-  $('#gancho').style.opacity = asoma(t, 0, 240, 2150, 2400)
-  PALABRAS.forEach((_, i) => {
-    const n = $(`#gancho-txt [data-p="${i}"]`)
-    const p = frena(tramo(t, 120 + i * 95, 520 + i * 95))
-    poner(n, { display: 'inline-block', opacity: p, transform: `translateY(${entre(24, 0, p)}px)` })
-  })
-
-  /* 2 · 2,3 – 5,6 s · el ruido */
+  /* 1 · 0 – 3,8 s · un flyer solo, con arco completo (Q5, R3) */
   {
-    $('#ruido').style.opacity = asoma(t, 2300, 2500, 5300, 5600)
-    const corre = suave(tramo(t, 2300, 5300))
-    const apaga = tramo(t, 4000, 5300)
-    poner($('#grilla'), {
-      transform: `translateY(${entre(260, -1180, corre)}px)`,
-      filter: `saturate(${entre(1, .12, apaga)}) brightness(${entre(1, .5, apaga)})`,
+    $('#solo').style.opacity = asoma(t, 0, 200, 3500, 3800)
+    const llega = frena(tramo(t, 150, 1600))
+    const asienta = suave(tramo(t, 1600, 3500))
+    poner(soloFlyer, {
+      opacity: llega,
+      transform: `translateY(${entre(230, 0, llega)}px) rotate(${entre(-7, -1.5, llega)}deg)`
+        + ` scale(${entre(.6, .97, llega) * entre(1, 1.07, asienta)})`,
     })
-    const dicho = asoma(t, 3500, 3800, 5100, 5350)
-    poner($('#velo-ruido'), { opacity: dicho * .95 })
-    poner($('#dicho-ruido'), { opacity: dicho, transform: `scale(${entre(.95, 1, rebota(tramo(t, 3500, 3950)))})` })
+    PALABRAS.forEach((_, i) => {
+      const n = $(`#gancho-txt [data-p="${i}"]`)
+      const p = frena(tramo(t, 1600 + i * 95, 2000 + i * 95))
+      poner(n, { display: 'inline-block', opacity: p, transform: `translateY(${entre(22, 0, p)}px)` })
+    })
   }
 
-  /* 3 · 5,5 – 8 s · lo que cuesta hoy */
+  /* 2 · 3,6 – 7,4 s · se multiplica en el muro */
   {
-    $('#costos-capa').style.opacity = asoma(t, 5500, 5750, 7700, 7950)
+    $('#muro').style.opacity = asoma(t, 3600, 3800, 7100, 7400)
+    const corre = suave(tramo(t, 3600, 7100))
+    const apaga = tramo(t, 5600, 7100)
+    poner($('#grilla'), {
+      transform: `translateY(${entre(60, -900, corre)}px)`,
+      filter: `saturate(${entre(1, .1, apaga)}) brightness(${entre(1, .45, apaga)})`,
+    })
+    $('#grilla').querySelectorAll('.flyer').forEach((f, i) => {
+      const p = frena(tramo(t, 3600 + i * 42, 4100 + i * 42))
+      poner(f, { opacity: p, transform: `scale(${entre(.93, 1, p)})` })
+    })
+    const dicho = asoma(t, 4900, 5200, 6900, 7150)
+    poner($('#velo-muro'), { opacity: dicho * .95 })
+    poner($('#dicho-muro'), { opacity: dicho, transform: `scale(${entre(.95, 1, rebota(tramo(t, 4900, 5350)))})` })
+  }
+
+  /* 3 · 7,2 – 9,9 s · lo que cuesta hoy */
+  {
+    $('#costos-capa').style.opacity = asoma(t, 7200, 7450, 9700, 9950)
+    const tit = frena(tramo(t, 7250, 7700))
+    poner($('#titulo-costos'), { opacity: tit, transform: `translateY(${entre(24, 0, tit)}px)` })
     for (const n of document.querySelectorAll('.costo')) {
       const i = Number(n.dataset.c) - 1
-      const p = frena(tramo(t, 5700 + i * 450, 6300 + i * 450))
-      poner(n, { opacity: p, transform: `translateY(${entre(34, 0, p)}px)` })
+      const p = frena(tramo(t, 7750 + i * 430, 8300 + i * 430))
+      poner(n, { opacity: p, transform: `translateY(${entre(30, 0, p)}px)` })
     }
   }
 
-  /* 4 · 7,8 – 9,2 s · el corte */
+  /* 4 · 9,8 – 12,6 s · el corte y la marca (R1: quieta un segundo entero) */
   {
-    $('#corte').style.opacity = asoma(t, 7800, 7900, 8300, 8650)
-    poner($('#destello'), { transform: `scale(${entre(.3, 62, frena(tramo(t, 7900, 8400)))})` })
+    $('#corte').style.opacity = asoma(t, 9850, 9950, 10350, 10650)
+    poner($('#destello'), { transform: `scale(${entre(.3, 62, frena(tramo(t, 9950, 10450)))})` })
+    $('#marca').style.opacity = asoma(t, 10350, 10600, 12250, 12550)
+    poner($('#marca .frasco'), { transform: `scale(${entre(.55, 1, rebota(tramo(t, 10400, 10950)))})` })
+    const n = frena(tramo(t, 10750, 11150))
+    poner($('#marca .nom'), { opacity: n, transform: `translateY(${entre(20, 0, n)}px)` })
+    poner($('#marca .baj'), { opacity: frena(tramo(t, 11000, 11350)) })
   }
 
-  /* 5 · 8,3 – 9,8 s · la marca.
-   *
-   * Necesita su segundo y medio. Con el destello encima duraba menos que un
-   * parpadeo: el frasco aparecía cuando la pantalla todavía estaba verde. */
+  /* 5 · 12,3 – 20,8 s · el teléfono, con el tema escribiéndose */
   {
-    /* R1 · después de que el nombre cae, un segundo entero quieto.
-     * Antes caía a los 9,2 y la capa se iba a los 9,45: un cuarto de segundo.
-     * El respiro va al nombre de la marca, que es lo que se quiere que quede. */
-    $('#marca').style.opacity = asoma(t, 8300, 8600, 10400, 10700)
-    poner($('#marca .frasco'), { transform: `scale(${entre(.55, 1, rebota(tramo(t, 8350, 8950)))})` })
-    const n = frena(tramo(t, 8750, 9200))
-    poner($('#marca .nom'), { opacity: n, transform: `translateY(${entre(22, 0, n)}px)` })
-    poner($('#marca .baj'), { opacity: frena(tramo(t, 9000, 9400)) })
-  }
-
-  /* 6 · 9 – 19 s · el flujo, con la aplicación de verdad */
-  {
-    $('#flujo').style.opacity = asoma(t, 10450, 10800, FIN_FLUJO - 300, FIN_FLUJO)
-    const sube = frena(tramo(t, 10450, 11150))
-    poner($('.telefono'), { transform: `translateY(${entre(300, 0, sube)}px) scale(${entre(.94, 1, sube)})` })
+    $('#flujo').style.opacity = asoma(t, 12350, 12650, FIN_FLUJO - 300, FIN_FLUJO)
+    const sube = frena(tramo(t, 12350, 13050))
+    poner($('.telefono'), { transform: `translateY(${entre(280, 0, sube)}px) scale(${entre(.94, 1, sube)})` })
 
     const paso = PASOS.filter(p => t >= p.desde).pop() || PASOS[0]
     const img = $('#pantalla')
     if (!img.src.endsWith(paso.img)) img.src = 'assets/' + paso.img
-    // El cambio de pantalla entra con un empujón corto, como un toque de verdad.
     const recien = tramo(t, paso.desde, paso.desde + 260)
-    poner(img, { opacity: entre(.4, 1, recien), transform: `translateY(${entre(18, 0, frena(recien))}px)` })
+    poner(img, { opacity: entre(.45, 1, recien), transform: `translateY(${entre(16, 0, frena(recien))}px)` })
 
     const f = $('#frase-flujo')
     if (f.innerHTML !== paso.frase) f.innerHTML = paso.frase
-    const rot = frena(tramo(t, 10800, 11250))
-    poner($('#rot-flujo'), { opacity: Math.min(rot, asoma(t, 10800, 11250, FIN_FLUJO - 400, FIN_FLUJO - 100)) })
+    const rot = frena(tramo(t, 12750, 13200))
+    poner($('#rot-flujo'), { opacity: Math.min(rot, asoma(t, 12750, 13200, FIN_FLUJO - 400, FIN_FLUJO - 100)) })
 
-    // El dedo baja, aprieta y se va, justo antes de que cambie la pantalla.
+    /* El tema se escribe solo.
+     *
+     * Va encima de la captura de la pantalla vacía, en la caja que midió
+     * `capturar-flujo.mjs` — por eso cae adentro del recuadro aunque el
+     * formulario cambie. Dos segundos y medio para el texto entero: rápido pero
+     * humano. Instantáneo se lee como un pegado, no como alguien escribiendo,
+     * que es justamente lo que hay que mostrar. */
+    const tec = $('#tecleo')
+    if (paso.tecleo) {
+      const vidrio = $('.vidrio')
+      const anchoV = vidrio.offsetWidth, altoV = vidrio.offsetHeight
+      const cuerpo = CAMPO.cuerpo * altoV
+      poner(tec, {
+        display: 'block',
+        left: `${CAMPO.x * anchoV}px`, top: `${CAMPO.y * altoV}px`,
+        width: `${CAMPO.w * anchoV}px`, height: `${CAMPO.h * altoV}px`,
+        padding: `${CAMPO.sangriaArriba * altoV}px ${CAMPO.sangria * anchoV}px`,
+        background: CAMPO.fondo, borderRadius: CAMPO.radio,
+        fontSize: `${cuerpo}px`, lineHeight: `${cuerpo * 1.5}px`,
+      })
+      const escrito = Math.round(entre(0, TEMA.length, sujeta(tramo(t, paso.desde + 800, paso.desde + 3300))))
+      const parpadeo = Math.floor((t - paso.desde) / 480) % 2 === 0 ? 1 : .12
+      tec.innerHTML = TEMA.slice(0, escrito)
+        + `<span id="cursor" style="opacity:${escrito < TEMA.length ? 1 : parpadeo};height:${cuerpo}px"></span>`
+    } else {
+      poner(tec, { display: 'none' })
+    }
+
+    // El toque, a velocidad de persona. Donde se escribe, recién al terminar.
     const vidrio = $('.vidrio')
     const toque = paso.toque
+    const cuando = paso.desde + (paso.tecleo ? 3600 : 1350)
     if (toque) {
-      /* R3 · el toque va a velocidad de persona. El dedo baja en un segundo
-       * entero y se queda un rato después de apretar: así se puede seguir con
-       * la vista, que es la prueba que pide la regla. */
-      const cuando = paso.desde + 1350
       const x = 13 + vidrio.offsetWidth * toque.x
       const y = 13 + vidrio.offsetHeight * toque.y
       const llega = suave(tramo(t, cuando - 1000, cuando))
@@ -416,76 +536,82 @@ function pintar(t) {
         transform: `scale(${entre(1, .76, Math.sin(aprieta * Math.PI))})`,
       })
       const onda = tramo(t, cuando + 60, cuando + 700)
-      poner($('#onda'), {
-        opacity: onda > 0 && onda < 1 ? (1 - onda) * .9 : 0,
-        left: `${x}px`, top: `${y}px`, transform: `scale(${entre(.5, 3.2, frena(onda))})`,
-      })
-    } else {
-      poner($('#dedo'), { opacity: 0 })
-      poner($('#onda'), { opacity: 0 })
-    }
+      poner($('#onda'), { opacity: onda > 0 && onda < 1 ? (1 - onda) * .9 : 0, left: `${x}px`, top: `${y}px`, transform: `scale(${entre(.5, 3.2, frena(onda))})` })
+    } else { poner($('#dedo'), { opacity: 0 }); poner($('#onda'), { opacity: 0 }) }
   }
 
-  /* 7 · 18,8 – 23,2 s · se despliega el carrusel */
+  /* 6 · 20,6 – 23,6 s · sólo el frasco, pensando */
   {
-    $('#carrusel').style.opacity = asoma(t, 22300, 22600, 26900, 27200)
-    /* R2 · la velocidad viene de la aceleración, no de ir rápido parejo.
-     * Las cuatro placas salían cada 170 ms exactos, que se lee como PowerPoint.
-     * Ahora los huecos se achican —280, 190, 130— como un mazo repartiendo, y
-     * cuando la última cae hay medio segundo de quietud antes de deslizar. */
-    const SALIDAS = [22500, 22780, 22970, 23100]
-    const abanico = [-300, -100, 100, 300]
-    const ultima = SALIDAS[3] + 900          // cuándo terminó de caer la cuarta
-    const desliza = suave(tramo(t, ultima + 500, 26500))
-    const cual = Math.min(3, Math.floor(tramo(t, ultima + 500, 26500) * 4))
-    PLACAS.forEach((n, i) => {
-      const sale = rebota(tramo(t, SALIDAS[i], SALIDAS[i] + 900))
-      const x = entre(0, abanico[i], frena(tramo(t, SALIDAS[i], SALIDAS[i] + 900))) - desliza * 900
-      poner(n, {
-        zIndex: 4 - i,
-        opacity: sujeta(tramo(t, SALIDAS[i], SALIDAS[i] + 400) * 1.6),
-        transform: `translate(calc(-50% + ${x}px), calc(-50% + ${entre(420, -120, frena(tramo(t, SALIDAS[i], SALIDAS[i] + 900)))}px))`
-          + ` rotate(${entre(0, (i - 1.5) * 4, sale)}deg) scale(${entre(.6, 1, sale)})`,
-      })
+    $('#pensando').style.opacity = asoma(t, 20650, 20950, 23350, 23650)
+    // El frasco de la aplicación, con su reloj movido a mano.
+    for (const a of frasco.getAnimations({ subtree: true })) { a.pause(); a.currentTime = Math.max(0, t - 20650) }
+    const p = rebota(tramo(t, 20700, 21350))
+    poner($('#pensando .frasco'), { transform: `scale(${entre(.7, 1, p)})` })
+    poner($('#pensando .dice'), { opacity: frena(tramo(t, 21250, 21650)) })
+    $('#pensando').querySelectorAll('.puntitos i').forEach((b, i) => {
+      const fase = ((t - 21350) / 520 + i * .33) % 1
+      poner(b, { transform: `translateY(${-14 * Math.sin(fase * Math.PI)}px)`, opacity: entre(.35, 1, Math.sin(fase * Math.PI)) })
     })
-    document.querySelectorAll('#puntos i').forEach((p, i) => p.classList.toggle('on', i === cual))
-    poner($('#puntos'), { opacity: asoma(t, ultima + 400, ultima + 700, 26600, 26900) })
-    const rc = frena(tramo(t, 24200, 24800))
-    poner($('#rot-carrusel'), { opacity: Math.min(rc, asoma(t, 24200, 24800, 26600, 26900)), transform: `translateY(${entre(30, 0, rc)}px)` })
   }
 
-  /* 8 · 22,9 – 26 s · el posteo publicado */
+  /* 7 · 23,4 – 28 s · la lluvia de placas (P4: el sistema de marca) */
   {
-    $('#posteo').style.opacity = asoma(t, 26900, 27200, 30300, 30600)
-    const p = frena(tramo(t, 26900, 27700))
-    poner($('.tarjeta-ig'), { transform: `translateY(${entre(60, 0, p)}px) scale(${entre(.94, 1, p)})` })
-    // Los números suben. Son ilustrativos: el aviso no promete una cifra.
-    const sube = frena(tramo(t, 27400, 29700))
+    $('#lluvia').style.opacity = asoma(t, 23450, 23750, 27750, 28050)
+    const avance = tramo(t, 23450, 28050)
+    for (const g of GOTAS) {
+      // Caen y se reciclan arriba: una tira continua, no una tanda que termina.
+      const y = ((g.desfase + avance * g.veloc * 1.5) % 1) * 2700 - 620
+      poner(g.n, { left: `${g.x}px`, top: `${y}px`, opacity: sujeta(tramo(t, 23450, 23950)) })
+    }
+    const d = frena(tramo(t, 25050, 25650))
+    poner($('#dicho-lluvia'), { opacity: Math.min(d, asoma(t, 25050, 25650, 27450, 27750)), transform: `translateY(${entre(26, 0, d)}px)` })
+  }
+
+  /* 8 · 27,8 – 31,5 s · el posteo publicado y la consulta que llega */
+  {
+    $('#posteo').style.opacity = asoma(t, 27850, 28150, 31250, 31550)
+    const p = frena(tramo(t, 27850, 28550))
+    const sube = frena(tramo(t, 28150, 30050))
     $('#megusta').textContent = Math.round(entre(0, 248, sube)).toLocaleString('es-AR')
     $('#coment').textContent = `${Math.round(entre(0, 12, sube))} comentarios`
     chips.forEach((n, i) => {
       const c = CHIPS[i]
       const a = frena(tramo(t, c.ms, c.ms + 600))
       const flota = 1 - tramo(t, c.ms + 600, c.ms + 2400)
-      poner(n, {
-        left: `${c.x}px`, top: `${c.y - (1 - flota) * 110}px`,
+      poner(n, { left: `${c.x}px`, top: `${c.y - (1 - flota) * 100}px`,
         opacity: Math.min(a, flota < .3 ? flota * 3.3 : 1),
-        transform: `scale(${entre(.75, 1, rebota(tramo(t, c.ms, c.ms + 600)))})`,
-      })
+        transform: `scale(${entre(.78, 1, rebota(tramo(t, c.ms, c.ms + 600)))})` })
+    })
+    // El mensaje entra como un aviso del teléfono y empuja la publicación hacia
+    // abajo. Sin el empujón le tapa el nombre de la cuenta, que es lo único que
+    // dice de quién es el posteo.
+    const m = rebota(tramo(t, 29650, 30350))
+    poner($('.tarjeta-ig'), { transform: `translateY(${entre(50, 0, p) + entre(0, 140, sujeta(m))}px) scale(${entre(.95, 1, p)})` })
+    poner($('#mensaje'), {
+      opacity: Math.min(sujeta(m * 1.6), asoma(t, 29650, 29950, 31150, 31450)),
+      transform: `translateY(${entre(-70, 0, m)}px) scale(${entre(.9, 1, m)})`,
     })
   }
 
-  /* 9 · 25,8 – 28 s · el cierre */
+  /* 9 · 31,3 – 34,1 s · la foto grupal (Q8) */
   {
-    $('#cierre').style.opacity = tramo(t, 30400, 30800)
-    poner($('#cierre .frasco'), { transform: `scale(${entre(.6, 1, rebota(tramo(t, 30500, 31100)))})` })
-    const n = frena(tramo(t, 30900, 31400))
-    poner($('#cierre .nom'), { opacity: n, transform: `translateY(${entre(24, 0, n)}px)` })
-    const c = frena(tramo(t, 31200, 31700))
-    poner($('#cierre .claim'), { opacity: c })
-    const b = rebota(tramo(t, 31600, 32200))
-    poner($('#cierre .cta'), { opacity: sujeta(b * 2), transform: `scale(${entre(.8, 1, b)})` })
-    poner($('#cierre .url'), { opacity: frena(tramo(t, 32100, 32700)) })
+    $('#cierre').style.opacity = tramo(t, 31350, 31650)
+    orbita.forEach((o, i) => {
+      const p = frena(tramo(t, 31450 + i * 70, 32350 + i * 70))
+      const lejos = 2.4
+      poner(o.n, {
+        opacity: p,
+        transform: `translate(${entre(o.x * lejos, o.x, p)}px, ${entre(o.y * lejos, o.y, p)}px)`
+          + ` rotate(${entre(o.giro * 3, o.giro, p)}deg) scale(${entre(.7, 1, p)})`,
+      })
+    })
+    poner($('#cierre .frasco'), { transform: `scale(${entre(.6, 1, rebota(tramo(t, 32050, 32600)))})` })
+    const n = frena(tramo(t, 32450, 32850))
+    poner($('#cierre .nom'), { opacity: n, transform: `translateY(${entre(18, 0, n)}px)` })
+    poner($('#cierre .claim'), { opacity: frena(tramo(t, 32700, 33050)) })
+    const b = rebota(tramo(t, 32950, 33500))
+    poner($('#cierre .cta'), { opacity: sujeta(b * 2), transform: `scale(${entre(.82, 1, b)})` })
+    poner($('#cierre .url'), { opacity: frena(tramo(t, 33400, 33850)) })
   }
 }
 

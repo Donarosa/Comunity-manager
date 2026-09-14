@@ -23,7 +23,7 @@ import { findChrome } from '../core/render/engine.mjs'
 
 const SITIO = process.env.SITIO || 'http://localhost:8787'
 const SESION = process.env.SESION || 'loc_1964'
-const TEMA = process.env.TEMA || 'los inflables tapan el filtro de la pileta'
+const TEMA = process.env.TEMA || 'crea en dos clicks publicaciones para instagram y comenza a vender'
 
 const PLAN = {
   resumen: 'Un carrusel que explica por qué los inflables ensucian el filtro y qué hacer después de cada uso.',
@@ -82,6 +82,7 @@ const esperar = ms => new Promise(r => setTimeout(r, ms))
  * aire. Se guarda en fracciones del alto y el ancho para que no dependa del
  * tamaño de la captura. */
 const toques = {}
+const campos = {}
 const tocar = async (texto, paso) => {
   const caja = await p.evaluate(t => {
     const b = [...document.querySelectorAll('button')].find(x => x.textContent.includes(t))
@@ -122,6 +123,36 @@ await foto('1-inicio')
 
 await tocar('Sugerime', '1-inicio')
 await esperar(1200)
+
+/* La pantalla del tema, primero vacía.
+ *
+ * El comercial escribe el tema letra por letra encima de esta captura, así que
+ * necesita la pantalla sin nada escrito y la caja exacta del campo. Medida acá y
+ * no a ojo: si el formulario cambia, el texto sigue cayendo adentro del recuadro
+ * en vez de quedar flotando al lado. */
+await foto('2-vacio')
+campos.tema = await p.evaluate(() => {
+  const ta = document.querySelector('textarea')
+  const r = ta.getBoundingClientRect()
+  const cs = getComputedStyle(ta)
+  return {
+    x: r.left / innerWidth, y: r.top / innerHeight,
+    w: r.width / innerWidth, h: r.height / innerHeight,
+    // El tamaño de letra va en fracción del alto: el comercial dibuja el
+    // teléfono a otra escala y lo tiene que convertir.
+    cuerpo: parseFloat(cs.fontSize) / innerHeight,
+    interlinea: parseFloat(cs.lineHeight) / innerHeight,
+    sangria: parseFloat(cs.paddingLeft) / innerWidth,
+    sangriaArriba: parseFloat(cs.paddingTop) / innerHeight,
+    // El campo vacío tiene su texto de ayuda adentro, y el comercial escribe
+    // encima: sin tapar el fondo se leen los dos textos superpuestos. El color
+    // y el redondeo se miden acá por la misma razón que la caja — el día que el
+    // formulario cambie de tono, el parche no queda de otro color.
+    fondo: cs.backgroundColor,
+    radio: cs.borderRadius,
+  }
+})
+
 // El tema, escrito como lo escribiría una persona.
 await p.evaluate(t => {
   const ta = document.querySelector('textarea')
@@ -151,6 +182,6 @@ await esperar(3200)
 await p.evaluate(() => window.scrollTo(0, 0))
 await foto('5-listo')
 
-writeFileSync('video/assets/flujo.json', JSON.stringify({ toques, tema: TEMA }, null, 2))
+writeFileSync('video/assets/flujo.json', JSON.stringify({ toques, campos, tema: TEMA }, null, 2))
 await navegador.close()
 console.log('\nlisto · video/assets/flujo-*.png + flujo.json')
