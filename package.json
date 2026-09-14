@@ -14,7 +14,8 @@
     "muestras": "node pruebas/muestras.mjs",
     "ejemplo": "node render-placa.mjs spec-ejemplo.json",
     "logotipos": "node pruebas/logotipos.mjs && open placas/logotipos",
-    "muestrario": "node pruebas/muestrario.mjs && open placas/muestrario"
+    "muestrario": "node pruebas/muestrario.mjs && open placas/muestrario",
+    "fuentes": "node pruebas/fuentes.mjs"
   },
   "dependencies": {
     "@google/genai": "^0.7.0",

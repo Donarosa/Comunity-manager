@@ -91,7 +91,7 @@ export const DEFAULT_FONT = 'moderno'
  * dos cosas, todas las marcas terminan en el mismo tono por más que cambien el
  * tratamiento.
  *
- * Las nueve son OFL (verificado en google/fonts). Eso importa acá más que en el
+ * Todas son OFL (verificado en google/fonts). Eso importa acá más que en el
  * cuerpo del texto: la OFL permite uso comercial *y* no reclama derechos sobre
  * lo que compongas con ella, así que el logotipo resultante es registrable como
  * marca. Con una fuente de licencia restrictiva, el cliente no podría.
@@ -172,6 +172,52 @@ const LOGO_PRESETS = [
     vibe: 'Remates cuadrados y macizos. Cervecerías, parrillas, marcas con oficio.',
     family: 'Alfa Slab One', weights: '400', tracking: '-.01em',
       monoEscala: 0.76, monoTracking: '.01em',
+  },
+
+  /* Las cinco de abajo entraron para que dos negocios distintos no terminen con
+   * la misma firma. Con diez familias, el muestrario de cinco rubros repetía
+   * registro; cada una de estas abre uno que no estaba —déco, serif gruesa,
+   * redonda de cartel, cuadrada técnica y tallada— y ninguna se pisa con las
+   * que ya había.
+   *
+   * Las cinco son OFL verificada en `google/fonts`: salen del pack de
+   * `anthropics/skills`, que trae la licencia al lado de cada archivo. Eso acá
+   * no es un detalle de prolijidad: la OFL no reclama nada sobre lo que
+   * compongas, así que el logotipo le queda registrable al cliente. */
+  {
+    id: 'deco',
+    label: 'Déco fina',
+    vibe: 'Trazo parejo y geométrico, aire de los años treinta. Estética, joyería, arquitectura, eventos.',
+    family: 'Poiret One', weights: '400', tracking: '.06em', caps: true,
+      monoEscala: 0.9, monoTracking: '.04em',
+  },
+  {
+    id: 'serif-gruesa',
+    label: 'Serif gruesa',
+    vibe: 'Remates anchos y cálidos, de etiqueta de producto. Cafés de especialidad, dietéticas, marcas de autor.',
+    family: 'Young Serif', weights: '400', tracking: '-.015em',
+      monoEscala: 0.82, monoTracking: '-.01em',
+  },
+  {
+    id: 'redonda',
+    label: 'Redonda de cartel',
+    vibe: 'Gorda y redondeada, simpática sin ser infantil. Heladerías, kioscos, food trucks, fiestas.',
+    family: 'Erica One', weights: '400', tracking: '0',
+      monoEscala: 0.95, monoTracking: '0',
+  },
+  {
+    id: 'tecnica',
+    label: 'Cuadrada técnica',
+    vibe: 'Ángulos rectos y aire de instrumento. Talleres, cerrajerías, informática, servicio técnico.',
+    family: 'Tektur', weights: '400;600;800', tracking: '.01em', caps: true,
+      monoEscala: 1, monoTracking: '0',
+  },
+  {
+    id: 'tallada',
+    label: 'Abierta',
+    vibe: 'Palo seco de trazo parejo, con los remates apenas abiertos. Viveros, veterinarias, cabañas, turismo.',
+    family: 'National Park', weights: '400;600;800', tracking: '.02em', caps: true,
+      monoEscala: 1, monoTracking: '.01em',
   },
 ]
 

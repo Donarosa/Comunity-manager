@@ -44,6 +44,35 @@ const NEGOCIOS = [
     logotipoTipo: 'palabra-simbolo', logotipoTratamiento: 'apilado', logotipoEscudo: 'contorno',
     logotipoFuente: 'serif-moderna',
     kick: 'Hecho acá', title: 'Plata que <span class="acc">no se pone negra</span>' },
+
+  // Los cinco de abajo son los rubros de las cinco tipografías nuevas. Están
+  // acá para que la pregunta del muestrario siga teniendo sentido: sumar
+  // familias sirve si dos negocios distintos dejan de parecerse, y eso no se
+  // comprueba mirando la lista, se comprueba mirando las placas.
+  { nombre: 'Estudio Lumen', color: '#4A4A6A', tipografia: 'editorial',
+    logotipoTipo: 'palabra', logotipoTratamiento: 'filete',
+    logotipoFuente: 'deco',
+    kick: 'Obra nueva', title: 'Cuánto cambia <span class="acc">una medianera</span>' },
+
+  { nombre: 'Tostado Café', color: '#7A4522', tipografia: 'calido',
+    logotipoTipo: 'palabra-simbolo', logotipoTratamiento: 'linea', logotipoEscudo: 'circulo',
+    logotipoFuente: 'serif-gruesa',
+    kick: 'Tueste del jueves', title: 'Por qué el café <span class="acc">se pone rancio</span>' },
+
+  { nombre: 'Heladería Pelusa', color: '#C2185B', tipografia: 'geometrico',
+    logotipoTipo: 'palabra-simbolo', logotipoTratamiento: 'pastilla', logotipoEscudo: 'cuadrado',
+    logotipoFuente: 'redonda',
+    kick: 'Gusto del mes', title: 'Dulce de leche <span class="acc">hecho el lunes</span>' },
+
+  { nombre: 'Cerrajería Norte', color: '#37474F', tipografia: 'tecnico',
+    logotipoTipo: 'palabra-simbolo', logotipoTratamiento: 'linea', logotipoEscudo: 'cuadrado',
+    logotipoFuente: 'tecnica',
+    kick: 'Urgencias', title: 'Qué hacer si <span class="acc">se parte la llave</span>' },
+
+  { nombre: 'Vivero El Sauce', color: '#33691E', tipografia: 'clasico',
+    logotipoTipo: 'palabra-simbolo', logotipoTratamiento: 'linea', logotipoEscudo: 'marco',
+    logotipoFuente: 'tallada',
+    kick: 'Entró plantín', title: 'Cuándo trasplantar <span class="acc">sin matarla</span>' },
 ]
 
 for (const [i, n] of NEGOCIOS.entries()) {
