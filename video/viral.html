@@ -47,8 +47,8 @@
 
   .titular { font-weight: 800; letter-spacing: -.035em; line-height: .96; text-wrap: balance; }
   .rotulo {
-    font-family: var(--mono); font-weight: 700; font-size: 26px;
-    letter-spacing: .22em; text-transform: uppercase;
+    font-family: var(--mono); font-weight: 700; font-size: 34px;
+    letter-spacing: .2em; text-transform: uppercase;
   }
 
   /* ── 1 · el problema ── */
@@ -74,8 +74,12 @@
   }
   .flyer .cinta {
     align-self: flex-start; position: relative; z-index: 2;
+    /* Q11 · igual que el rubro: a 15px sobre 1920 esto no se lee, y en amarillo
+       pleno invita a intentarlo. La chapita tiene que leerse como forma, no como
+       palabra — lo que se lee de este muro es el grito, que sí está a 54px. */
     font-family: var(--mono); font-size: 15px; font-weight: 800; letter-spacing: .12em;
     padding: 5px 12px; border-radius: 4px; background: #FACC15; color: #2B0B4F;
+    opacity: .5;
   }
   .flyer .grito {
     position: relative; z-index: 2; font-family: 'Anton', var(--font);
@@ -83,7 +87,11 @@
     text-shadow: 0 0 22px rgba(255,0,200,.8), 0 3px 0 #C026D3;
   }
   .flyer .grito em { font-style: normal; color: #FDE047; }
-  .flyer .pie { position: relative; z-index: 2; font-family: var(--mono); font-size: 14px; letter-spacing: .1em; color: rgba(255,255,255,.72); }
+    /* Q11 · el rubro del flyer es textura, no texto para leer.
+     A 14px sobre 1920 nadie lo lee, y a .72 de opacidad igual invita a
+     intentarlo: ese estado intermedio es justo el que la regla prohíbe. Se baja
+     hasta que se lea como ruido, que es lo que tiene que ser. */
+  .flyer .pie { position: relative; z-index: 2; font-family: var(--mono); font-size: 14px; letter-spacing: .1em; color: #fff; opacity: .34; }
 
   #velo-ruido { position: absolute; inset: 0; background: rgba(7,11,22,.84); }
   #dicho-ruido { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 0 80px; }
@@ -96,7 +104,10 @@
     border-radius: 22px; padding: 32px 36px;
   }
   .costo b { font-size: 74px; font-weight: 800; letter-spacing: -.03em; color: #FF7A7A; white-space: nowrap; }
-  .costo span { font-size: 34px; color: rgba(245,242,234,.8); line-height: 1.25; }
+  /* La cifra es el mensaje y la línea la explica. A 34px caía en el estado
+     intermedio: ni textura ni legible. Sube a 42 — arriba del piso auxiliar,
+     abajo del de subtítulo, que es lo que le corresponde a un pie de cifra. */
+  .costo span { font-size: 42px; color: rgba(245,242,234,.86); line-height: 1.22; }
 
   /* ── 2 · Alquimia ── */
   #destello { position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%;
@@ -106,7 +117,7 @@
   #marca .frasco { width: 250px; height: 250px; border-radius: 48px; overflow: hidden; box-shadow: 0 30px 90px -26px rgba(63,204,114,.55); }
   #marca .frasco img { width: 100%; display: block; }
   #marca .nom { font-size: 120px; font-weight: 800; letter-spacing: -.04em; margin-top: 44px; }
-  #marca .baj { margin-top: 20px; font-size: 40px; color: var(--gris); text-align: center; }
+  #marca .baj { margin-top: 22px; font-size: 48px; color: var(--gris); text-align: center; }
 
   /* ── el teléfono con el flujo ── */
   #flujo { display: grid; place-items: center; align-content: center; }
@@ -145,18 +156,18 @@
     box-shadow: 0 40px 100px -30px rgba(20,24,28,.4); border: 1px solid rgba(20,24,28,.08);
   }
   .ig-cab { display: flex; align-items: center; gap: 16px; padding: 20px 22px; }
-  .ig-cab .av { width: 54px; height: 54px; border-radius: 50%; background: var(--azul); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 20px; }
-  .ig-cab .nom { font-weight: 700; font-size: 26px; }
-  .ig-cab .sub { font-size: 20px; color: var(--gris); }
+  .ig-cab .av { width: 62px; height: 62px; border-radius: 50%; background: var(--azul); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 24px; opacity: .55; }
+  .ig-cab .nom { font-weight: 700; font-size: 34px; }
+  .ig-cab .sub { font-size: 24px; color: var(--gris); opacity: .5; }
   .tarjeta-ig > img { width: 100%; display: block; }
   .ig-pie { padding: 20px 24px 26px; }
   .ig-iconos { display: flex; gap: 22px; font-size: 38px; }
-  .ig-nums { margin-top: 12px; font-size: 28px; font-weight: 700; }
+  .ig-nums { margin-top: 14px; font-size: 36px; font-weight: 700; }
   .ig-nums span { color: var(--gris); font-weight: 500; }
   .chip-sube {
     position: absolute; display: inline-flex; align-items: center; gap: 14px;
     padding: 18px 28px; border-radius: 999px; background: var(--papel2); color: var(--ink);
-    font-size: 32px; font-weight: 800; box-shadow: 0 20px 44px -14px rgba(20,24,28,.35);
+    font-size: 38px; font-weight: 800; box-shadow: 0 20px 44px -14px rgba(20,24,28,.35);
     border: 1px solid rgba(20,24,28,.07); white-space: nowrap;
   }
 
@@ -165,12 +176,13 @@
   #cierre .frasco { width: 170px; height: 170px; border-radius: 34px; overflow: hidden; }
   #cierre .frasco img { width: 100%; display: block; }
   #cierre .nom { font-size: 104px; font-weight: 800; letter-spacing: -.04em; margin-top: 32px; }
-  #cierre .claim { margin-top: 18px; font-size: 42px; color: var(--gris); text-align: center; }
+  #cierre .claim { margin-top: 20px; font-size: 50px; color: var(--gris); text-align: center; }
   #cierre .cta {
-    margin-top: 54px; background: var(--menta); color: #06220F; font-size: 44px; font-weight: 800;
-    padding: 28px 56px; border-radius: 999px; box-shadow: 0 10px 0 var(--menta-h);
+    margin-top: 56px; background: var(--menta); color: #06220F; font-size: 60px; font-weight: 800;
+    padding: 32px 64px; border-radius: 999px; box-shadow: 0 10px 0 var(--menta-h);
   }
-  #cierre .url { margin-top: 30px; font-family: var(--mono); font-size: 30px; font-weight: 700; letter-spacing: .08em; color: var(--gris); }
+  /* Q11 · «la URL del cierre es la línea que menos debería ser chica». */
+  #cierre .url { margin-top: 32px; font-family: var(--mono); font-size: 40px; font-weight: 700; letter-spacing: .06em; color: var(--ink); }
 
   #grano {
     position: absolute; inset: 0; z-index: 50; pointer-events: none; opacity: .045;
@@ -245,7 +257,7 @@
 </div>
 
 <script type="module">
-const FIN = 28000
+const FIN = 34000
 
 const sujeta = v => Math.max(0, Math.min(1, v))
 const tramo = (t, a, b) => sujeta((t - a) / (b - a))
@@ -288,9 +300,9 @@ const PLACAS = [1, 2, 3, 4].map(n => {
 })
 
 const CHIPS = [
-  { t: '♥ 248 me gusta', x: 90, y: 1500, ms: 23200 },
-  { t: '👤 31 seguidores', x: 540, y: 1600, ms: 23700 },
-  { t: '💬 12 consultas', x: 140, y: 1700, ms: 24200 },
+  { t: '♥ 248 me gusta', x: 90, y: 1490, ms: 27300 },
+  { t: '👤 31 seguidores', x: 520, y: 1600, ms: 28000 },
+  { t: '💬 12 consultas', x: 140, y: 1710, ms: 28700 },
 ]
 const chips = CHIPS.map(c => {
   const n = document.createElement('div')
@@ -302,13 +314,13 @@ const chips = CHIPS.map(c => {
 
 /* Los cinco pasos del flujo: qué pantalla se ve, qué se dice y dónde toca. */
 const PASOS = [
-  { desde: 9650,  img: 'flujo-1-inicio.png',  frase: 'Abrís y tocás <b>Sugerime</b>.',      toque: FLUJO.toques['1-inicio'] },
-  { desde: 11500, img: 'flujo-2-tema.png',    frase: 'Escribís de qué querés hablar.',       toque: FLUJO.toques['2-tema'] },
-  { desde: 13400, img: 'flujo-3-forma.png',   frase: 'Elegís si va suelto o en carrusel.',   toque: FLUJO.toques['3-forma'] },
-  { desde: 15300, img: 'flujo-4-armando.png', frase: 'Y lo arma solo, con tu marca.',        toque: null },
-  { desde: 17100, img: 'flujo-5-listo.png',   frase: 'Y lo arma solo, con tu marca.',        toque: null },
+  { desde: 10500, img: 'flujo-1-inicio.png',  frase: 'Abrís y tocás <b>Sugerime</b>.',      toque: FLUJO.toques['1-inicio'] },
+  { desde: 12900, img: 'flujo-2-tema.png',    frase: 'Escribís de qué querés hablar.',       toque: FLUJO.toques['2-tema'] },
+  { desde: 15300, img: 'flujo-3-forma.png',   frase: 'Elegís si va suelto o en carrusel.',   toque: FLUJO.toques['3-forma'] },
+  { desde: 17700, img: 'flujo-4-armando.png', frase: 'Y lo arma solo, con tu marca.',        toque: null },
+  { desde: 20100, img: 'flujo-5-listo.png',   frase: 'Cuatro placas, con tu marca.',         toque: null },
 ]
-const FIN_FLUJO = 19000
+const FIN_FLUJO = 22500
 
 function pintar(t) {
   for (const id of ['#gancho', '#ruido', '#costos-capa', '#corte', '#marca', '#flujo', '#carrusel', '#posteo', '#cierre']) {
@@ -358,7 +370,10 @@ function pintar(t) {
    * Necesita su segundo y medio. Con el destello encima duraba menos que un
    * parpadeo: el frasco aparecía cuando la pantalla todavía estaba verde. */
   {
-    $('#marca').style.opacity = asoma(t, 8300, 8600, 9450, 9800)
+    /* R1 · después de que el nombre cae, un segundo entero quieto.
+     * Antes caía a los 9,2 y la capa se iba a los 9,45: un cuarto de segundo.
+     * El respiro va al nombre de la marca, que es lo que se quiere que quede. */
+    $('#marca').style.opacity = asoma(t, 8300, 8600, 10400, 10700)
     poner($('#marca .frasco'), { transform: `scale(${entre(.55, 1, rebota(tramo(t, 8350, 8950)))})` })
     const n = frena(tramo(t, 8750, 9200))
     poner($('#marca .nom'), { opacity: n, transform: `translateY(${entre(22, 0, n)}px)` })
@@ -367,8 +382,8 @@ function pintar(t) {
 
   /* 6 · 9 – 19 s · el flujo, con la aplicación de verdad */
   {
-    $('#flujo').style.opacity = asoma(t, 9650, 9950, FIN_FLUJO - 300, FIN_FLUJO)
-    const sube = frena(tramo(t, 9650, 10300))
+    $('#flujo').style.opacity = asoma(t, 10450, 10800, FIN_FLUJO - 300, FIN_FLUJO)
+    const sube = frena(tramo(t, 10450, 11150))
     poner($('.telefono'), { transform: `translateY(${entre(300, 0, sube)}px) scale(${entre(.94, 1, sube)})` })
 
     const paso = PASOS.filter(p => t >= p.desde).pop() || PASOS[0]
@@ -380,20 +395,23 @@ function pintar(t) {
 
     const f = $('#frase-flujo')
     if (f.innerHTML !== paso.frase) f.innerHTML = paso.frase
-    const rot = frena(tramo(t, 9950, 10400))
-    poner($('#rot-flujo'), { opacity: Math.min(rot, asoma(t, 9950, 10400, FIN_FLUJO - 400, FIN_FLUJO - 100)) })
+    const rot = frena(tramo(t, 10800, 11250))
+    poner($('#rot-flujo'), { opacity: Math.min(rot, asoma(t, 10800, 11250, FIN_FLUJO - 400, FIN_FLUJO - 100)) })
 
     // El dedo baja, aprieta y se va, justo antes de que cambie la pantalla.
     const vidrio = $('.vidrio')
     const toque = paso.toque
     if (toque) {
-      const cuando = paso.desde + 950
+      /* R3 · el toque va a velocidad de persona. El dedo baja en un segundo
+       * entero y se queda un rato después de apretar: así se puede seguir con
+       * la vista, que es la prueba que pide la regla. */
+      const cuando = paso.desde + 1350
       const x = 13 + vidrio.offsetWidth * toque.x
       const y = 13 + vidrio.offsetHeight * toque.y
-      const llega = suave(tramo(t, cuando - 700, cuando))
+      const llega = suave(tramo(t, cuando - 1000, cuando))
       const aprieta = tramo(t, cuando, cuando + 180)
       poner($('#dedo'), {
-        opacity: asoma(t, cuando - 700, cuando - 500, cuando + 320, cuando + 520),
+        opacity: asoma(t, cuando - 1000, cuando - 760, cuando + 520, cuando + 760),
         left: `${x}px`, top: `${entre(y + 220, y, llega)}px`,
         transform: `scale(${entre(1, .76, Math.sin(aprieta * Math.PI))})`,
       })
@@ -410,34 +428,39 @@ function pintar(t) {
 
   /* 7 · 18,8 – 23,2 s · se despliega el carrusel */
   {
-    $('#carrusel').style.opacity = asoma(t, 18800, 19100, 22900, 23200)
-    // Salen del teléfono en abanico y después se deslizan como en Instagram.
+    $('#carrusel').style.opacity = asoma(t, 22300, 22600, 26900, 27200)
+    /* R2 · la velocidad viene de la aceleración, no de ir rápido parejo.
+     * Las cuatro placas salían cada 170 ms exactos, que se lee como PowerPoint.
+     * Ahora los huecos se achican —280, 190, 130— como un mazo repartiendo, y
+     * cuando la última cae hay medio segundo de quietud antes de deslizar. */
+    const SALIDAS = [22500, 22780, 22970, 23100]
     const abanico = [-300, -100, 100, 300]
-    const desliza = suave(tramo(t, 20600, 22600))
-    const cual = Math.min(3, Math.floor(tramo(t, 20600, 22600) * 4))
+    const ultima = SALIDAS[3] + 900          // cuándo terminó de caer la cuarta
+    const desliza = suave(tramo(t, ultima + 500, 26500))
+    const cual = Math.min(3, Math.floor(tramo(t, ultima + 500, 26500) * 4))
     PLACAS.forEach((n, i) => {
-      const sale = rebota(tramo(t, 19000 + i * 170, 19900 + i * 170))
-      const x = entre(0, abanico[i], frena(tramo(t, 19000 + i * 170, 19900 + i * 170))) - desliza * 900
+      const sale = rebota(tramo(t, SALIDAS[i], SALIDAS[i] + 900))
+      const x = entre(0, abanico[i], frena(tramo(t, SALIDAS[i], SALIDAS[i] + 900))) - desliza * 900
       poner(n, {
         zIndex: 4 - i,
-        opacity: sujeta(tramo(t, 19000 + i * 170, 19400 + i * 170) * 1.6),
-        transform: `translate(calc(-50% + ${x}px), calc(-50% + ${entre(420, -120, frena(tramo(t, 19000 + i * 170, 19900 + i * 170)))}px))`
+        opacity: sujeta(tramo(t, SALIDAS[i], SALIDAS[i] + 400) * 1.6),
+        transform: `translate(calc(-50% + ${x}px), calc(-50% + ${entre(420, -120, frena(tramo(t, SALIDAS[i], SALIDAS[i] + 900)))}px))`
           + ` rotate(${entre(0, (i - 1.5) * 4, sale)}deg) scale(${entre(.6, 1, sale)})`,
       })
     })
     document.querySelectorAll('#puntos i').forEach((p, i) => p.classList.toggle('on', i === cual))
-    poner($('#puntos'), { opacity: asoma(t, 20400, 20700, 22700, 22900) })
-    const rc = frena(tramo(t, 21000, 21600))
-    poner($('#rot-carrusel'), { opacity: Math.min(rc, asoma(t, 21000, 21600, 22700, 22900)), transform: `translateY(${entre(30, 0, rc)}px)` })
+    poner($('#puntos'), { opacity: asoma(t, ultima + 400, ultima + 700, 26600, 26900) })
+    const rc = frena(tramo(t, 24200, 24800))
+    poner($('#rot-carrusel'), { opacity: Math.min(rc, asoma(t, 24200, 24800, 26600, 26900)), transform: `translateY(${entre(30, 0, rc)}px)` })
   }
 
   /* 8 · 22,9 – 26 s · el posteo publicado */
   {
-    $('#posteo').style.opacity = asoma(t, 22900, 23200, 25700, 26000)
-    const p = frena(tramo(t, 22900, 23600))
+    $('#posteo').style.opacity = asoma(t, 26900, 27200, 30300, 30600)
+    const p = frena(tramo(t, 26900, 27700))
     poner($('.tarjeta-ig'), { transform: `translateY(${entre(60, 0, p)}px) scale(${entre(.94, 1, p)})` })
     // Los números suben. Son ilustrativos: el aviso no promete una cifra.
-    const sube = frena(tramo(t, 23300, 25200))
+    const sube = frena(tramo(t, 27400, 29700))
     $('#megusta').textContent = Math.round(entre(0, 248, sube)).toLocaleString('es-AR')
     $('#coment').textContent = `${Math.round(entre(0, 12, sube))} comentarios`
     chips.forEach((n, i) => {
@@ -454,15 +477,15 @@ function pintar(t) {
 
   /* 9 · 25,8 – 28 s · el cierre */
   {
-    $('#cierre').style.opacity = tramo(t, 25800, 26100)
-    poner($('#cierre .frasco'), { transform: `scale(${entre(.6, 1, rebota(tramo(t, 25900, 26500)))})` })
-    const n = frena(tramo(t, 26300, 26800))
+    $('#cierre').style.opacity = tramo(t, 30400, 30800)
+    poner($('#cierre .frasco'), { transform: `scale(${entre(.6, 1, rebota(tramo(t, 30500, 31100)))})` })
+    const n = frena(tramo(t, 30900, 31400))
     poner($('#cierre .nom'), { opacity: n, transform: `translateY(${entre(24, 0, n)}px)` })
-    const c = frena(tramo(t, 26500, 27000))
+    const c = frena(tramo(t, 31200, 31700))
     poner($('#cierre .claim'), { opacity: c })
-    const b = rebota(tramo(t, 26800, 27400))
+    const b = rebota(tramo(t, 31600, 32200))
     poner($('#cierre .cta'), { opacity: sujeta(b * 2), transform: `scale(${entre(.8, 1, b)})` })
-    poner($('#cierre .url'), { opacity: frena(tramo(t, 27200, 27700)) })
+    poner($('#cierre .url'), { opacity: frena(tramo(t, 32100, 32700)) })
   }
 }
 

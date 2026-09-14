@@ -94,6 +94,51 @@ que hace Alquimia, así que el formato dice lo mismo que el guion. Y termina con
 la hoja de contactos: los ocho cuadros juntos, como queda un storyboard sobre
 la mesa.
 
+### La auditoría de aceptación
+
+Lo mejor que tiene `video-shotcraft` no son sus 157 cartas de movimiento: es
+`references/aesthetic-rules.md`, veintitantas reglas de jurisprudencia. Cada una
+trae la regla, **el caso real que la originó** —con la queja textual del cliente
+y cuántas vueltas costó— y la pregunta de autochequeo. No es teoría de diseño,
+es la lista de las veces que alguien tuvo que rehacer algo.
+
+El viral pasó por esa lista. Lo que falló y se corrigió:
+
+| Regla | Qué decía | Qué estaba mal |
+| --- | --- | --- |
+| **R1** | El nombre de la marca se queda quieto **un segundo entero** después de caer | Caía a los 9,2 s y la capa se iba a los 9,45: un cuarto de segundo |
+| **R3** | Más lento antes que más rápido; la interacción a velocidad de persona | Cinco pantallas en 9,4 s. «¿De qué querés hablar?» duraba 1,9 s: no alcanza para leer la pregunta, la ayuda y el tema escrito |
+| **R2** | La velocidad viene de la aceleración; el grupo cierra con medio segundo quieto | Las cuatro placas salían cada 170 ms exactos — movimiento parejo, que se lee como PowerPoint |
+| **Q11** | Subtítulo ≥56 px, auxiliar ≥32 px, **medido en píxeles del cuadro renderizado** | La URL del cierre a 30 px y los comentarios a 28 px, por debajo del piso. Y la regla dice que la URL del cierre es «la línea que menos debería ser chica» |
+| **Q11** | El texto tiene dos estados: textura o para leer, nunca el intermedio | Los rubros y las chapitas de los flyers, a 14–15 px pero en amarillo pleno: demasiado chicos para leerse, demasiado brillantes para ignorarse |
+
+La medición de Q11 quedó como herramienta:
+
+```bash
+node video/auditar.mjs                        # revisa viral.html
+PAGINA=storyboard.html node video/auditar.mjs
+```
+
+Renderiza el comercial cada medio segundo y mide la **altura útil real** de cada
+texto: el `font-size` multiplicado por todas las escalas que arrastran los
+padres. La regla lo pide explícitamente así, y con razón — un texto de 64 px
+adentro de algo escalado a 0,7 mide 45 y no se lee, y en el código sigue
+diciendo 64. Sale con código 1 si queda algún texto en el estado intermedio.
+
+Encontró cuatro cosas que la revisión a ojo no vio: el nombre de la cuenta de
+Instagram a 26 px, la ciudad a 24, las iniciales del avatar a 20 y el rótulo
+«Así se usa» a 26. Las dos primeras se agrandaron; las otras dos son decoración
+de la tarjeta y se atenuaron a propósito.
+
+Y de paso obligó a algo que estaba mal hecho: los rubros de los flyers estaban
+atenuados bajando el color, no la opacidad. Se veía bien pero era una intención
+que solo existía en el ojo de quien la escribió. Ahora está en `opacity`, que es
+declarativo y lo puede comprobar una máquina.
+
+El video pasó de 28 a 34 segundos. Es lo que cuesta cumplir R3, y el caso de esa
+regla es difícil de discutir: seis rondas de comentarios pidieron «más lento» y
+ninguna pidió «más rápido».
+
 ### Lo que se tomó de `video-shotcraft`
 
 El repositorio de [Vincentwei1021](https://github.com/Vincentwei1021/video-shotcraft)
