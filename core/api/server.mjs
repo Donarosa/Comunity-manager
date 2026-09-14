@@ -567,6 +567,7 @@ async function despachar(req, res) {
     // La IA apagada no es un error del pedido: es una función que este servidor
     // no tiene prendida. 503 y el mensaje ya viene escrito para el usuario.
     if (e.codigo === 'sin_ia') return json(res, 503, { error: e.message, codigo: e.codigo })
+    if (e.codigo === 'ia_saturada') return json(res, 503, { error: e.message, codigo: e.codigo, detalle: e.detalle })
     // Falta un paso del alta, no falló el pedido.
     if (e.codigo === 'sin_marca') return json(res, 409, { error: e.message, codigo: e.codigo })
     if (/no existe la cuenta|no encuentro|no encontrado/.test(e.message)) return json(res, 404, { error: e.message })

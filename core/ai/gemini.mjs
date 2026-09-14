@@ -61,15 +61,15 @@ export const MODEL = process.env.CM_MODEL || 'gemini-3.6-flash'
 // cliente. Un modelo sin precio confirmado no lleva entrada y cae al tope de
 // abajo, que sobreestima a propósito.
 const PRECIOS = {
-  'gemini-2.0-flash':    { in: 0.10,  out: 0.40 },   // retirado por Google
-  'gemini-2.5-flash':    { in: 0.30,  out: 2.50 },
-  'gemini-2.5-pro':      { in: 1.25,  out: 10.00 },
+  'gemini-2.0-flash':         { in: 0.10,  out: 0.40 },   // retirado por Google
+  'gemini-2.5-flash':         { in: 0.30,  out: 2.50 },
+  'gemini-2.5-pro':           { in: 1.25,  out: 10.00 },
+  'gemini-3.5-flash':         { in: 0.30,  out: 2.50 },
+  'gemini-3.6-flash':         { in: 0.30,  out: 2.50 },
+  'gemini-3.5-flash-lite':    { in: 0.10,  out: 0.40 },
+  'gemini-flash-lite-latest': { in: 0.10,  out: 0.40 },
 }
 
-// PENDIENTE: confirmar el precio de gemini-3.6-flash en ai.google.dev/pricing y
-// sumarlo arriba. Hasta entonces se cobra al valor del modelo más caro que
-// conocemos: es un número equivocado, pero equivocado hacia arriba. Subestimar
-// el costo es lo que hace que una suscripción se venda por menos de lo que sale.
 const PRECIO_TOPE = { in: 1.25, out: 10.00 }
 const sinPrecio = new Set()
 
@@ -87,6 +87,27 @@ export class SinIAError extends Error {
     this.name = 'SinIAError'
     this.codigo = 'sin_ia'
   }
+}
+
+/**
+ * Error cuando el servicio de Gemini está temporalmente sobrecargado (503 Service Unavailable / 429).
+ */
+export class IASaturadaError extends Error {
+  constructor(detalle = '') {
+    super('El servicio de IA (Google Gemini) está experimentando alta demanda en este momento. Por favor, aguardá unos segundos y volvé a intentar.')
+    this.name = 'IASaturadaError'
+    this.codigo = 'ia_saturada'
+    this.detalle = detalle
+  }
+}
+
+export function esErrorTransitorio(err) {
+  const msg = err?.message || String(err)
+  return msg.includes('503') ||
+         msg.includes('high demand') ||
+         msg.includes('UNAVAILABLE') ||
+         msg.includes('429') ||
+         msg.includes('RESOURCE_EXHAUSTED')
 }
 
 let avisado = false
@@ -192,18 +213,60 @@ export async function pedirJSON({
   const genAI = client()
 
 
-  const response = await genAI.models.generateContent({
-    model: MODEL,
-    contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    config: {
-      systemInstruction,
-      responseMimeType: 'application/json',
-      responseSchema: esquemaParaGemini(schema),
-      maxOutputTokens: maxTokens,
-      // thinkingConfig solo lo usan los modelos 2.5-*; los demás lo ignoran.
-      thinkingConfig: { thinkingBudget },
-    },
-  })
+  const candidatos = [
+    MODEL,
+    'gemini-3.5-flash',
+    'gemini-flash-lite-latest',
+  ].filter((m, idx, arr) => m && arr.indexOf(m) === idx)
+
+  const sleep = ms => new Promise(r => setTimeout(r, ms))
+
+  let ultimoError = null
+  let response = null
+  let modeloEfectivo = MODEL
+
+  for (const mod of candidatos) {
+    let reintentos = 2
+    while (reintentos >= 0) {
+      try {
+        modeloEfectivo = mod
+        response = await genAI.models.generateContent({
+          model: mod,
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          config: {
+            systemInstruction,
+            responseMimeType: 'application/json',
+            responseSchema: esquemaParaGemini(schema),
+            maxOutputTokens: maxTokens,
+            // thinkingConfig solo lo usan los modelos 2.5-*; los demás lo ignoran.
+            thinkingConfig: { thinkingBudget },
+          },
+        })
+        break
+      } catch (err) {
+        ultimoError = err
+        if (esErrorTransitorio(err) && reintentos > 0) {
+          const esperaMs = (3 - reintentos) * 1500
+          console.warn(`[IA] ${mod} saturado (${err.message?.slice(0, 40)}...). Reintentando en ${esperaMs}ms...`)
+          await sleep(esperaMs)
+          reintentos--
+        } else {
+          if (esErrorTransitorio(err) && candidatos.length > 1) {
+            console.warn(`[IA] ${mod} no respondió tras reintentos. Probando modelo alternativo...`)
+          }
+          break
+        }
+      }
+    }
+    if (response) break
+  }
+
+  if (!response) {
+    if (esErrorTransitorio(ultimoError)) {
+      throw new IASaturadaError(ultimoError?.message || '')
+    }
+    throw ultimoError
+  }
 
   const texto = textoDe(response)
   if (!texto) {
@@ -221,7 +284,7 @@ export async function pedirJSON({
   return {
     data,
     usage,
-    costo: costoUSD(usage, MODEL),
-    model: MODEL,
+    costo: costoUSD(usage, modeloEfectivo),
+    model: modeloEfectivo,
   }
 }
