@@ -53,7 +53,8 @@ ESTRUCTURA DE UN POSTEO
 - El caption es el texto que va debajo del posteo en Instagram: entre 2 y 5 renglones, arranca con la línea más fuerte (en el celular se corta a los ~125 caracteres) y cierra con una acción clara.
 - Los hashtags van entre 4 y 8, en minúscula, mezclando rubro y ciudad. Nada de #amor #vida #instagood.
 
-MEZCLA DE LA SEMANA
+MEZCLA DE LA SEMANA (solo cuando se arma un plan de varias piezas)
+Esto no aplica a una publicación suelta: ahí manda el tema que pidió el negocio, y forzar la mezcla es lo que hace que la placa termine hablando de otra cosa.
 No todo es vender. Sobre el total del plan, apuntá a: la mitad contenido útil o de oficio (cómo se hace, qué mirar, un error común), un cuarto de negocio propiamente dicho (producto, servicio, promoción real), y un cuarto de humano (quién está atrás, el día a día, la respuesta a algo que preguntan seguido). Dos posteos seguidos no pueden tener la misma plantilla ni el mismo objetivo.`
 
 /* ── schema de salida ────────────────────────────────────── */
@@ -86,7 +87,7 @@ const PLACA = {
     },
     titulo: {
       type: 'string',
-      description: 'Hasta 55 caracteres. Con 1 o 2 palabras en <span class="acc">…</span>, salvo en "frase" que usa <em>…</em>. En "foto" es la primera línea, sin resaltes.',
+      description: 'Hasta 55 caracteres. Con 1 o 2 palabras en <span class="acc">…</span>, salvo en "frase" que usa <em>…</em>. En "foto" es la primera línea, sin resaltes. Dice de qué trata esta publicación: alguien que ve solo la placa, sin leer el caption, tiene que entender el tema.',
     },
     cuerpo: {
       type: 'string',
@@ -115,7 +116,10 @@ const PUBLICACION = {
     dia: { type: 'string', description: 'Día sugerido: "lunes", "martes"…' },
     canal: { type: 'string', enum: ['feed', 'historia'] },
     objetivo: { type: 'string', description: 'En una frase, para qué sirve este posteo al negocio.' },
-    placas: { type: 'array', items: PLACA },
+    placas: {
+      type: 'array', items: PLACA,
+      description: 'Las placas desarrollan el objetivo de arriba, no el negocio en general. Si el objetivo habla de un sauna, las placas hablan del sauna. Una placa que podría haber salido con cualquier otro objetivo del mismo negocio está mal: es la señal de que se escribió el tema en el caption y las placas se llenaron con lo de siempre.',
+    },
     caption: { type: 'string', description: 'El texto del posteo. 2 a 5 renglones.' },
     hashtags: { type: 'array', items: { type: 'string' }, description: '4 a 8, con # adelante.' },
     notaFoto: {
@@ -184,7 +188,14 @@ export async function generarPlan({ brand, posteos = 3, historias = 2, pedido = 
       : `Armá un plan de contenido con ${posteos} posteo(s) de feed y ${historias} historia(s).`,
     !FORMAS[forma] && posteos > 0 && `De los posteos de feed, al menos uno tiene que ser un carrusel de 3 a 5 placas (portada + desarrollo + cierre). Los demás pueden ser placa suelta.`,
     !FORMAS[forma] && historias > 0 && `Cada historia es una sola placa, canal "historia".`,
-    pedido && `\nPedido puntual del negocio, tiene prioridad sobre todo lo demás:\n${pedido}`,
+    pedido && `
+DE QUÉ HABLA ESTA PUBLICACIÓN. Lo pidió el negocio y manda sobre todo lo demás:
+${pedido}
+
+El tema va en las placas, no solo en el caption y los hashtags. El título de la
+primera placa tiene que dejarlo claro. Si escribís el pedido en el caption y las
+placas las llenás con contenido general del rubro, la publicación está mal
+armada: la placa es lo que se ve, el caption es lo que casi nadie lee.`,
     evitar && `\nYa se publicó esto hace poco, no lo repitas:\n${evitar}`,
   ].filter(Boolean).join('\n')
 

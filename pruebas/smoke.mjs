@@ -1512,5 +1512,36 @@ test('al pasar a computadora el campo vuelve al formulario', () => {
     'revisarModo no corre al cambiar de tamaño: el campo se queda sobre la placa')
 })
 
+// El pedido llegaba al caption y a los hashtags pero no a las placas: se pedía
+// "sauna" y salía una placa que decía "Elegí la pileta ideal". La causa estaba a
+// la vista en el schema — `placas` era el único campo sin descripción, así que
+// era el único que no tenía dicho de qué hablar, y las descripciones de cada
+// placa hablan de forma (largo, resaltes, plantillas) y nunca de tema.
+test('el tema pedido llega a las placas, no solo al caption', () => {
+  const plan = readFileSync(join(RAIZ, 'core/content/plan.mjs'), 'utf8')
+
+  // Ningún campo del schema puede quedar sin descripción: el que no la tiene es
+  // el que el modelo llena con lo que se le ocurre.
+  const campos = [...plan.matchAll(/^\s{4}(\w+): \{[\s\S]*?\n\s{4}\},?$/gm)].map(m => m[0])
+  const sinDescripcion = campos
+    .filter(c => !/description:/.test(c) && !/items: (PLACA|PASO)\b/.test(c))
+    .map(c => /^\s*(\w+):/.exec(c)[1])
+  assert.deepEqual(sinDescripcion, [], `campos del schema sin descripción: ${sinDescripcion.join(', ')}`)
+  assert.match(plan, /placas: \{[\s\S]{0,400}description:/,
+    'el campo `placas` volvió a quedar sin decir de qué tienen que hablar')
+
+  // Y el pedido tiene que decir dónde aterriza, no solo que existe.
+  const i = plan.indexOf('pedido &&')
+  assert.ok(i > -1, 'el pedido dejó de llegar al prompt')
+  const bloque = plan.slice(i, i + 700)
+  assert.ok(/placas/.test(bloque),
+    'el pedido no dice que va en las placas: se escribe en el caption y la placa sale genérica')
+
+  // La mezcla de la semana empujaba a contenido general también en una
+  // publicación suelta, que es cuando el tema pedido es todo lo que importa.
+  assert.match(plan, /MEZCLA DE LA SEMANA \(solo cuando/,
+    'la mezcla semanal volvió a aplicarse a una publicación suelta')
+})
+
 // El resumen va último: si se agrega un bloque abajo, tiene que contarlo.
 console.log(`\n${ok} pruebas OK${process.exitCode ? ' — con fallas' : ''}\n`)
