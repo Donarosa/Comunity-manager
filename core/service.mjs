@@ -722,8 +722,25 @@ export async function generarContenido(cuentaId, {
   const { plan, costo } = await generarPlan({ brand: marca, posteos, historias, pedido, evitar, forma })
   registrarCosto(cuenta, costo)
 
+  /* Una carpeta por generación, no una por día.
+   *
+   * Los nombres de las placas los arma `planToSpec` y son fijos —`01-post-01`,
+   * `01-post-02`—, así que dos planes del mismo día caían en la misma ruta. Y
+   * `/piezas/...` se sirve con un año de caché, que está bien solo si la URL no
+   * cambia de contenido nunca. Pasaban dos cosas a la vez: el segundo plan
+   * pisaba los PNG del primero en el disco, y el navegador seguía mostrando los
+   * del primero porque la URL era la misma. Se veía el pie nuevo con la placa
+   * vieja, que es imposible de diagnosticar mirando el prompt.
+   *
+   * El editor nunca tuvo el problema: ahí el nombre del archivo lo arma el
+   * cliente con la marca de tiempo. Acá va en la carpeta, que además mantiene
+   * juntas las placas de un mismo plan.
+   *
+   * Con `etiqueta` —solo la CLI la manda— la carpeta sigue siendo la que el
+   * usuario nombró: si repite el nombre, está pidiendo pisar lo anterior. */
   const { dia } = periodo()
-  const sub = etiqueta ? `${dia}-${etiqueta}`.replace(/[^\w.-]/g, '-') : dia
+  const sub = (etiqueta ? `${dia}-${etiqueta}` : `${dia}-${Date.now().toString(36)}`)
+    .replace(/[^\w.-]/g, '-')
   const outDir = carpetaPiezas(cuentaId, sub)
 
   const { spec, publicaciones, pendientes, resumen: resumenPlan } = planToSpec(plan, { outDir, fotos })

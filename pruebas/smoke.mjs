@@ -1543,5 +1543,31 @@ test('el tema pedido llega a las placas, no solo al caption', () => {
     'la mezcla semanal volvió a aplicarse a una publicación suelta')
 })
 
+// Dos planes del mismo día caían en la misma carpeta —`2026-09-14`— con los
+// mismos nombres de placa —`01-post-01.png`—, y `/piezas/...` se sirve con un
+// año de caché. El segundo plan pisaba los PNG del primero y el navegador
+// seguía mostrando los del primero: el pie nuevo con la placa vieja. Mirando el
+// prompt eso no se diagnostica nunca.
+test('cada generación escribe en su propia carpeta', () => {
+  const service = readFileSync(join(RAIZ, 'core/service.mjs'), 'utf8')
+  const i = service.indexOf('const outDir = carpetaPiezas(cuentaId, sub)')
+  assert.ok(i > -1, 'cambió cómo se arma la carpeta del plan')
+  const armado = service.slice(Math.max(0, i - 400), i)
+  assert.ok(/Date\.now\(\)/.test(armado),
+    'la carpeta del plan volvió a depender solo del día: dos planes del mismo día se pisan')
+
+  // Y la caché larga solo es correcta si la URL no cambia de contenido.
+  const server = readFileSync(join(RAIZ, 'core/api/server.mjs'), 'utf8')
+  assert.match(server, /max-age=31536000/,
+    'si se acorta la caché de las piezas, revisar que siga haciendo falta')
+
+  // La otra mitad: los nombres de placa del plan son fijos a propósito —se leen
+  // en el orden del carrusel— así que lo único que puede ser único es la
+  // carpeta. Si esto cambia, el arreglo de arriba deja de alcanzar.
+  const plan = readFileSync(join(RAIZ, 'core/content/plan.mjs'), 'utf8')
+  assert.match(plan, /const nombre = total > 1 \? `\$\{id\}-\$\{PAD\(j \+ 1\)\}` : id/,
+    'cambiaron los nombres de las placas del plan')
+})
+
 // El resumen va último: si se agrega un bloque abajo, tiene que contarlo.
 console.log(`\n${ok} pruebas OK${process.exitCode ? ' — con fallas' : ''}\n`)
