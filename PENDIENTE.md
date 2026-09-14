@@ -107,3 +107,29 @@ resuelta con `CUENTAS_INTERNAS`.
 
 Se implementa junto con el cobro y no antes: sin una forma de pagar, un bloqueo
 es una pared sin puerta.
+
+---
+
+## Anotado, sin hacer: las historias animadas
+
+Se midió y se decidió **no implementarlo por ahora**. La medición está en
+`video/README.md` y el script que la produce es `node video/historia.mjs`, que
+no lo llama nada del producto: es un spike suelto.
+
+Lo que dio: 1080×1920, 6 segundos, 493 KB. Una placa quieta tarda 1,7 s de punta
+a punta y la historia 11,8 s — siete veces, no las ciento sesenta que sugiere
+comparar cuadro contra cuadro, porque abrir Chrome pesa más que renderizar un
+PNG y ese costo se paga una sola vez. Lo que sí es lineal y sin piso es el
+segundo de más: treinta cuadros cada uno.
+
+Tres cosas que quedaron a la vista y hay que resolver antes de escribir nada:
+
+- **El tiempo en Vercel.** `maxDuration` es 60 y la función corre en x86 con
+  `@sparticuz/chromium`. Seis segundos caerían cerca de los 35 allá; diez lo
+  pasan. Es una estimación desde el número local: falta renderizar una vez en
+  Vercel y ver el número de verdad.
+- **El encuadre de historia queda casi vacío.** La zona segura empuja el
+  contenido abajo, y lo que en una placa quieta se lee como aire, en seis
+  segundos de video se lee como una pieza sin terminar. Pide foto de fondo.
+- **La cuota cuenta placas.** Un video no es una placa: cuesta siete veces más y
+  ocupa quinientas veces el disco. Eso es una decisión de producto, no técnica.
