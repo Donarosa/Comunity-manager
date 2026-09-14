@@ -75,6 +75,45 @@ revisarla: con una semana de prueba sigue siendo cierta, con un muro de pago no.
 
 ---
 
+## El mismo aviso, como storyboard
+
+Una segunda versión del viral, contada como el guion dibujado de un director.
+
+```bash
+PAGINA=storyboard.html node video/viral.mjs   # → video/storyboard.mp4
+```
+
+Usa los mismos insumos que el viral —las capturas del flujo y las placas del
+motor—, así que si ya corriste `capturar-flujo.mjs` y `piezas-demo.mjs` no hace
+falta nada más.
+
+**La idea.** Los primeros cuadros están en boceto: línea de lápiz, sin color,
+con su número y su anotación a mano. A partir del cuadro 04 se llenan con el
+producto de verdad. El boceto que se vuelve pieza terminada es exactamente lo
+que hace Alquimia, así que el formato dice lo mismo que el guion. Y termina con
+la hoja de contactos: los ocho cuadros juntos, como queda un storyboard sobre
+la mesa.
+
+### Lo que se tomó de `video-shotcraft`
+
+El repositorio de [Vincentwei1021](https://github.com/Vincentwei1021/video-shotcraft)
+son 157 cartas de recetas de movimiento, cada una con tabla de parámetros y
+trampas conocidas. **No tiene estilo storyboard** —está buscado, no hay
+ninguna— así que esa parte no sale de ahí. Lo que sí salieron son tres recetas,
+aplicadas a mano porque su tubería es de Remotion y acá el render es HTML +
+puppeteer + ffmpeg:
+
+| Carta | Qué aportó |
+| --- | --- |
+| `paper-title-card` | El cartel de texto: la palabra *i* arranca en el cuadro 4+i·4, dura 9, va de escala 1.28 a 1 con el desenfoque de 7 a 0. Un solo acento por frase — dos acentos es ninguno. Y los carteles duran siempre 50–55 cuadros: lo que tarda alguien en leer una frase. |
+| `panel-grid-moves` | Los paneles entran con dos cuadros de diferencia y se retienen dieciocho antes de irse. |
+| `quad-split-parallel-scenes` | Entre dos eventos vecinos, de 3 a 6 cuadros. Menos se lee como si todo se moviera junto —y junto es tieso—; más y la densidad se desarma. |
+
+Son números que si no se adivinan, y adivinarlos cuesta varias vueltas de
+render. Eso es lo que el repositorio vale acá.
+
+---
+
 ## El frasco suelto, en GIF
 
 El mismo frasco que burbujea en la pantalla de espera, para usar donde haga

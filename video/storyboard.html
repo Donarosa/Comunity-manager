@@ -1,0 +1,375 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Alquimia — storyboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=JetBrains+Mono:wght@400;600;700;800&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+
+<!--
+  El mismo aviso, contado como un storyboard.
+  ──────────────────────────────────────────
+  La idea: los primeros cuadros están en boceto —línea de lápiz, sin color— y a
+  partir del cuadro 04 se llenan con el producto de verdad. El boceto que se
+  vuelve pieza terminada es exactamente lo que hace Alquimia, así que el formato
+  dice lo mismo que el guion.
+
+  De `video-shotcraft` (Vincentwei1021) salen tres recetas, aplicadas acá a mano
+  y no por su tubería, que es de Remotion:
+    · paper-title-card — el cartel de texto entra palabra por palabra: la
+      palabra i arranca en el cuadro 4+i·4, dura 9, va de escala 1.28 a 1 con el
+      desenfoque de 7 a 0. Un solo acento por frase; dos acentos es ninguno.
+    · panel-grid-moves (comic-panel-split) — los paneles entran con dos cuadros
+      de diferencia, se retienen 18, y el último se come la pantalla en 12.
+    · quad-split-parallel-scenes — entre dos eventos vecinos, de 3 a 6 cuadros.
+      Juntos se lee tieso; más lejos se desarma.
+
+  Todo lo dibuja `pintar(t)`. Para mirarlo a ojo: `storyboard.html?vivo=1`.
+-->
+
+<style>
+  :root {
+    --papel:   #EFEADF;
+    --papel-2: #F7F4EC;
+    --lapiz:   #2A2722;
+    --lapiz-2: #6B6458;
+    --menta:   #2FA55E;
+    --azul:    #0076B3;
+    --rojo:    #C8503C;
+    --font: 'Plus Jakarta Sans', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+    --mano: 'Caveat', cursive;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { background: #000; overflow: hidden; }
+  body { display: grid; place-items: center; min-height: 100vh; }
+
+  #escena {
+    position: relative; width: 1080px; height: 1920px; overflow: hidden;
+    background: var(--papel); color: var(--lapiz); font-family: var(--font);
+    -webkit-font-smoothing: antialiased;
+  }
+  /* La hoja: reglones muy tenues, como un papel de guion. */
+  #hoja {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(to right, rgba(42,39,34,.045) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(42,39,34,.045) 1px, transparent 1px);
+    background-size: 54px 54px;
+  }
+  .capa { position: absolute; inset: 0; }
+
+  /* ── el cuadro del storyboard ── */
+  .cuadro {
+    position: absolute; left: 50%; top: 50%;
+    width: 820px;
+    transform-origin: 50% 50%;
+  }
+  .cuadro .marco {
+    position: relative; width: 100%; aspect-ratio: 4 / 3;
+    border: 4px solid var(--lapiz); border-radius: 4px;
+    background: var(--papel-2); overflow: hidden;
+    box-shadow: 8px 10px 0 rgba(42,39,34,.11);
+  }
+  .cuadro .marco img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 12%; }
+  .cuadro .marco svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .cuadro .num {
+    position: absolute; top: -18px; left: 22px; z-index: 3;
+    font-family: var(--mono); font-size: 22px; font-weight: 800; letter-spacing: .18em;
+    background: var(--lapiz); color: var(--papel); padding: 7px 16px; border-radius: 3px;
+  }
+  .cuadro .pie {
+    margin-top: 22px; font-family: var(--mano); font-size: 54px; line-height: 1.12;
+    color: var(--lapiz);
+  }
+  .cuadro .pie b { color: var(--menta); font-weight: 700; }
+  .cuadro .pie .malo { color: var(--rojo); }
+  .cuadro .nota {
+    margin-top: 6px; font-family: var(--mono); font-size: 20px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--lapiz-2);
+  }
+
+  /* El trazo del boceto se dibuja solo. */
+  .traza { fill: none; stroke: var(--lapiz); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
+  .traza-fina { stroke-width: 2.2; opacity: .55; }
+  .relleno-lapiz { fill: rgba(42,39,34,.08); stroke: none; }
+
+  /* ── el cartel de texto (receta paper-title-card) ── */
+  #cartel { display: grid; place-items: center; align-content: center; padding: 0 110px; text-align: center; }
+  #cartel .frase { font-size: 104px; font-weight: 800; letter-spacing: -.035em; line-height: 1.02; }
+  #cartel .frase i { font-style: italic; color: var(--menta); }
+  #cartel .frase .malo { font-style: italic; color: var(--rojo); }
+  #cartel .palabra { display: inline-block; }
+  #cartel .raya { margin-top: 34px; width: 220px; height: 6px; background: var(--menta); transform-origin: 50% 50%; }
+
+  /* ── la hoja completa del final ── */
+  #contacto { display: grid; place-items: center; align-content: center; }
+  #rejilla { display: grid; grid-template-columns: repeat(2, 400px); gap: 30px 34px; }
+  .mini { position: relative; }
+  .mini .marco { position: relative; width: 100%; aspect-ratio: 4/3; border: 3px solid var(--lapiz); border-radius: 3px; background: var(--papel-2); overflow: hidden; }
+  .mini .marco img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 12%; }
+  .mini .marco svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .mini .num { position: absolute; top: -12px; left: 14px; font-family: var(--mono); font-size: 15px; font-weight: 800; letter-spacing: .14em; background: var(--lapiz); color: var(--papel); padding: 4px 10px; border-radius: 2px; }
+
+  /* ── el cierre ── */
+  /* El cierre se apoya sobre la hoja, no la tapa: que se sigan viendo los ocho
+     cuadros detrás es la mitad del remate. */
+  #cierre { display: grid; place-items: center; align-content: center; }
+  #cierre > * { position: relative; z-index: 2; }
+  #cierre::before {
+    content: ''; position: absolute; left: 90px; right: 90px; top: 480px; bottom: 480px;
+    background: rgba(247,244,236,.97); border: 4px solid var(--lapiz); border-radius: 6px;
+    box-shadow: 14px 16px 0 rgba(42,39,34,.18);
+  }
+  #cierre .frasco { width: 160px; height: 160px; border-radius: 32px; overflow: hidden; }
+  #cierre .frasco img { width: 100%; display: block; }
+  #cierre .nom { font-size: 104px; font-weight: 800; letter-spacing: -.04em; margin-top: 30px; }
+  #cierre .claim { margin-top: 14px; font-family: var(--mano); font-size: 52px; color: var(--lapiz-2); }
+  #cierre .cta {
+    margin-top: 48px; background: var(--menta); color: #062814; font-size: 44px; font-weight: 800;
+    padding: 26px 54px; border-radius: 6px; box-shadow: 8px 8px 0 rgba(42,39,34,.85);
+  }
+  #cierre .url { margin-top: 28px; font-family: var(--mono); font-size: 28px; font-weight: 700; letter-spacing: .1em; color: var(--lapiz-2); }
+
+  #grano {
+    position: absolute; inset: 0; z-index: 60; pointer-events: none; opacity: .09;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+</style>
+
+<div id="escena">
+  <div id="hoja"></div>
+  <div class="capa" id="cuadros"></div>
+  <div class="capa" id="cartel"><div><div class="frase" id="cartel-txt"></div><div class="raya"></div></div></div>
+  <div class="capa" id="contacto"><div id="rejilla"></div></div>
+  <div class="capa" id="cierre">
+    <div class="frasco"><img src="assets/logo.svg" alt=""></div>
+    <div class="nom">Alquimia</div>
+    <div class="claim">del boceto a la placa, en un toque</div>
+    <div class="cta">Probalo gratis</div>
+    <div class="url">alquimia-cm.vercel.app</div>
+  </div>
+  <div id="grano"></div>
+</div>
+
+<script type="module">
+const FIN = 30000
+const F = 1000 / 30                       // un cuadro, en milisegundos
+
+const sujeta = v => Math.max(0, Math.min(1, v))
+const tramo = (t, a, b) => sujeta((t - a) / (b - a))
+const frena = p => 1 - Math.pow(1 - p, 3)
+const suave = p => p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2
+const rebota = p => { const c = 2.2; return 1 + (c + 1) * Math.pow(p - 1, 3) + c * Math.pow(p - 1, 2) }
+const entre = (a, b, p) => a + (b - a) * p
+const asoma = (t, a, b, c, d) => Math.min(tramo(t, a, b), 1 - tramo(t, c, d))
+const $ = s => document.querySelector(s)
+const poner = (n, e) => n && Object.assign(n.style, e)
+
+const FLUJO = await fetch('assets/flujo.json').then(r => r.json())
+
+/* ── los bocetos ──
+ * Dibujados con cuatro trazos cada uno. No tienen que ser bonitos: tienen que
+ * leerse como lo que son, el apunte de alguien pensando el aviso. */
+const BOCETOS = {
+  feed: `<svg viewBox="0 0 400 300">
+    <rect class="traza" x="148" y="26" width="104" height="248" rx="14"/>
+    <rect class="relleno-lapiz" x="160" y="52" width="80" height="48" rx="5"/>
+    <rect class="relleno-lapiz" x="160" y="110" width="80" height="48" rx="5"/>
+    <rect class="relleno-lapiz" x="160" y="168" width="80" height="48" rx="5"/>
+    <path class="traza traza-fina" d="M170 64h60M170 78h40M170 122h60M170 136h40M170 180h60M170 194h40"/>
+    <path class="traza" d="M300 120c18 22 18 44 0 66" />
+    <path class="traza" d="M330 106c30 36 30 72 0 108" />
+    <path class="traza traza-fina" d="M96 150h-34M84 138l-14 12 14 12"/>
+  </svg>`,
+  reloj: `<svg viewBox="0 0 400 300">
+    <circle class="traza" cx="200" cy="150" r="86"/>
+    <path class="traza" d="M200 150V92M200 150l44 26"/>
+    <path class="traza traza-fina" d="M200 50v-14M200 264v-14M86 150H72M328 150h-14"/>
+    <path class="traza traza-fina" d="M300 76c22-18 42-16 52 4"/>
+    <path class="traza traza-fina" d="M78 232c-18 10-30 4-34-10"/>
+  </svg>`,
+  plata: `<svg viewBox="0 0 400 300">
+    <rect class="traza" x="92" y="96" width="216" height="118" rx="8"/>
+    <circle class="traza" cx="200" cy="155" r="34"/>
+    <path class="traza traza-fina" d="M200 132v46M190 142h16a8 8 0 010 16h-12a8 8 0 000 16h16"/>
+    <path class="traza traza-fina" d="M116 118h20M264 192h20"/>
+    <path class="traza" d="M120 72c26-18 54-18 80 0M200 72c26-18 54-18 80 0" opacity=".45"/>
+  </svg>`,
+  frasco: `<svg viewBox="0 0 400 300">
+    <path class="traza" d="M172 74v42c-30 16-46 48-46 92 0 20 16 36 36 36h76c20 0 36-16 36-36 0-44-16-76-46-92V74"/>
+    <path class="traza" d="M164 74h72"/>
+    <path class="relleno-lapiz" d="M134 186c22-8 44-6 66 4 22 10 44 8 66-8v40c0 20-16 34-36 34h-60c-20 0-36-14-36-34z"/>
+    <circle class="traza traza-fina" cx="178" cy="202" r="7"/>
+    <circle class="traza traza-fina" cx="212" cy="186" r="5"/>
+    <circle class="traza traza-fina" cx="236" cy="206" r="6"/>
+  </svg>`,
+}
+
+/* ── los ocho cuadros ──
+ * `boceto` se dibuja mientras el guion está en lápiz; `img` es la captura real
+ * que lo reemplaza cuando la historia llega a Alquimia. */
+const CUADROS = [
+  { n: '01', boceto: 'feed',   pie: 'Todos publican <span class="malo">lo mismo</span>.', nota: 'El feed · nadie frena', entra: 300 },
+  { n: '02', boceto: 'reloj',  pie: 'Tres horas peleando una plantilla.',                 nota: 'El costo · tu tiempo', entra: 1500 },
+  { n: '03', boceto: 'plata',  pie: 'O <span class="malo">US$10</span> la placa.',        nota: 'El costo · un diseñador', entra: 2700 },
+  { n: '04', boceto: 'frasco', img: 'assets/flujo-1-inicio.png', pie: 'Le decís <b>de qué hablar</b>.', nota: 'Alquimia · un toque', entra: 9000, toque: FLUJO.toques['1-inicio'] },
+  { n: '05', img: 'assets/flujo-3-forma.png',   pie: 'Elegís suelto o carrusel.',   nota: 'Alquimia · la forma',   entra: 12600, toque: FLUJO.toques['3-forma'] },
+  { n: '06', img: 'assets/flujo-4-armando.png', pie: 'Y lo arma <b>con tu marca</b>.', nota: 'Alquimia · trabajando', entra: 15600 },
+  { n: '07', img: 'assets/carrusel-01.png',     pie: 'Cuatro placas listas.',       nota: 'La salida · 2160 px',   entra: 18600 },
+  { n: '08', img: 'assets/carrusel-03.png',     pie: 'Y tu feed deja de estar vacío.', nota: 'El resultado',        entra: 21600 },
+]
+
+const cont = $('#cuadros')
+const nodos = CUADROS.map(c => {
+  const d = document.createElement('div')
+  d.className = 'cuadro'
+  d.innerHTML = `<div class="marco"><span class="num">CUADRO ${c.n}</span>`
+    + (c.boceto ? BOCETOS[c.boceto] : '')
+    + (c.img ? `<img src="${c.img}" alt="">` : '')
+    + `</div><div class="pie">${c.pie}</div><div class="nota">${c.nota}</div>`
+  cont.append(d)
+  return d
+})
+
+/* La hoja de contactos del final: los ocho, chiquitos, como se ve un storyboard
+   terminado sobre la mesa. */
+const rej = $('#rejilla')
+for (const c of CUADROS) {
+  const d = document.createElement('div')
+  d.className = 'mini'
+  d.innerHTML = `<div class="marco"><span class="num">${c.n}</span>`
+    + (c.img ? `<img src="${c.img}" alt="">` : BOCETOS[c.boceto] || '')
+    + `</div>`
+  rej.append(d)
+}
+const minis = [...document.querySelectorAll('.mini')]
+
+/* ── los carteles de texto (receta paper-title-card) ── */
+const CARTELES = [
+  { desde: 5400,  txt: 'Publicar bien <span class="malo">cuesta</span>.' },
+  { desde: 7100,  txt: 'Hasta que lo hace <i>Alquimia</i>.' },
+  { desde: 24600, txt: 'De la idea a la placa, <i>en un toque</i>.' },
+]
+const DURA_CARTEL = 52 * F                    // 50–55 cuadros, como manda la carta
+
+function pintarCartel(t) {
+  const c = CARTELES.filter(x => t >= x.desde && t < x.desde + DURA_CARTEL).pop()
+  $('#cartel').style.opacity = c ? asoma(t, c.desde, c.desde + 3 * F, c.desde + DURA_CARTEL - 8 * F, c.desde + DURA_CARTEL) : 0
+  if (!c) return
+  const caja = $('#cartel-txt')
+  if (caja.dataset.d !== String(c.desde)) {
+    caja.dataset.d = String(c.desde)
+    caja.innerHTML = c.txt
+    /* Cada palabra en su propio nodo, sin romper el resaltado.
+     *
+     * Con un reemplazo por expresión regular sobre el HTML se comen las
+     * etiquetas y la frase sale a la mitad —salía «De la»—. Se recorren los
+     * nodos de texto y se parte solo adentro de cada uno, así el <i> del acento
+     * sigue entero. */
+    const caminar = el => {
+      for (const hijo of [...el.childNodes]) {
+        if (hijo.nodeType === 3) {
+          const frag = document.createDocumentFragment()
+          for (const trozo of hijo.textContent.split(/(\s+)/)) {
+            if (!trozo) continue
+            if (/^\s+$/.test(trozo)) { frag.append(trozo); continue }
+            const sp = document.createElement('span')
+            sp.className = 'palabra'
+            sp.textContent = trozo
+            frag.append(sp)
+          }
+          hijo.replaceWith(frag)
+        } else if (hijo.nodeType === 1) caminar(hijo)
+      }
+    }
+    caminar(caja)
+  }
+  const local = t - c.desde
+  caja.querySelectorAll('.palabra').forEach((n, i) => {
+    // palabra i: arranca en el cuadro 4+i·4 y dura 9
+    const p = frena(tramo(local, (4 + i * 4) * F, (13 + i * 4) * F))
+    poner(n, { opacity: p, transform: `scale(${entre(1.28, 1, p)})`, filter: `blur(${entre(7, 0, p)}px)` })
+  })
+  // La raya cierra: aparecer es anunciar que el cartel termina.
+  poner($('#cartel .raya'), { transform: `scaleX(${frena(tramo(local, 16 * F, 34 * F))})` })
+}
+
+function pintar(t) {
+  // Un cartel es un respiro entre secciones: si los cuadros se quedan detrás,
+  // no hay respiro, hay dos cosas encimadas.
+  const enCartel = CARTELES.some(c => t >= c.desde - 4 * F && t < c.desde + DURA_CARTEL)
+  $('#cuadros').style.opacity = enCartel ? 0 : 1
+  $('#contacto').style.opacity = 0
+  $('#cierre').style.opacity = 0
+
+  /* ── los cuadros ──
+   * Entran de a uno, girados apenas, y se van cuando entra el siguiente. Entre
+   * dos eventos vecinos, de 3 a 6 cuadros: juntos se lee tieso. */
+  CUADROS.forEach((c, i) => {
+    const n = nodos[i]
+    const sig = CUADROS[i + 1]
+    const hasta = sig ? sig.entra + 6 * F : 24200
+    const vivo = asoma(t, c.entra, c.entra + 10 * F, hasta - 10 * F, hasta)
+    if (vivo <= 0) { n.style.opacity = 0; return }
+
+    const p = rebota(tramo(t, c.entra, c.entra + 18 * F))
+    const giro = (i % 2 ? 1 : -1) * 1.4
+    // Un empuje muy lento durante toda la toma: un cuadro quieto se lee muerto.
+    const respira = tramo(t, c.entra, hasta)
+    poner(n, {
+      opacity: vivo, zIndex: 10 + i,
+      transform: `translate(-50%, calc(-50% + ${entre(70, 0, p)}px))`
+        + ` rotate(${entre(giro * 3, giro, p)}deg) scale(${entre(.9, 1, p) * entre(1, 1.045, respira)})`,
+    })
+
+    // El boceto se llena: del cuadro 04 en adelante la captura real aparece
+    // encima del dibujo. Es el momento en que el guion deja de ser un guion.
+    const img = n.querySelector('img')
+    if (img) {
+      const llena = c.boceto ? frena(tramo(t, c.entra + 20 * F, c.entra + 44 * F)) : 1
+      poner(img, { opacity: llena })
+    }
+    const pie = n.querySelector('.pie')
+    const pp = frena(tramo(t, c.entra + 8 * F, c.entra + 20 * F))
+    poner(pie, { opacity: pp, transform: `translateY(${entre(14, 0, pp)}px)` })
+    poner(n.querySelector('.nota'), { opacity: frena(tramo(t, c.entra + 14 * F, c.entra + 24 * F)) * .9 })
+  })
+
+  pintarCartel(t)
+
+  /* ── la hoja entera ── */
+  {
+    const vive = asoma(t, 26400, 26900, 29600, 30000)
+    $('#contacto').style.opacity = vive
+    minis.forEach((m, i) => {
+      // Dos cuadros entre uno y otro: la hoja se arma de golpe, como cuando uno
+      // extiende el storyboard sobre la mesa.
+      const p = frena(tramo(t, 26500 + i * 2 * F, 26500 + i * 2 * F + 12 * F))
+      poner(m, { opacity: p, transform: `scale(${entre(.86, 1, p)})` })
+    })
+    poner($('#rejilla'), { transform: `scale(${entre(1, 1.03, tramo(t, 26900, 30000))})` })
+  }
+
+  /* ── el cierre, encima de la hoja ── */
+  {
+    $('#cierre').style.opacity = tramo(t, 27600, 28000)
+    poner($('#cierre .frasco'), { transform: `scale(${entre(.6, 1, rebota(tramo(t, 27700, 28300)))})` })
+    const n = frena(tramo(t, 28100, 28600))
+    poner($('#cierre .nom'), { opacity: n, transform: `translateY(${entre(20, 0, n)}px)` })
+    poner($('#cierre .claim'), { opacity: frena(tramo(t, 28400, 28900)) })
+    const b = rebota(tramo(t, 28700, 29300))
+    poner($('#cierre .cta'), { opacity: sujeta(b * 2), transform: `scale(${entre(.82, 1, b)})` })
+    poner($('#cierre .url'), { opacity: frena(tramo(t, 29100, 29600)) })
+  }
+}
+
+window.pintar = pintar
+window.DURACION = FIN
+pintar(0)
+
+if (new URLSearchParams(location.search).has('vivo')) {
+  const a = performance.now()
+  const tic = ahora => { pintar((ahora - a) % FIN); requestAnimationFrame(tic) }
+  requestAnimationFrame(tic)
+}
+</script>

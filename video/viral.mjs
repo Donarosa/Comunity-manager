@@ -4,6 +4,7 @@
 //   node video/capturar-flujo.mjs   las pantallas de la aplicación
 //   node video/piezas-demo.mjs      las placas que muestra
 //   node video/viral.mjs            → video/viral.mp4
+//   PAGINA=storyboard.html node video/viral.mjs   → video/storyboard.mp4
 //
 //   DESDE=9000 HASTA=19000 node video/viral.mjs    solo el tramo del flujo
 //
@@ -20,7 +21,9 @@ import { findChrome } from '../core/render/engine.mjs'
 
 const AQUI = dirname(fileURLToPath(import.meta.url))
 const FPS = Number(process.env.FPS || 30)
-const SALIDA = resolve(AQUI, process.env.SALIDA || 'viral.mp4')
+// Sirve para los dos comerciales: el viral y el storyboard.
+const PAGINA = process.env.PAGINA || 'viral.html'
+const SALIDA = resolve(AQUI, process.env.SALIDA || PAGINA.replace('.html', '.mp4'))
 
 const TIPOS = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -42,7 +45,7 @@ const navegador = await puppeteer.launch({
 })
 const p = await navegador.newPage()
 await p.setViewport({ width: 1080, height: 1920, deviceScaleFactor: 1 })
-await p.goto(`${SITIO}/viral.html`, { waitUntil: 'networkidle0' })
+await p.goto(`${SITIO}/${PAGINA}`, { waitUntil: 'networkidle0' })
 await p.evaluate(async () => {
   await document.fonts.ready
   await Promise.all([...document.images].map(i => i.complete ? null : new Promise(r => { i.onload = i.onerror = r })))
