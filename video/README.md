@@ -83,6 +83,68 @@ cuadros: dónde empieza el verde en cada x y hasta dónde llega el cian.
 
 ---
 
+## La prueba de la historia animada
+
+La pregunta era si conviene que Alquimia haga historias animadas además de
+placas. Esto la contesta con números en vez de con intuición.
+
+```bash
+node video/historia.mjs                    # → video/historia.mp4
+SEGUNDOS=8 FPS=24 node video/historia.mjs
+```
+
+No es una maqueta: la placa la dibuja `htmlFor()`, el mismo motor que hace los
+PNG, con una marca normalizada igual que la de un cliente. Lo único que se le
+suma es una capa de animación por encima, escrita en el script y **no en el
+motor** — el motor sigue siendo la fuente de verdad del render y no se toca para
+resolver una pieza puntual.
+
+### Lo que salió
+
+| | |
+| --- | --- |
+| Formato | 1080×1920 · 6 s · 30 fps · 180 cuadros |
+| Una placa quieta, de punta a punta | **1,7 s** |
+| La historia, de punta a punta | **11,8 s** |
+| El barrido solo (Chrome ya abierto) | 8,4 s |
+| Cada cuadro de más | **162×** lo que cuesta una captura suelta |
+| Peso | 493 KB |
+
+Los dos números que importan son distintos y conviene no confundirlos. **Una
+pieza cuesta 7 veces una placa** de punta a punta, porque abrir Chrome pesa más
+que renderizar un PNG y ese costo se paga una sola vez. **Cada segundo de más
+cuesta 30 cuadros**, y ahí sí la cuenta es lineal y sin piso.
+
+### Lo que eso significa en Vercel
+
+`vercel.json` declara `maxDuration: 60` y `memory: 2048`. Once segundos y medio
+locales entran cómodos — pero eso es en una Mac con chip de Apple. La función
+corre en x86 con `@sparticuz/chromium`, que en la experiencia habitual va entre
+dos y cuatro veces más lento. **Una historia de 6 segundos caería alrededor de
+los 35 s: adentro del tope, pero sin margen.** Una de 10 lo pasa.
+
+No está medido en Vercel — es una estimación a partir del número local. Antes de
+construir nada conviene renderizar una sola vez allá y ver el número de verdad.
+
+### Lo que la prueba dejó a la vista
+
+**El encuadre de historia queda casi vacío.** La zona segura de Instagram empuja
+todo el contenido abajo —`pad: '270px 88px 330px'` y el ancla al pie— y en una
+placa quieta eso se lee como aire. En seis segundos de video se lee como una
+pieza sin terminar. Una historia animada casi con seguridad quiere una foto de
+fondo, no el fondo liso que alcanza para el feed.
+
+**Los primeros cuatro décimos están en blanco.** La firma entra a los 150 ms y
+el título recién al segundo. Para un PNG no existe el problema; en una historia,
+que se pasa con el pulgar, medio segundo en blanco es medio segundo perdido.
+
+**Y la cuota no sabe contar esto.** Hoy el plan cuenta *placas*. Un video no es
+una placa, cuesta siete veces más y ocupa quinientas veces el disco. Eso hay que
+resolverlo antes de escribir la primera animación de verdad, y no es un problema
+técnico.
+
+---
+
 ## El guion
 
 | Tiempo | Escena | Qué se ve | Qué dice |
