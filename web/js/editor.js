@@ -307,6 +307,10 @@ export function iniciarEditor({ contenedor, cuenta, catalogo, alVolver, alCambia
         const p = placa()
         const html = await api.previsualizar(cuenta.id, {
           canal: st.canal,
+          // La posición importa: con dos o tres colores de marca las placas se
+          // turnan, y sin esto la vista previa de la tercera saldría con el
+          // color de la primera y el PNG después no coincidiría.
+          indice: st.activa,
           placa: {
             ...p,
             plantilla: plantillaSegunPosicion(p.plantilla, st.activa, st.placas.length),

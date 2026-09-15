@@ -84,8 +84,16 @@ export function coloresDeSVG(svg) {
  * @param {string}   o.inicial       color de arranque
  * @param {string[]} o.delLogo       colores extraídos del logo del usuario
  * @param {function} o.onCambio      recibe el hex elegido
+ * @param {string}   [o.etiqueta]    cuál de los colores de marca se está editando
+ * @param {function} [o.derivar]     cómo sacar la paleta del color elegido. Por
+ *                                   defecto lo trata como el único color de la
+ *                                   marca; el selector de varios pasa el suyo,
+ *                                   porque los neutros salen del principal y no
+ *                                   del que se está editando — derivándolos
+ *                                   acá, la tira mostraba un papel y una tinta
+ *                                   que la placa nunca iba a usar.
  */
-export function selectorDeColor({ inicial = '#A83A1C', delLogo = [], onCambio } = {}) {
+export function selectorDeColor({ inicial = '#A83A1C', delLogo = [], onCambio, etiqueta, derivar } = {}) {
   let elegido = inicial
   let familia = familiaDe(inicial)
 
@@ -104,7 +112,7 @@ export function selectorDeColor({ inicial = '#A83A1C', delLogo = [], onCambio } 
   function pintarTira() {
     vaciar(tira); vaciar(avisos)
     let p
-    try { p = derivePalette({ accent: elegido }) } catch { return }
+    try { p = derivar ? derivar(elegido) : derivePalette({ accent: elegido, etiqueta }) } catch { return }
     const muestras = [
       [p.flat.darkBg, 'Oscuro'], [p.flat.accent, 'Acento'], [p.flat.accentDeep, 'Profundo'],
       [p.flat.tint, 'Tinte'], [p.flat.bg, 'Fondo'], [p.flat.ink, 'Texto'],
@@ -219,7 +227,124 @@ export function selectorDeColor({ inicial = '#A83A1C', delLogo = [], onCambio } 
 
   cuerpo.append(vistas[0][1]())
   pintarTira()
-  raiz.append(pestanas, cuerpo, el('div', { style: 'margin-top:20px' }, el('span.rotulo', {}, 'Así queda tu paleta')), tira, avisos)
+  raiz.append(pestanas, cuerpo,
+    el('div', { style: 'margin-top:20px' },
+      el('span.rotulo', {}, etiqueta ? `Así queda con el ${etiqueta}` : 'Así queda tu paleta')),
+    tira, avisos)
 
   return { nodo: raiz, valor: () => elegido }
+}
+
+/* ── La paleta de la marca: uno obligatorio, hasta tres ─────────────────────
+ *
+ * Alguien con dos colores de marca no tenía dónde cargar el segundo. Acá se
+ * cargan hasta tres, y arriba de todo se elige cuál se está editando: el
+ * selector de un color de abajo es el mismo de siempre, no una segunda copia.
+ *
+ * Lo que la pantalla tiene que dejar claro —y por eso la línea de abajo no es
+ * decorativa— es que los colores **no se mezclan en una placa**: se turnan. Sin
+ * eso, quien carga dos espera ver los dos juntos y lo que recibe le parece un
+ * error.
+ */
+export function selectorDePaleta({ inicial = ['#A83A1C'], delLogo = [], onCambio } = {}) {
+  const NOMBRES = ['Principal', 'Secundario', 'Terciario']
+  const colores = (Array.isArray(inicial) ? inicial : [inicial]).filter(Boolean).slice(0, 3)
+  if (!colores.length) colores.push('#A83A1C')
+  let editando = 0
+
+  const raiz = el('div')
+  const fila = el('div.paleta-marca')
+  const cajaSelector = el('div', { style: 'margin-top:18px' })
+
+  const avisar = () => onCambio?.([...colores])
+
+  function pintarSelector() {
+    vaciar(cajaSelector)
+    const sel = selectorDeColor({
+      inicial: colores[editando],
+      etiqueta: NOMBRES[editando].toLowerCase(),
+      // La paleta se deriva con el color puesto en su lugar de la lista, no
+      // solo: así la tira muestra el papel, la tinta y los grises que la placa
+      // va a usar de verdad, que salen del principal.
+      derivar: hex => {
+        const lista = colores.slice()
+        lista[editando] = hex
+        const d = derivePalette({ accent: lista[0], secundario: lista[1], terciario: lista[2] })
+        return { ...d.paletas[editando], warnings: d.warnings }
+      },
+      delLogo,
+      onCambio: hex => { colores[editando] = hex; pintarFila(); avisar() },
+    })
+    cajaSelector.append(sel.nodo)
+  }
+
+  function pintarFila() {
+    vaciar(fila)
+    colores.forEach((hex, i) => {
+      const chip = el('button.color-slot' + (i === editando ? '.editando' : ''), {
+        type: 'button',
+        onclick: () => { if (i !== editando) { editando = i; pintarFila(); pintarSelector() } },
+      },
+        el('span.color-slot__muestra', { style: `background:${hex}` }),
+        el('span.color-slot__txt', {},
+          el('b', {}, NOMBRES[i]),
+          el('span.chico', {}, hex)
+        ),
+        // El principal no se saca: sin él no hay paleta que derivar.
+        i > 0 ? el('span.color-slot__x', {
+          role: 'button',
+          title: `Quitar el color ${NOMBRES[i].toLowerCase()}`,
+          onclick: ev => {
+            ev.stopPropagation()
+            colores.splice(i, 1)
+            editando = Math.min(editando, colores.length - 1)
+            pintarFila(); pintarSelector(); avisar()
+          },
+        }, '×') : null
+      )
+      fila.append(chip)
+    })
+    if (colores.length < 3) {
+      fila.append(el('button.color-slot.color-slot--mas', {
+        type: 'button',
+        onclick: () => {
+          /* El color que se propone al agregar uno.
+           *
+           * Mismo peso que el principal —igual luz e igual croma, sólo cambia
+           * el tono— porque dos colores de marca de distinto peso no se turnan
+           * bien: una placa queda pálida al lado de la otra. Y el tono se
+           * elige lo más lejos posible de TODOS los que ya están: calculándolo
+           * contra el principal nada más, el tercero salía idéntico al
+           * segundo, que es exactamente lo que no sirve. */
+          const { H, L, C } = hexToOklch(colores[0])
+          const puestos = colores.map(c => hexToOklch(c).H)
+          let mejor = (H + 150) % 360, lejania = -1
+          for (let cand = 0; cand < 360; cand += 5) {
+            const d = Math.min(...puestos.map(h => {
+              const x = Math.abs(h - cand) % 360
+              return x > 180 ? 360 - x : x
+            }))
+            if (d > lejania) { lejania = d; mejor = cand }
+          }
+          colores.push(oklchToHex({ H: mejor, L, C }))
+          editando = colores.length - 1
+          pintarFila(); pintarSelector(); avisar()
+        },
+      }, el('span.color-slot__txt', {}, el('b', {}, `+ ${NOMBRES[colores.length]}`),
+           el('span.chico', {}, 'Si tu marca tiene otro'))))
+    }
+  }
+
+  raiz.append(
+    fila,
+    el('p.apunte.chico', { style: 'margin-top:10px' },
+      'Los colores no se mezclan en la misma placa: se turnan. En un carrusel la '
+      + 'portada sale con el principal, la segunda con el secundario y la tercera '
+      + 'con el terciario. Una placa suelta usa siempre el principal.'),
+    cajaSelector
+  )
+  pintarFila()
+  pintarSelector()
+
+  return { nodo: raiz, valor: () => [...colores] }
 }

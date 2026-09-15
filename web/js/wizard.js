@@ -9,7 +9,7 @@
 
 import { api } from './api.js'
 import { el, $, $$, vaciar, aviso, elegirEnGrupo, svgLogo } from './ui.js'
-import { selectorDeColor, coloresDeSVG } from './color.js'
+import { selectorDePaleta, coloresDeSVG } from './color.js'
 // El sello viene del mismo módulo que usa el motor. Tener una segunda versión
 // acá era tener dos sellos distintos: el de la vista previa salía con la
 // leyenda de abajo cabeza abajo y el del PNG no.
@@ -168,7 +168,10 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, marca = null, mo
     tiene: { logo: marca?.logo ? true : null, color: marca?.meta?.colorOriginal ? true : null, tipo: marca?.fonts?.preset ? true : null },
     logo: marca?.logo || null,
     coloresDelLogo: [],
-    color: marca?.colors?.accent?.bg || marca?.meta?.colorOriginal || '#A83A1C',
+    // Hasta tres. El primero manda; los otros dos son de quien los tenga.
+    colores: (marca?.meta?.colores?.length
+      ? marca.meta.colores
+      : [marca?.colors?.accent?.bg || marca?.meta?.colorOriginal || '#A83A1C']).slice(0, 3),
     tipografia: marca?.fonts?.preset || 'moderno',
     disposicion: marca?.disposicion || 'clasica',
     logotipoTipo: marca?.logotipo?.tipo || 'palabra-simbolo',
@@ -275,11 +278,14 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, marca = null, mo
         el('h3.edicion-card__title', {}, 'Paleta de color')
       ),
       el('div.edicion-card__body', {},
-        el('div', { style: 'display:flex;align-items:center;gap:10px;margin-bottom:4px;' },
-          el('span', { style: `width:22px;height:22px;border-radius:50%;background:${st.color};border:1.5px solid rgba(0,0,0,0.15);display:inline-block;` }),
-          el('b', {}, st.color)
+        el('div', { style: 'display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;' },
+          ...st.colores.map(hex =>
+            el('span', { title: hex, style: `width:22px;height:22px;border-radius:50%;background:${hex};border:1.5px solid rgba(0,0,0,0.15);display:inline-block;` })),
+          el('b', {}, st.colores[0])
         ),
-        el('span', {}, 'Color de acento y contraste calculado para tus piezas.')
+        el('span', {}, st.colores.length > 1
+          ? `${st.colores.length} colores de marca: las placas se turnan entre ellos.`
+          : 'Color de acento y contraste calculado para tus piezas.')
       ),
       el('div.edicion-card__footer', {},
         el('span', {}, 'Cambiar color ➔')
@@ -357,7 +363,9 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, marca = null, mo
       try {
         await api.guardarMarca(st.cuentaId, {
           ...st.negocio,
-          color: st.color || undefined,
+          color: st.colores[0] || undefined,
+          colorSecundario: st.colores[1] || null,
+          colorTerciario: st.colores[2] || null,
           tipografia: st.tipografia || undefined,
           disposicion: st.disposicion || undefined,
           logotipoTipo: st.logotipoTipo,
@@ -611,7 +619,9 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, marca = null, mo
         try {
           await api.guardarMarca(st.cuentaId, {
             ...st.negocio,
-            color: st.color || undefined,
+            color: st.colores[0] || undefined,
+          colorSecundario: st.colores[1] || null,
+          colorTerciario: st.colores[2] || null,
             tipografia: st.tipografia || undefined,
             logotipoTipo: st.logotipoTipo,
             logotipoTratamiento: st.logotipoTratamiento,
@@ -641,12 +651,13 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, marca = null, mo
 
   /* ── SECCIÓN COLOR (wrapper de selectorDeColor) ── */
   function seccionColor(cont) {
-    const sel = selectorDeColor({
-      inicial: st.color || '#A83A1C',
+    const sel = selectorDePaleta({
+      inicial: st.colores,
       delLogo: st.coloresDelLogo || [],
-      onCambio: hex => { st.color = hex },
+      onCambio: lista => { st.colores = lista },
     })
-    bloque(cont, 'Color de tu marca', 'Elegí el color que ya usás o dejate guiar por las propuestas.', sel.nodo)
+    bloque(cont, 'Los colores de tu marca',
+      'El principal es obligatorio. Si tu marca tiene dos o tres, cargalos todos.', sel.nodo)
   }
 
   /* ── SECCIÓN TIPOGRAFÍA ── */
@@ -811,7 +822,7 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, marca = null, mo
       const partes = nombre.trim().split(/\s+/)
       const base = partes.length > 1 ? partes.slice(0, -1).join(' ') + ' ' : nombre
       const acc = partes.length > 1 ? partes[partes.length - 1] : ''
-      const color = st.color || '#A83A1C'
+      const color = st.colores[0] || '#A83A1C'
       const fuente = (FUENTES_MUESTRA[st.tipografia] || ['Inter'])[0]
 
       const lf = (cat.fuentesLogotipo || []).find(f => f.id === st.logotipoFuente)
@@ -1061,7 +1072,9 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, marca = null, mo
           canal: 'feed',
           placa: placaDeMuestra,
           marcaTemporal: {
-            color: st.color,
+            color: st.colores[0],
+            colorSecundario: st.colores[1] || null,
+            colorTerciario: st.colores[2] || null,
             tipografia: st.tipografia,
             disposicion: st.disposicion,
             logotipoTipo: st.logotipoTipo,

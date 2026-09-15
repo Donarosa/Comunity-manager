@@ -12,6 +12,7 @@ import { resolve, isAbsolute } from 'path'
 
 import { resolveFormat, DEFAULT_FORMAT } from './formats.mjs'
 import { brandContext } from './brand-context.mjs'
+import { paletaDeLaPlaca } from '../brand/palette.mjs'
 import { flatHTML } from './templates/flat.mjs'
 import { vectorHTML } from './templates/vector.mjs'
 import { fotoHTML } from './templates/foto.mjs'
@@ -71,9 +72,22 @@ async function abrirNavegador() {
   })
 }
 
+/* El color que le toca a la placa.
+ *
+ * Una marca puede tener hasta tres colores y las placas se turnan: la regla de
+ * cuál va con cuál está en `brand/palette.mjs`, no acá — la identidad va en el
+ * objeto `brand` y el motor sólo la aplica. Lo único que hace el motor es
+ * cambiarle a la marca el juego de colores antes de pasársela al template, así
+ * que los tres templates siguen leyendo `B.colors.flat` sin enterarse. */
+function conSuPaleta(ctx, indice, slide) {
+  const paleta = paletaDeLaPlaca(ctx.B, indice, slide)
+  if (!paleta || paleta === ctx.B.colors) return ctx
+  return { ...ctx, B: { ...ctx.B, colors: paleta } }
+}
+
 /** HTML de una placa. Útil para previsualizar sin abrir Chrome. */
-export function htmlFor(slide, brand, formatName) {
-  const ctx = brandContext(brand)
+export function htmlFor(slide, brand, formatName, indice = 0) {
+  const ctx = conSuPaleta(brandContext(brand), indice, slide)
   const fmt = resolveFormat(slide.format || formatName || DEFAULT_FORMAT)
   if (slide.style === 'vector') return vectorHTML(slide, ctx, fmt)
   if (slide.style === 'foto') return fotoHTML(slide, ctx, fmt)
@@ -108,8 +122,9 @@ export async function renderSpec({ spec, brand, outDir, onSlide }) {
     const page = await browser.newPage()
     let viewport = null
 
-    for (const s of spec.slides) {
+    for (const [indice, s] of spec.slides.entries()) {
       const fmt = resolveFormat(s.format || spec.format || DEFAULT_FORMAT)
+      const cx = conSuPaleta(ctx, indice, s)
 
       if (!viewport || viewport.w !== fmt.w || viewport.h !== fmt.h) {
         await page.setViewport({ width: fmt.w, height: fmt.h, deviceScaleFactor: 2 })
@@ -117,9 +132,9 @@ export async function renderSpec({ spec, brand, outDir, onSlide }) {
       }
 
       const html =
-        s.style === 'vector' ? vectorHTML(s, ctx, fmt)
-        : s.style === 'foto' ? fotoHTML(s, ctx, fmt)
-        : flatHTML(s, ctx, fmt)
+        s.style === 'vector' ? vectorHTML(s, cx, fmt)
+        : s.style === 'foto' ? fotoHTML(s, cx, fmt)
+        : flatHTML(s, cx, fmt)
 
       // 'load' y no 'domcontentloaded': con domcontentloaded las hojas de
       // fuentes pueden no estar parseadas todavía, así que sus @font-face no

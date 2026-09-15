@@ -20,7 +20,7 @@ core/
     templates/         flat · vector · foto
   brand/      identidad del cliente
     color.mjs          conversiones OKLCH y contraste
-    palette.mjs        un color → paleta de 16, con contraste forzado
+    palette.mjs        hasta 3 colores → una paleta de 16 por cada uno
     fonts.mjs          tipografías de texto y de logotipo (familia + importUrl juntas)
     schema.mjs         normalizeBrand() y saneado del logo
     logo.mjs           isotipos desde el repositorio curado
@@ -91,6 +91,19 @@ cáscaras la exponen — no la escribas dos veces.
 - **La identidad va en el objeto `brand`, nunca en el motor ni en el spec.** Si
   hace falta un color o una fuente que no está, se agrega a la derivación de
   marca. Nada de valores de marca hardcodeados en un template: son multi-cliente.
+- **Una marca puede tener hasta tres colores, y las placas se turnan.** No se
+  mezclan adentro de una misma placa: tres colores fuertes en 1080×1350 se
+  pelean y el que pierde es el texto. La portada del carrusel sale con el
+  principal, la segunda con el secundario, la tercera con el terciario; una
+  placa suelta usa siempre el principal. Lo que **no** rota son los neutros —el
+  papel, la tinta, los grises, los filetes—: salen todos del principal, porque
+  si rotaran, la segunda placa tendría otro blanco y el carrusel se leería como
+  dos marcas distintas. La regla de qué placa lleva qué color está en
+  `paletaDeLaPlaca()`, en `brand/palette.mjs`, y no en el motor: el motor sólo
+  le cambia a la marca el juego de colores antes de pasárselo al template, así
+  que los tres templates siguen leyendo `B.colors.flat` sin enterarse. Y todo lo
+  que previsualice una placa tiene que saber su posición en el carrusel, o se
+  edita con un color y se baja otro.
 - **El logotipo se arma con tipografía, no con iconos.** Un icono de catálogo
   lo comparten miles de negocios y no es registrable como marca. Si no hay logo
   propio, el símbolo es el monograma con las iniciales del nombre.

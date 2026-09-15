@@ -157,6 +157,7 @@ function resumen(c) {
       logo: c.marca.logo?.origen || 'default',
       colores: c.marca.colors || null,
       colorHex: c.marca.meta?.colorOriginal || null,
+      colores: c.marca.meta?.colores || (c.marca.meta?.colorOriginal ? [c.marca.meta.colorOriginal] : []),
       tipografia: c.marca.fonts?.preset || null,
       // La usa el editor para dibujar la tarjeta "La de tu marca" con la
       // disposición que la marca realmente tiene. Sin esto dibujaba siempre la
@@ -249,6 +250,12 @@ export function configurarMarca(cuentaId, datos) {
         handle: previo.handle,
         sitio: previo.site,
         color: previo.meta.colorOriginal,
+        // Los colores dos y tres viajan de vuelta o se pierden cada vez que se
+        // guarda la marca por cualquier otro motivo —cambiar la tipografía, por
+        // ejemplo—: `normalizeBrand()` reconstruye la paleta desde cero con lo
+        // que le llega, y lo que no le llega no existe.
+        colorSecundario: previo.meta.colores?.[1] || null,
+        colorTerciario: previo.meta.colores?.[2] || null,
         tipografia: previo.fonts.preset,
         disposicion: previo.disposicion,
         logotipoTipo: previo.logotipo?.tipo,
@@ -463,7 +470,11 @@ function ejemplosDeCampos(placa) {
  */
 const marcarEjemplo = v => typeof v === 'string' ? `<span class="ej">${v}</span>` : v
 
-export function previsualizar(cuentaId, { canal = 'feed', placa, marcaTemporal = null }) {
+/* `indice` es la posición de la placa dentro del carrusel, y hace falta porque
+ * una marca puede tener hasta tres colores y las placas se turnan: sin él, la
+ * vista previa de la tercera placa saldría con el color de la primera y el
+ * PNG después saldría distinto. */
+export function previsualizar(cuentaId, { canal = 'feed', placa, marcaTemporal = null, indice = 0 }) {
   const cuenta = leerCuenta(cuentaId)
   let marca = cuenta.marca
 
@@ -478,6 +489,8 @@ export function previsualizar(cuentaId, { canal = 'feed', placa, marcaTemporal =
       handle: marca?.handle || '',
       sitio: marca?.site || '',
       color: marca?.meta?.colorOriginal || '#16140F',
+      colorSecundario: marca?.meta?.colores?.[1] || null,
+      colorTerciario: marca?.meta?.colores?.[2] || null,
       tipografia: marca?.fonts?.preset || 'editorial-seriedad',
       disposicion: marca?.disposicion || 'clasica',
       logo: marca?.logo || { origen: 'default' },
@@ -509,7 +522,7 @@ export function previsualizar(cuentaId, { canal = 'feed', placa, marcaTemporal =
     'border-radius:4px;font-style:normal;' +
     '-webkit-box-decoration-break:clone;box-decoration-break:clone}</style>'
 
-  return { html: htmlFor(slide, marca, formato) + estiloEjemplos, formato }
+  return { html: htmlFor(slide, marca, formato, Number(indice) || 0) + estiloEjemplos, formato }
 }
 
 function lienzoVacio(color) {

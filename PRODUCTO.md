@@ -87,6 +87,15 @@ forzado: si el color de marca es un amarillo flúor, el sistema baja el tono
 para los textos, mantiene el original en los fondos, y avisa. Ninguna placa
 sale ilegible en silencio.
 
+**Y pueden ser hasta tres colores, que se turnan.** Un negocio con dos colores
+es lo normal, no la excepción: el logo tiene un azul y un naranja y los dos son
+suyos. Los tres no se mezclan en la misma placa —tres colores fuertes juntos se
+pelean y el que pierde es el texto—: la portada del carrusel sale con el
+principal, la segunda con el secundario, la tercera con el terciario. Una placa
+suelta usa siempre el principal. El papel, la tinta y los grises salen siempre
+del principal y no rotan, así el carrusel se lee como una marca con tres
+colores y no como tres marcas.
+
 **La tipografía se elige de un catálogo.** El usuario elige "Cálido", no
 escribe una URL de Google Fonts. Si la familia y la URL de importación no
 coinciden, el render sale con fuentes de sistema y no es obvio por qué. En el

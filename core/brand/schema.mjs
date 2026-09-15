@@ -97,10 +97,16 @@ export function normalizeBrand(input = {}) {
   const nombre = String(input.nombre || '').trim()
   if (!nombre) throw new Error('falta el nombre del negocio')
 
-  const color = input.color || '#4F46E5'
-  const { flat, vector, foto, warnings, hue } = derivePalette({
-    accent: color,
-    deep: input.colorSecundario,
+  /* Hasta tres colores de marca. El principal es obligatorio; los otros dos
+   * son de quien los tenga, que es más gente de la que parece: casi cualquier
+   * logo con dos tintas. No se mezclan en la misma placa — se turnan entre
+   * placas. La regla está en `paletaDeLaPlaca()`. */
+  const colores = [input.color || '#4F46E5', input.colorSecundario, input.colorTerciario]
+    .map(c => (c ? String(c).trim().toUpperCase() : null))
+    .filter(Boolean)
+  const color = colores[0]
+  const { flat, vector, foto, paletas, warnings, hue } = derivePalette({
+    accent: color, secundario: colores[1], terciario: colores[2],
   })
 
   const fonts = resolveFonts(input.tipografia || DEFAULT_FONT, input.logotipoFuente)
@@ -150,7 +156,7 @@ export function normalizeBrand(input = {}) {
     logo,
     fonts,
     disposicion,
-    colors: { flat, vector, foto },
+    colors: { flat, vector, foto, paletas },
     scene: input.scene || null,
     hints: {
       cover: input.hints?.cover || 'Deslizá →',
@@ -167,7 +173,7 @@ export function normalizeBrand(input = {}) {
       voz: input.voz || null,
       noDecir: input.noDecir || [],
     },
-    meta: { slug, hue, colorOriginal: color, creada: input.creada || new Date().toISOString() },
+    meta: { slug, hue, colorOriginal: color, colores, creada: input.creada || new Date().toISOString() },
   }
 
   return { brand, warnings }

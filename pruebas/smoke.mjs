@@ -10,7 +10,7 @@ import { rmSync, existsSync, readFileSync, readdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { normalizeBrand, sanitizeLogoInner, deriveWordmark } from '../core/brand/schema.mjs'
-import { derivePalette } from '../core/brand/palette.mjs'
+import { derivePalette, paletaDeLaPlaca } from '../core/brand/palette.mjs'
 import { contrast, hexToOklch, oklchToHex } from '../core/brand/color.mjs'
 import { resolveFonts, FONT_PRESETS, LOGO_FONTS, resolveLogoFont } from '../core/brand/fonts.mjs'
 import { renderSpec, htmlFor, esServerless } from '../core/render/engine.mjs'
@@ -1567,6 +1567,118 @@ test('cada generación escribe en su propia carpeta', () => {
   const plan = readFileSync(join(RAIZ, 'core/content/plan.mjs'), 'utf8')
   assert.match(plan, /const nombre = total > 1 \? `\$\{id\}-\$\{PAD\(j \+ 1\)\}` : id/,
     'cambiaron los nombres de las placas del plan')
+})
+
+
+/* ── Los colores de marca, que ahora son hasta tres ──────────────────────── */
+
+// Alguien con dos colores de marca sólo podía cargar uno. Se guardan tres y las
+// placas se turnan; lo que sigue es todo lo que hace que eso no se rompa en
+// silencio la próxima vez que alguien toque la derivación.
+
+test('la marca guarda hasta tres colores y arma una paleta por cada uno', () => {
+  const { brand } = normalizeBrand({
+    nombre: 'Piletas SOL', color: '#0076B3', colorSecundario: '#E8873D', colorTerciario: '#1F7A4D',
+  })
+  assert.equal(brand.colors.paletas.length, 3)
+  assert.deepEqual(brand.meta.colores, ['#0076B3', '#E8873D', '#1F7A4D'])
+  // `colors.flat` sigue siendo el del principal: lo lee todo lo que ya existía.
+  assert.equal(brand.colors.flat.accent, brand.colors.paletas[0].flat.accent)
+})
+
+test('un solo color sigue dando una sola paleta', () => {
+  const { brand } = normalizeBrand({ nombre: 'Uno solo', color: '#8C1D2F' })
+  assert.equal(brand.colors.paletas.length, 1)
+  assert.deepEqual(brand.meta.colores, ['#8C1D2F'])
+  // Y con una sola paleta no hay nada que turnar: siempre la misma.
+  assert.equal(paletaDeLaPlaca(brand, 2), brand.colors)
+})
+
+// Lo que no puede pasar es que la segunda placa tenga otro papel y otro gris:
+// ahí el carrusel se lee como dos marcas distintas en vez de una con dos
+// colores. Los neutros salen del principal y no rotan.
+test('los neutros no rotan: solo rota el acento', () => {
+  const { brand } = normalizeBrand({
+    nombre: 'Dos tonos', color: '#0076B3', colorSecundario: '#E8873D',
+  })
+  const [a, b] = brand.colors.paletas
+  for (const k of ['bg', 'paper', 'ink', 'fg', 'muted', 'soft', 'hair']) {
+    assert.equal(a.flat[k], b.flat[k], `el neutro ${k} cambió entre paletas`)
+  }
+  for (const k of ['accent', 'darkBg', 'tint', 'accentOnDark']) {
+    assert.notEqual(a.flat[k], b.flat[k], `${k} no rotó`)
+  }
+})
+
+test('las placas se turnan por posición, y una placa puede pedir otra', () => {
+  const { brand } = normalizeBrand({
+    nombre: 'Tres', color: '#0076B3', colorSecundario: '#E8873D', colorTerciario: '#1F7A4D',
+  })
+  const P = brand.colors.paletas
+  assert.equal(paletaDeLaPlaca(brand, 0), P[0])
+  assert.equal(paletaDeLaPlaca(brand, 1), P[1])
+  assert.equal(paletaDeLaPlaca(brand, 2), P[2])
+  assert.equal(paletaDeLaPlaca(brand, 3), P[0], 'la cuarta placa vuelve al principal')
+  assert.equal(paletaDeLaPlaca(brand, 1, { paleta: 2 }), P[2], 'la placa no pudo pedir su paleta')
+})
+
+// El contraste se fuerza en los tres, no solo en el principal: un secundario
+// amarillo flúor entregaría placas ilegibles con el mismo silencio de antes.
+test('los colores dos y tres también pasan por el control de contraste', () => {
+  const { warnings, paletas } = derivePalette({ accent: '#8C1D2F', secundario: '#FFE800' })
+  assert.ok(warnings.some(w => /secundario/.test(w)), 'no avisó del secundario')
+  assert.ok(contrast(paletas[1].flat.accent, paletas[1].flat.bg) >= 4.4)
+})
+
+// Turnar entre dos tonos casi iguales no se ve, y el dueño queda esperando un
+// cambio que nunca llega. Se avisa; no se bloquea, porque puede tener dos bordós.
+test('avisa cuando dos colores de marca son casi el mismo tono', () => {
+  const { warnings } = derivePalette({ accent: '#8C1D2F', secundario: '#A02436' })
+  assert.ok(warnings.some(w => /casi el mismo tono/.test(w)))
+})
+
+// El motor no tiene que saber de colores: lo único que hace es cambiarle a la
+// marca el juego antes de pasárselo al template. Si eso se rompe, las tres
+// placas salen del mismo color y nadie se entera hasta ver el carrusel.
+test('el motor le pasa a cada placa el color que le toca', () => {
+  const { brand } = normalizeBrand({
+    nombre: 'Rotación', color: '#0076B3', colorSecundario: '#E8873D',
+  })
+  const slide = { name: 'x', style: 'flat', type: 'body', title: 'Hola', body: 'Texto' }
+  const uno = htmlFor(slide, brand, 'feed', 0)
+  const dos = htmlFor(slide, brand, 'feed', 1)
+  assert.ok(uno.includes(`--accent:${brand.colors.paletas[0].flat.accent}`))
+  assert.ok(dos.includes(`--accent:${brand.colors.paletas[1].flat.accent}`))
+})
+
+// Al guardar la marca por cualquier otro motivo —cambiar la tipografía— la
+// marca se vuelve a normalizar desde cero con lo que le llega. Lo que no le
+// llega desaparece, y los colores dos y tres se perdían en silencio.
+test('guardar la marca de nuevo no se come los colores dos y tres', () => {
+  const service = readFileSync(join(RAIZ, 'core/service.mjs'), 'utf8')
+  const i = service.indexOf('export function configurarMarca')
+  const base = service.slice(i, i + 1400)
+  assert.match(base, /colorSecundario: previo\.meta\.colores\?\.\[1\]/)
+  assert.match(base, /colorTerciario: previo\.meta\.colores\?\.\[2\]/)
+})
+
+// Y la vista previa del editor tiene que mirar la misma posición que el PNG, o
+// se edita con un color y se baja otro.
+test('la vista previa del editor sabe en qué placa del carrusel está', () => {
+  const editor = readFileSync(join(RAIZ, 'web/js/editor.js'), 'utf8')
+  assert.match(editor, /indice: st\.activa/, 'el editor dejó de mandar la posición de la placa')
+  const service = readFileSync(join(RAIZ, 'core/service.mjs'), 'utf8')
+  assert.match(service, /htmlFor\(slide, marca, formato, Number\(indice\)/,
+    'previsualizar dejó de usar la posición para elegir el color')
+})
+
+// La tira de "así queda tu paleta" mostraba el papel y la tinta derivados del
+// color que se estaba editando, no del principal: un papel y un texto que la
+// placa nunca iba a usar. Se deriva con el color puesto en su lugar de la lista.
+test('el selector de la web deriva la paleta con el color en su lugar', () => {
+  const color = readFileSync(join(RAIZ, 'web/js/color.js'), 'utf8')
+  assert.match(color, /derivar: hex => \{/, 'el selector volvió a derivar el color suelto')
+  assert.match(color, /d\.paletas\[editando\]/)
 })
 
 // El resumen va último: si se agrega un bloque abajo, tiene que contarlo.
