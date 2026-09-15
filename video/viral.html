@@ -381,6 +381,20 @@ hoja.textContent = await reglasDelFrasco()
 document.head.append(hoja)
 
 const FIN = 39500
+
+/* Los momentos en que el aviso cambia de idea.
+ *
+ * Están acá y no repartidos por `pintar()` porque no los usa sólo el video: se
+ * publican en `window.HITOS` y `viral.mjs` se los pasa al compositor de
+ * `musica.mjs`, que hace caer el golpe justo donde cambia el plano. Si se mueve
+ * un plano, la música se mueve con él sin que nadie la reedite.
+ *
+ * `marca` no es el arranque de una capa sino el instante en que revienta el
+ * destello, que es donde la música tiene que pegar. */
+const H = {
+  muro: 3500, costos: 7050, marca: 10550, flujo: 13150, formas: 21750,
+  frasco: 25500, lluvia: 27650, posteo: 31800, cierre: 36500,
+}
 const sujeta = v => Math.max(0, Math.min(1, v))
 const tramo = (t, a, b) => sujeta((t - a) / (b - a))
 const frena = p => 1 - Math.pow(1 - p, 3)
@@ -530,15 +544,15 @@ function pintar(t) {
 
   /* 2 · 3,5 – 7,2 s · se multiplica en el muro */
   {
-    $('#muro').style.opacity = asoma(t, 3500, 3700, 6900, 7200)
-    const corre = suave(tramo(t, 3500, 6900))
+    $('#muro').style.opacity = asoma(t, H.muro, H.muro + 200, 6900, 7200)
+    const corre = suave(tramo(t, H.muro, 6900))
     const apaga = tramo(t, 5400, 6900)
     poner($('#grilla'), {
       transform: `translateY(${entre(60, -900, corre)}px)`,
       filter: `saturate(${entre(1, .1, apaga)}) brightness(${entre(1, .45, apaga)})`,
     })
     $('#grilla').querySelectorAll('.baldosa').forEach((f, i) => {
-      const p = frena(tramo(t, 3500 + i * 42, 4000 + i * 42))
+      const p = frena(tramo(t, H.muro + i * 42, H.muro + 500 + i * 42))
       poner(f, { opacity: p, transform: `scale(${entre(.93, 1, p)})` })
     })
     const dicho = asoma(t, 4700, 5000, 6700, 6950)
@@ -550,7 +564,7 @@ function pintar(t) {
      Tres segundos y medio: es el único plano con dos cifras y una frase, y
      leer los tres renglones lleva más que ver una placa (R3). */
   {
-    $('#costos-capa').style.opacity = asoma(t, 7050, 7300, 10300, 10550)
+    $('#costos-capa').style.opacity = asoma(t, H.costos, H.costos + 250, 10300, 10550)
     const tit = frena(tramo(t, 7150, 7600))
     poner($('#titulo-costos'), { opacity: tit, transform: `translateY(${entre(24, 0, tit)}px)` })
     for (const n of document.querySelectorAll('.costo')) {
@@ -562,8 +576,8 @@ function pintar(t) {
 
   /* 4 · 10,5 – 13,3 s · el corte y la marca (R1: quieta un segundo entero) */
   {
-    $('#corte').style.opacity = asoma(t, 10450, 10550, 10950, 11250)
-    poner($('#destello'), { transform: `scale(${entre(.3, 62, frena(tramo(t, 10550, 11050)))})` })
+    $('#corte').style.opacity = asoma(t, H.marca - 100, H.marca, H.marca + 400, H.marca + 700)
+    poner($('#destello'), { transform: `scale(${entre(.3, 62, frena(tramo(t, H.marca, H.marca + 500)))})` })
     $('#marca').style.opacity = asoma(t, 10950, 11200, 13000, 13300)
     poner($('#marca .frasco'), { transform: `scale(${entre(.55, 1, rebota(tramo(t, 11000, 11550)))})` })
     const n = frena(tramo(t, 11350, 11750))
@@ -573,7 +587,7 @@ function pintar(t) {
 
   /* 5 · 13,1 – 21,9 s · «Así se usa», y después el teléfono */
   {
-    $('#flujo').style.opacity = asoma(t, 13150, 13400, T.sale, T.sale + 300)
+    $('#flujo').style.opacity = asoma(t, H.flujo, H.flujo + 250, T.sale, T.sale + 300)
     const vidrio = $('.vidrio'), tel = $('.telefono')
     const anchoV = vidrio.offsetWidth, altoV = vidrio.offsetHeight
     const MARCO = 13   // el padding del teléfono: el vidrio empieza ahí
@@ -674,7 +688,7 @@ function pintar(t) {
   /* 6 · 21,7 – 25,6 s · las cuatro formas, como tarjetas */
   {
     const ELIGE = 24000
-    $('#formas').style.opacity = asoma(t, 21750, 22000, 25300, 25600)
+    $('#formas').style.opacity = asoma(t, H.formas, H.formas + 250, 25300, 25600)
     poner($('#rot-formas'), { opacity: asoma(t, 21850, 22300, 25100, 25350), transform: 'none' })
     document.querySelectorAll('.forma').forEach((n, i) => {
       const p = rebota(tramo(t, 22000 + i * 170, 22650 + i * 170))
@@ -712,7 +726,7 @@ function pintar(t) {
      Dos segundos y pico: es una espera, y una espera larga en un aviso se
      siente como lo que es. */
   {
-    const DESDE = 25500
+    const DESDE = H.frasco
     $('#pensando').style.opacity = asoma(t, DESDE, DESDE + 300, 27500, 27800)
     // El frasco de la aplicación, con su reloj movido a mano. Las animaciones
     // son de los hijos del SVG, no del SVG: sin `subtree` no encuentra ninguna.
@@ -741,12 +755,12 @@ function pintar(t) {
 
   /* 8 · 27,6 – 32,0 s · la lluvia de placas (P4: el sistema de marca) */
   {
-    $('#lluvia').style.opacity = asoma(t, 27650, 27950, 31700, 32000)
-    const avance = tramo(t, 27650, 32000)
+    $('#lluvia').style.opacity = asoma(t, H.lluvia, H.lluvia + 300, 31700, 32000)
+    const avance = tramo(t, H.lluvia, 32000)
     for (const g of GOTAS) {
       // Caen y se reciclan arriba: una tira continua, no una tanda que termina.
       const y = ((g.desfase + avance * g.veloc * 1.5) % 1) * 2700 - 620
-      poner(g.n, { left: `${g.x}px`, top: `${y}px`, opacity: sujeta(tramo(t, 27650, 28150)) })
+      poner(g.n, { left: `${g.x}px`, top: `${y}px`, opacity: sujeta(tramo(t, H.lluvia, H.lluvia + 500)) })
     }
     const d = frena(tramo(t, 29200, 29800))
     poner($('#dicho-lluvia'), { opacity: Math.min(d, asoma(t, 29200, 29800, 31400, 31700)), transform: `translateY(${entre(26, 0, d)}px)` })
@@ -755,8 +769,8 @@ function pintar(t) {
   /* 9 · 31,8 – 36,7 s · el posteo, los números y los dos avisos */
   {
     const WA = 34300, IG = 35200
-    $('#posteo').style.opacity = asoma(t, 31800, 32100, 36400, 36700)
-    const p = frena(tramo(t, 31800, 32500))
+    $('#posteo').style.opacity = asoma(t, H.posteo, H.posteo + 300, 36400, 36700)
+    const p = frena(tramo(t, H.posteo, H.posteo + 700))
     // Cada aviso que llega empuja la publicación un poco más abajo, como en el
     // teléfono. Sin el empujón le tapan el nombre de la cuenta, que es lo único
     // que dice de quién es el posteo.
@@ -787,7 +801,7 @@ function pintar(t) {
 
   /* 10 · 36,5 – 39,5 s · la foto grupal (Q8) */
   {
-    $('#cierre').style.opacity = tramo(t, 36500, 36800)
+    $('#cierre').style.opacity = tramo(t, H.cierre, H.cierre + 300)
     orbita.forEach((o, i) => {
       const p = frena(tramo(t, 36600 + i * 70, 37500 + i * 70))
       const lejos = 2.4
@@ -809,6 +823,7 @@ function pintar(t) {
 
 window.pintar = pintar
 window.DURACION = FIN
+window.HITOS = H
 pintar(0)
 
 if (new URLSearchParams(location.search).has('vivo')) {

@@ -12,6 +12,7 @@
     "prueba": "node --env-file-if-exists=.env pruebas/smoke.mjs",
     "prueba-auth": "node --env-file-if-exists=.env pruebas/auth-dashboard-firebase.mjs",
     "muestras": "node pruebas/muestras.mjs",
+    "musica": "node video/musica.mjs",
     "ejemplo": "node render-placa.mjs spec-ejemplo.json",
     "logotipos": "node pruebas/logotipos.mjs && open placas/logotipos",
     "muestrario": "node pruebas/muestrario.mjs && open placas/muestrario",

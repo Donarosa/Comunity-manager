@@ -7,6 +7,7 @@
 //   PAGINA=storyboard.html node video/viral.mjs   → video/storyboard.mp4
 //
 //   DESDE=9000 HASTA=19000 node video/viral.mjs    solo el tramo del flujo
+//   SIN_MUSICA=1 node video/viral.mjs              muda
 //
 // Se sirve por HTTP y no por `file://` porque la página lee `flujo.json`, y un
 // módulo no puede pedir un archivo local: el navegador lo rechaza por origen.
@@ -26,11 +27,13 @@
 
 import { createServer } from 'node:http'
 import { spawn } from 'node:child_process'
-import { createReadStream, statSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { createReadStream, statSync, writeFileSync } from 'node:fs'
 import { dirname, extname, join, normalize, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import puppeteer from 'puppeteer-core'
 import { findChrome } from '../core/render/engine.mjs'
+import { componer } from './musica.mjs'
 
 const AQUI = dirname(fileURLToPath(import.meta.url))
 // Se sirve la raíz: la página importa `web/js/frasco.js`, el mismo módulo que
@@ -72,9 +75,23 @@ const desde = Number(process.env.DESDE || 0)
 const hasta = Number(process.env.HASTA || duracion)
 const cuadros = Math.round((hasta - desde) / 1000 * FPS)
 
+/* La música se compone acá, con los tiempos que el propio aviso publica.
+ *
+ * Se arma la pista entera y después se le pide a ffmpeg que entre por el mismo
+ * milisegundo que el video: así un render parcial —`DESDE=9000`— sale con el
+ * pedazo de música que le corresponde y no con el principio del tema. */
+const hitos = await p.evaluate(() => window.HITOS || {})
+const pista = join(tmpdir(), 'alquimia-musica.wav')
+const muda = process.env.SIN_MUSICA === '1'
+if (!muda) writeFileSync(pista, componer({ ms: duracion, hitos }))
+
+const audio = muda
+  ? ['-f', 'lavfi', '-i', 'anullsrc=channel_layout=stereo:sample_rate=44100']
+  : ['-ss', String(desde / 1000), '-i', pista]
+
 const ff = spawn('ffmpeg', [
   '-y', '-f', 'image2pipe', '-framerate', String(FPS), '-i', '-',
-  '-f', 'lavfi', '-i', 'anullsrc=channel_layout=stereo:sample_rate=44100', '-shortest',
+  ...audio, '-shortest',
   '-c:v', 'libx264', '-preset', 'slow', '-crf', '19',
   '-profile:v', 'high', '-level', '4.0', '-pix_fmt', 'yuv420p', '-r', String(FPS),
   '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', SALIDA,
