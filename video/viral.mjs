@@ -10,6 +10,19 @@
 //
 // Se sirve por HTTP y no por `file://` porque la página lee `flujo.json`, y un
 // módulo no puede pedir un archivo local: el navegador lo rechaza por origen.
+//
+// De qué vive `video/assets/` —que no se versiona, como todo lo generado—:
+//
+//   flujo-*.png, flujo.json    `capturar-flujo.mjs`, contra la app corriendo
+//   lluvia-NN.png              `lluvia-demo.mjs`     diez negocios, placa de texto
+//   lluviafoto-NN.png          `fotos-demo.mjs`      tres negocios, placa con foto
+//   carrusel-NN.png            `piezas-demo.mjs`     el carrusel de Piletas SOL
+//
+// Y cuatro que ningún script rehace porque no salen del motor: los cinco
+// `flyer-0N` del muro del principio, que son capturas que trajo Santiago, y
+// `foto-piletas` / `foto-runclubs`, dos placas que ya había generado la
+// aplicación de verdad. Están en `Recursos video/`, fuera del repositorio. Si
+// se pierden, el aviso no se puede volver a armar igual.
 
 import { createServer } from 'node:http'
 import { spawn } from 'node:child_process'
