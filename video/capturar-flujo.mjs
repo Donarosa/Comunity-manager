@@ -98,12 +98,31 @@ const tocar = async (texto, paso) => {
   if (paso) toques[paso] = caja
 }
 const limpiar = () => p.evaluate(() => {
-  // Ni el correo de la cuenta ni la salida de sesión van en un aviso.
+  /* Ni el correo de la cuenta ni la salida de sesión van en un aviso.
+   *
+   * Se sacan del documento en vez de vaciarlos: vaciándolos la tarjeta de la
+   * cuenta quedaba con un hueco de doscientos píxeles donde antes estaba el
+   * correo, y en la captura se leía como un error de maquetado. */
   for (const n of document.querySelectorAll('p, span, div')) {
-    if (!n.children.length && /@/.test(n.textContent) && n.textContent.length < 40) n.textContent = ''
+    if (!n.children.length && /@/.test(n.textContent) && n.textContent.length < 40) n.remove()
   }
   const salir = [...document.querySelectorAll('button')].find(b => b.textContent.includes('Cerrar sesión'))
-  if (salir) salir.style.visibility = 'hidden'
+  if (salir) salir.remove()
+
+  /* Y nada cortado por la barra de acciones.
+   *
+   * La barra flota sobre el contenido, así que la última tarjeta siempre queda
+   * rebanada por la mitad. En la aplicación eso está bien —se sigue scrolleando—
+   * pero una foto de una tarjeta cortada se lee como una pantalla rota. Se
+   * esconde lo que no entre entero. */
+  const dock = document.querySelector('.dock-acciones')
+  if (dock) {
+    const tope = dock.getBoundingClientRect().top - 16
+    for (const n of document.querySelectorAll('.dash-header, .dash-metricas-grid > *, .dash-marca-box, .dash-tabs-home-wrap')) {
+      const c = n.getBoundingClientRect()
+      if (c.height > 40 && c.bottom > tope) n.style.display = 'none'
+    }
+  }
   // El botón que se va a tocar, congelado arriba de su flotado.
   const s = document.querySelector('.btn-sugerime')
   s?.getAnimations().forEach(a => { a.currentTime = 900 + 0.5 * 2200; a.pause() })

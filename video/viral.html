@@ -118,7 +118,7 @@
   .muesca { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); width: 160px; height: 32px; border-radius: 20px; background: #10141A; z-index: 8; }
   /* El foco: el recuadro que deja ver el campo y apaga todo lo demás. El halo de
      9999px es lo que oscurece el resto de la pantalla sin recortar nada. */
-  #foco { position: absolute; z-index: 6; border-radius: 20px; border: 3px solid var(--menta);
+  #foco { position: absolute; z-index: 6; border-radius: 28px; border: 3px solid var(--menta);
     box-shadow: 0 0 0 9999px rgba(245,242,234,.94); pointer-events: none; }
   /* Lo que se escribe solo, encima del campo real de la aplicación. */
   #tecleo { position: absolute; z-index: 7; color: var(--ink); text-align: left; white-space: pre-wrap; word-break: break-word; }
@@ -601,7 +601,8 @@ function pintar(t) {
      * centro al centro de la escena. Con `transform-origin` en el medio, un
      * punto que está a `d` del centro queda en `k·d` después de escalar: por eso
      * el corrimiento es `-k·d` y no `-d`. */
-    const k = 1080 * 0.9 / (CAMPO.w * anchoV)
+    const AIRE = 0.056               // lo que el recuadro sobresale del campo, a lo ancho
+    const k = 1080 * 0.94 / ((CAMPO.w + AIRE) * anchoV)
     const dx = MARCO + (CAMPO.x + CAMPO.w / 2) * anchoV - tel.offsetWidth / 2
     const dy = MARCO + (CAMPO.y + CAMPO.h / 2) * altoV - tel.offsetHeight / 2
     const z = Math.min(suave(tramo(t, T.zoomIn[0], T.zoomIn[1])), 1 - suave(tramo(t, T.zoomOut[0], T.zoomOut[1])))
@@ -612,8 +613,8 @@ function pintar(t) {
     })
     poner($('#foco'), {
       opacity: z,
-      left: `${(CAMPO.x - 0.012) * anchoV}px`, top: `${(CAMPO.y - 0.040) * altoV}px`,
-      width: `${(CAMPO.w + 0.024) * anchoV}px`, height: `${(CAMPO.h + 0.052) * altoV}px`,
+      left: `${(CAMPO.x - AIRE / 2) * anchoV}px`, top: `${(CAMPO.y - 0.064) * altoV}px`,
+      width: `${(CAMPO.w + AIRE) * anchoV}px`, height: `${(CAMPO.h + 0.092) * altoV}px`,
     })
 
     const enTema = t >= T.tema
@@ -646,7 +647,7 @@ function pintar(t) {
      * además tapa el texto de ayuda que trae la captura, que si no se lee por
      * debajo de lo que se escribe. */
     const tec = $('#tecleo')
-    if (enTema && t < T.zoomOut[1]) {
+    if (enTema) {
       const cuerpo = CAMPO.cuerpo * altoV
       poner(tec, {
         display: 'block',
