@@ -123,10 +123,12 @@ function generarPropuestasLocales(negocio = {}) {
       logo: {
         viewBox: '0 0 100 100',
         inner: `
-          <circle cx="50" cy="50" r="47" fill="none" stroke="currentColor" stroke-width="2.5"/>
-          <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" stroke-width="0.8"/>
-          <circle cx="50" cy="50" r="26" fill="none" stroke="currentColor" stroke-width="0.8"/>
-          <text x="50" y="50" text-anchor="middle" dominant-baseline="central" font-family="'Plus Jakarta Sans', sans-serif" font-size="${ini.length > 1 ? 16 : 22}" font-weight="800" fill="currentColor">${ini}</text>
+          <circle cx="50" cy="50" r="46" fill="currentColor"/>
+          <circle cx="50" cy="49.4" r="44" fill="none" stroke="#ffffff" stroke-width="1.2" stroke-opacity="0.35"/>
+          <circle cx="50" cy="50.6" r="44" fill="none" stroke="#000000" stroke-width="1.2" stroke-opacity="0.28"/>
+          <circle cx="50" cy="50" r="40" fill="none" stroke="#ffffff" stroke-width="0.7" stroke-opacity="0.4"/>
+          <circle cx="50" cy="50" r="19.5" fill="none" stroke="#ffffff" stroke-width="1.2" stroke-opacity="0.85"/>
+          <text x="50" y="50.5" text-anchor="middle" dominant-baseline="central" font-family="'Fraunces', serif" font-size="${ini.length > 1 ? 14 : 19}" font-weight="700" font-style="italic" fill="#ffffff">${ini}</text>
         `,
         strokeWidth: 4,
         strokeWidthSmall: 3,

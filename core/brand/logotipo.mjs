@@ -296,30 +296,58 @@ export function selloHTML({ nombre, rubro = '', px = 108, slug = 's' }) {
   const abajo = String(rubro || '').trim().toUpperCase()
   const ini = iniciales(nombre)
   const idA = `arco-${slug}`, idB = `arco-b-${slug}`
-  const A = ajustarAlArco(arriba, { radio: 37, fsMax: 7.6, fsMin: 5, tracking: 1.7 })
-  const Bj = ajustarAlArco(abajo, { radio: 31, fsMax: 5.4, fsMin: 3.6, tracking: 1.5 })
+  const idDrop = `f-drop-${slug}`, idInSh = `in-sh-${slug}`
+
+  // Radios calculados para que el texto respire holgadamente en el canal
+  const radioA = 30.5
+  const radioB = 27.5
+  const A = ajustarAlArco(arriba, { radio: radioA, fsMax: 5.9, fsMin: 4.1, tracking: 1.8 })
+  const Bj = ajustarAlArco(abajo, { radio: radioB, fsMax: 4.2, fsMin: 2.8, tracking: 1.5 })
   const ajuste = t => t.textLength ? ` textLength="${t.textLength}" lengthAdjust="spacingAndGlyphs"` : ''
-  // Radios sobre una caja de 100. Las banderas del arco de abajo son
-  // `0,0` (large-arc 0, sweep 0) y no son negociables: con large-arc 1 el
-  // semicírculo elige el camino de vuelta y la leyenda sale cabeza abajo.
-  // Verificado renderizando las cuatro combinaciones — no se deduce leyendo.
+
   return `<svg class="sello" width="${px}" height="${px}" viewBox="0 0 100 100" role="img" aria-label="${arriba}">
   <defs>
-    <path id="${idA}" d="M 50,50 m -37,0 a 37,37 0 1,1 74,0" fill="none"/>
-    <path id="${idB}" d="M 50,50 m -31,0 a 31,31 0 0,0 62,0" fill="none"/>
+    <filter id="${idDrop}" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#000000" flood-opacity="0.45"/>
+      <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="#000000" flood-opacity="0.25"/>
+    </filter>
+    <radialGradient id="${idInSh}" cx="50%" cy="46%" r="56%">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0.15"/>
+      <stop offset="65%" stop-color="#000000" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.75"/>
+    </radialGradient>
+    <path id="${idA}" d="M 50,50 m -${radioA},0 a ${radioA},${radioA} 0 1,1 ${radioA * 2},0" fill="none"/>
+    <path id="${idB}" d="M 50,50 m -${radioB},0 a ${radioB},${radioB} 0 0,0 ${radioB * 2},0" fill="none"/>
   </defs>
-  <circle cx="50" cy="50" r="47.5" fill="none" stroke="currentColor" stroke-width="2"/>
-  <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" stroke-width="0.7"/>
-  <circle cx="50" cy="50" r="26" fill="none" stroke="currentColor" stroke-width="0.7"/>
-  <text font-size="${A.fs}" font-weight="700" letter-spacing="${A.ls}" fill="currentColor">
+
+  <!-- Base sólida con sombra de relieve 3D -->
+  <circle cx="50" cy="50" r="45.5" fill="currentColor" filter="url(#${idDrop})"/>
+
+  <!-- Bisel de luz superior y sombra inferior en el borde exterior -->
+  <circle cx="50" cy="49.4" r="43.8" fill="none" stroke="#ffffff" stroke-width="1.2" stroke-opacity="0.35"/>
+  <circle cx="50" cy="50.6" r="43.8" fill="none" stroke="#000000" stroke-width="1.2" stroke-opacity="0.28"/>
+
+  <!-- Aro contenedor exterior limpio con amplio respiro -->
+  <circle cx="50" cy="50" r="40" fill="none" stroke="#ffffff" stroke-width="0.7" stroke-opacity="0.4"/>
+
+  <!-- Texto superior con amplio respiro -->
+  <text font-size="${A.fs}" font-weight="700" letter-spacing="${A.ls}" fill="#ffffff" dominant-baseline="central">
     <textPath href="#${idA}" startOffset="50%" text-anchor="middle"${ajuste(A)}>${arriba}</textPath>
   </text>${abajo ? `
-  <text font-size="${Bj.fs}" font-weight="600" letter-spacing="${Bj.ls}" fill="currentColor">
+  <!-- Texto inferior con amplio respiro -->
+  <text font-size="${Bj.fs}" font-weight="600" letter-spacing="${Bj.ls}" fill="#ffffff" opacity="0.88" dominant-baseline="central">
     <textPath href="#${idB}" startOffset="50%" text-anchor="middle"${ajuste(Bj)}>${abajo}</textPath>
   </text>` : ''}
-  <text x="50" y="50" text-anchor="middle" dominant-baseline="central"
-    font-size="${ini.length > 1 ? 17 : 23}" font-weight="700" letter-spacing="-0.5"
-    fill="currentColor">${ini}</text>
+
+  <!-- Núcleo central con sombra interna (cavidad) y aro blanco de la opción 4 -->
+  <circle cx="50" cy="50" r="19.5" fill="currentColor"/>
+  <circle cx="50" cy="50" r="19.5" fill="url(#${idInSh})"/>
+  <circle cx="50" cy="50" r="19.5" fill="none" stroke="#ffffff" stroke-width="1.2" stroke-opacity="0.85"/>
+
+  <!-- Monograma central en relieve con estilo serif -->
+  <text x="50" y="50.5" text-anchor="middle" dominant-baseline="central"
+    font-size="${ini.length > 1 ? 14 : 19}" font-weight="700" font-style="italic" letter-spacing="-0.02em"
+    fill="#ffffff">${ini}</text>
 </svg>`
 }
 
