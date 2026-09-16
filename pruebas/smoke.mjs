@@ -1869,5 +1869,18 @@ test('las grillas del editor pueden achicarse en un teléfono', () => {
   assert.match(css.slice(i, css.indexOf('}', i)), /max-width: 100%/)
 })
 
+
+// Cinco páginas estaban guardadas dos veces, idénticas, en la raíz y en `web/`.
+// El servidor lee siempre la de `web/` —`servirArchivo(res, WEB, ...)`— así que
+// la de la raíz no la abría nadie. No rompía nada; era una trampa: el día que
+// alguien editara la copia de la raíz, guardara y recargara, no iba a ver
+// ningún cambio y iba a pensar que el arreglo no funcionaba.
+test('ninguna página está guardada dos veces', () => {
+  const enWeb = new Set(readdirSync(join(RAIZ, 'web')).filter(f => f.endsWith('.html')))
+  const repetidas = readdirSync(RAIZ).filter(f => f.endsWith('.html') && enWeb.has(f))
+  assert.deepEqual(repetidas, [],
+    `estas páginas existen en la raíz y en web/, y el servidor solo lee las de web/: ${repetidas.join(', ')}`)
+})
+
 // El resumen va último: si se agrega un bloque abajo, tiene que contarlo.
 console.log(`\n${ok} pruebas OK${process.exitCode ? ' — con fallas' : ''}\n`)
