@@ -976,6 +976,7 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, marca = null, mo
     function pintarTratamientos() {
       vaciar(filaTratamientos)
       if (st.logotipoTipo === 'simbolo') return
+      const esSello = st.logotipoTipo === 'sello'
       const grupo = el('div.opciones', { style: 'margin-bottom:18px' })
       const tratLimpios = [
         { id: 'linea', label: 'En una línea', desc: 'Nombre corrido con acento de color.' },
@@ -985,18 +986,28 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, marca = null, mo
       ].filter(t => t.id !== 'apilado' || dosPalabras)
 
       for (const t of tratLimpios) {
+        const deshabilitado = esSello
+        const desc = deshabilitado
+          ? 'No aplica en sello circular'
+          : t.desc
         const b = el('button.opcion', {
-          onclick: () => {
+          onclick: deshabilitado ? null : () => {
             st.logotipoTratamiento = t.id
             elegirEnGrupo(grupo, b)
             refrescarMuestra()
           },
-        }, el('b', {}, t.label), el('span', {}, t.desc))
-        if (t.id === st.logotipoTratamiento) b.classList.add('elegida')
+          disabled: deshabilitado || undefined,
+          title: deshabilitado ? 'El sello circular tiene su propio formato integrado' : '',
+          style: deshabilitado ? 'opacity:0.45;cursor:not-allowed;pointer-events:none' : '',
+        }, el('b', {}, t.label), el('span', { style: deshabilitado ? 'color:var(--color-accent-1);font-style:italic;font-size:12px' : '' }, desc))
+        if (!deshabilitado && t.id === st.logotipoTratamiento) b.classList.add('elegida')
         grupo.append(b)
       }
       filaTratamientos.append(
-        el('label', { style: 'display:block;font-weight:700;font-size:.95rem;margin-bottom:8px' }, 'Formato del nombre'),
+        el('label', { style: `display:block;font-weight:700;font-size:.95rem;margin-bottom:8px${esSello ? ';opacity:0.6' : ''}` },
+          'Formato del nombre',
+          esSello ? el('span', { style: 'font-weight:400;font-size:12px;margin-left:8px;color:var(--color-muted)' }, '(No aplica en sello circular)') : ''
+        ),
         grupo
       )
     }
@@ -1006,6 +1017,7 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, marca = null, mo
     function pintarSimbolos() {
       vaciar(filaSimbolos)
       if (st.logotipoTipo === 'palabra' || st.logo) return
+      const esSello = st.logotipoTipo === 'sello'
       const grupo = el('div.opciones.dos', { style: 'margin-bottom:18px' })
       const escudosLimpios = [
         { id: 'circulo', label: 'Círculo pleno', desc: 'Iniciales sobre fondo redondo de color.' },
@@ -1014,18 +1026,28 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, marca = null, mo
         { id: 'letra', label: 'Solo letras', desc: 'Iniciales limpias de autor.' },
       ]
       for (const e of escudosLimpios) {
+        const deshabilitado = esSello
+        const desc = deshabilitado
+          ? 'No aplica en sello circular'
+          : e.desc
         const b = el('button.opcion', {
-          onclick: () => {
+          onclick: deshabilitado ? null : () => {
             st.logotipoEscudo = e.id
             elegirEnGrupo(grupo, b)
             refrescarMuestra()
           },
-        }, el('b', {}, e.label), el('span', {}, e.desc))
-        if (e.id === st.logotipoEscudo) b.classList.add('elegida')
+          disabled: deshabilitado || undefined,
+          title: deshabilitado ? 'El sello circular incluye su propio monograma central' : '',
+          style: deshabilitado ? 'opacity:0.45;cursor:not-allowed;pointer-events:none' : '',
+        }, el('b', {}, e.label), el('span', { style: deshabilitado ? 'color:var(--color-accent-1);font-style:italic;font-size:12px' : '' }, desc))
+        if (!deshabilitado && e.id === st.logotipoEscudo) b.classList.add('elegida')
         grupo.append(b)
       }
       filaSimbolos.append(
-        el('label', { style: 'display:block;font-weight:700;font-size:.95rem;margin-bottom:8px' }, 'Símbolo de iniciales'),
+        el('label', { style: `display:block;font-weight:700;font-size:.95rem;margin-bottom:8px${esSello ? ';opacity:0.6' : ''}` },
+          'Símbolo de iniciales',
+          esSello ? el('span', { style: 'font-weight:400;font-size:12px;margin-left:8px;color:var(--color-muted)' }, '(No aplica en sello circular)') : ''
+        ),
         grupo
       )
     }
