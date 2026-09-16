@@ -72,6 +72,30 @@
     {
       "source": "/logos",
       "destination": "/logos-visor.html"
+    },
+    {
+      "source": "/logos-visor",
+      "destination": "/logos-visor.html"
+    },
+    {
+      "source": "/firmas",
+      "destination": "/logotipos.html"
+    },
+    {
+      "source": "/ejemplos",
+      "destination": "/ejemplos-logos-marcas.html"
+    },
+    {
+      "source": "/ejemplos-logos-marcas",
+      "destination": "/ejemplos-logos-marcas.html"
+    },
+    {
+      "source": "/sellos",
+      "destination": "/ejemplos-sellos-circulares.html"
+    },
+    {
+      "source": "/sellos-circulares",
+      "destination": "/ejemplos-sellos-circulares.html"
     }
   ],
   "outputDirectory": "web"

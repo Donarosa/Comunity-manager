@@ -1882,5 +1882,42 @@ test('ninguna página está guardada dos veces', () => {
     `estas páginas existen en la raíz y en web/, y el servidor solo lee las de web/: ${repetidas.join(', ')}`)
 })
 
+
+/* Un atajo que anda en la máquina y no en producción ────────────────────────
+ *
+ * En la máquina, el servidor de Node atiende TODO, así que `/sellos` funciona
+ * con solo declararlo en `server.mjs`. En Vercel no: lo estático lo sirve el
+ * CDN antes de llegar a la función, busca un archivo llamado `sellos`, no lo
+ * encuentra y devuelve 404 sin preguntarle a nadie. Para que el atajo llegue a
+ * la función o al archivo hace falta además un `rewrite` en `vercel.json`.
+ *
+ * Pasó de verdad: se agregaron `/sellos` y `/ejemplos` y en producción los dos
+ * daban 404 mientras en local andaban perfecto. Eso no se descubre probando en
+ * la máquina — se descubre abriendo el link y encontrando la nada.
+ */
+test('los atajos de las páginas también existen en producción', () => {
+  const server = readFileSync(join(RAIZ, 'core/api/server.mjs'), 'utf8')
+  const vercel = JSON.parse(readFileSync(join(RAIZ, 'vercel.json'), 'utf8'))
+  const ignorado = readFileSync(join(RAIZ, '.vercelignore'), 'utf8')
+    .split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#'))
+
+  const reescritos = new Set(vercel.rewrites.map(r => r.source))
+  const faltan = []
+
+  // Cada bloque `if (... pathname === '/x' ...) return servirArchivo(res, WEB, 'y.html')`
+  const bloques = server.matchAll(
+    /if \(m === 'GET' && \(([^)]*pathname[^)]*)\)\)\s*\{\s*return servirArchivo\(res, WEB, '([\w.-]+\.html)'\)/g)
+  for (const [, cond, archivo] of bloques) {
+    // Una página que no se despliega no necesita atajo: es a propósito.
+    if (ignorado.includes(archivo)) continue
+    for (const [, ruta] of cond.matchAll(/pathname === '([^']+)'/g)) {
+      if (ruta === '/' || ruta === '/' + archivo) continue   // el archivo directo lo sirve el CDN
+      if (!reescritos.has(ruta)) faltan.push(`${ruta} → ${archivo}`)
+    }
+  }
+  assert.deepEqual(faltan, [],
+    `estos atajos andan en la máquina y dan 404 en producción, les falta un rewrite en vercel.json: ${faltan.join(', ')}`)
+})
+
 // El resumen va último: si se agrega un bloque abajo, tiene que contarlo.
 console.log(`\n${ok} pruebas OK${process.exitCode ? ' — con fallas' : ''}\n`)
