@@ -17,7 +17,7 @@
 // a prenderlo es reponer el botón y el paso del código.
 
 import { el, $, vaciar, aviso } from './ui.js'
-import { loginConGoogle } from './auth.js'
+import { loginConGoogle, ingresoDisponible } from './auth.js'
 
 export function abrirModalAuth({ alAutenticar = () => {} } = {}) {
   // Evitar modales duplicados
@@ -84,6 +84,24 @@ export function abrirModalAuth({ alAutenticar = () => {} } = {}) {
     )
 
     setTimeout(() => btnGoogle.focus(), 100)
+
+    /* Si el despliegue no tiene credenciales, el botón se cambia por la
+     * explicación. Se pregunta después de pintar y no antes para que el modal
+     * abra al instante: en el caso normal la respuesta llega en un milisegundo
+     * y nadie ve el cambio. */
+    ingresoDisponible().then(({ ok, enMaquina }) => {
+      if (ok || enMaquina || !caja.contains(btnGoogle)) return
+      btnGoogle.replaceWith(el('div.aviso', {},
+        el('b', { style: 'display:block;margin-bottom:6px' }, 'El ingreso no está configurado acá'),
+        el('span', {}, 'Este despliegue no tiene cargadas las credenciales de Firebase, '
+          + 'así que no hay con qué validar una cuenta. No es un error de la aplicación '
+          + 'ni algo que se arregle esperando: las previsualizaciones de rama salen sin '
+          + 'credenciales a propósito, para que no puedan tocar los datos de producción.'),
+        el('span', { style: 'display:block;margin-top:8px' },
+          'La versión de verdad está en ',
+          el('b', {}, 'alquimia-cm.vercel.app'), '.')
+      ))
+    })
   }
 
   renderIngreso()

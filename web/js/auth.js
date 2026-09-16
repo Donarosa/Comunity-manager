@@ -144,6 +144,29 @@ function mensajeDeAuth(e) {
   return MENSAJES_AUTH[e?.code] || 'No pudimos completar el ingreso. Probá de nuevo en un momento.'
 }
 
+const EN_MAQUINA = ['localhost', '127.0.0.1', ''].includes(
+  typeof location === 'undefined' ? '' : location.hostname)
+
+/**
+ * ¿Se puede entrar en este entorno?
+ *
+ * Existe para no ofrecer un botón que no va a funcionar. Un despliegue de rama
+ * sale sin las credenciales de Firebase —a propósito, para que una preview no
+ * escriba en la base de los clientes— y ahí el botón de Google fallaba recién
+ * después del clic, con un "volvé a intentar en unos minutos" que además era
+ * mentira: no iba a andar ni en unos minutos ni nunca. Eso es lo que hace que
+ * una preview parezca rota.
+ *
+ * `inicializarFirebaseClient()` está memorizada, así que preguntar es gratis.
+ */
+export async function ingresoDisponible() {
+  try {
+    const fb = await inicializarFirebaseClient()
+    if (fb?.listo) return { ok: true }
+  } catch { /* lo de abajo ya cubre el caso */ }
+  return { ok: false, enMaquina: EN_MAQUINA }
+}
+
 export async function loginConGoogle() {
   const fb = await inicializarFirebaseClient()
 
@@ -193,9 +216,11 @@ export async function loginConGoogle() {
   //
   // En una máquina el atajo sigue siendo útil para trabajar sin credenciales,
   // así que se conserva ahí y solo ahí.
-  const enMaquina = ['localhost', '127.0.0.1', ''].includes(location.hostname)
-  if (!enMaquina) {
-    throw new Error('El ingreso no está disponible en este momento. Volvé a intentar en unos minutos.')
+  if (!EN_MAQUINA) {
+    throw new Error(
+      'El ingreso no está configurado en este despliegue: no tiene cargadas las ' +
+      'credenciales de Firebase, así que no hay con qué validar una cuenta.'
+    )
   }
 
   const nombrePrompt = 'Demo Usuario Google'

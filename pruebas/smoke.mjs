@@ -1795,5 +1795,25 @@ test('lo que se pide una sola vez, se pide una sola vez', () => {
   assert.match(app, /await pidiendoCatalogo/)
 })
 
+
+// Un despliegue sin credenciales de Firebase no puede ofrecer un botón de
+// ingreso: falla recién después del clic. Y el mensaje decía "volvé a intentar
+// en unos minutos", que además era mentira — no iba a andar nunca. Eso es lo
+// que hace que una previsualización de rama parezca rota.
+test('sin credenciales, el ingreso explica en vez de prometer', () => {
+  const auth = readFileSync(join(RAIZ, 'web/js/auth.js'), 'utf8')
+  assert.match(auth, /export async function ingresoDisponible/,
+    'se fue la forma de preguntar si se puede entrar antes de ofrecerlo')
+  assert.ok(!/Volvé a intentar en unos minutos/.test(auth),
+    'volvió el mensaje que promete que va a andar cuando no va a andar')
+  assert.match(auth, /no está configurado en este despliegue/)
+
+  const modal = readFileSync(join(RAIZ, 'web/js/modal-auth.js'), 'utf8')
+  assert.match(modal, /ingresoDisponible\(\)\.then/,
+    'el modal dejó de preguntar si el ingreso está disponible')
+  // En la máquina sigue estando el atajo de demo, así que ahí no se avisa nada.
+  assert.match(modal, /if \(ok \|\| enMaquina/)
+})
+
 // El resumen va último: si se agrega un bloque abajo, tiene que contarlo.
 console.log(`\n${ok} pruebas OK${process.exitCode ? ' — con fallas' : ''}\n`)
