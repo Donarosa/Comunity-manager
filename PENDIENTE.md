@@ -1,7 +1,7 @@
 # Estado de producción
 
-**https://alquimia-cm.vercel.app** — actualizado 01/09/2026, verificado contra
-producción, no deducido.
+**https://alquimia-cm.vercel.app** — actualizado 16/09/2026, verificado contra
+producción, no deducido. Corriendo `bdcdfb7`.
 
 ```bash
 curl https://alquimia-cm.vercel.app/salud
@@ -14,7 +14,41 @@ todavía no llegó con un arreglo que no funciona.
 
 ---
 
-## Falta una sola cosa: autorizar el dominio en Firebase
+## Lo que falta comprobar de lo último que se subió
+
+Tres cosas se arreglaron o se agregaron entre el 14 y el 16 y ninguna la usó
+todavía una persona de verdad. Ninguna se puede comprobar desde acá sin escribir
+en la producción de un cliente, así que van como lista para hacer a mano una vez.
+
+- **Editar la marca ya no borra la marca.** Era el reporte: "vuelvo a editar mis
+  datos y está casi todo en blanco". La API mandaba la marca recortada y el
+  editor precargaba de ahí; lo que no viajaba volvía vacío y, al guardar, el
+  vacío se escribía encima. También se perdían el logo subido, la tipografía y
+  el tratamiento del logotipo. **Cómo comprobarlo:** entrar a editar los datos
+  del negocio y ver que vuelven completos; después cambiar *sólo* el color y
+  volver a mirar el rubro y el logo, que es exactamente lo que se borraba.
+
+- **Una marca puede tener hasta tres colores.** El principal es obligatorio, el
+  segundo y el tercero son de quien los tenga. No se mezclan en una placa: se
+  turnan entre placas de un carrusel. **Cómo comprobarlo:** cargar un segundo
+  color en el alta y generar un carrusel de tres o más placas; la portada sale
+  con el principal y la segunda con el secundario.
+
+- **La carrera con Firebase, en las dos puntas.** Del lado del servidor,
+  `estaActivo()` decía que no había base hasta que la inicialización terminaba,
+  y el almacén la consulta sincrónicamente en dieciséis lugares: en el primer
+  pedido de cada instancia fría nadie iba a buscar la cuenta a Firestore, el
+  disco estaba vacío y se creaba una cuenta nueva encima. Eso es lo que hacía
+  que "pasando un rato" se perdiera la marca. Del lado del navegador, el mismo
+  error hacía cuatro pedidos de `/config/firebase` y tres de `/catalogo` por
+  carga. **Cómo comprobarlo:** no se comprueba de una; si en unos días nadie
+  vuelve a reportar que perdió la marca, quedó. Y si pasa, ahora el log grita
+  `[ALMACÉN]` cuando la función corre sin Firestore, en vez de perder cuentas
+  en silencio.
+
+---
+
+## Autorizar el dominio en Firebase — si el login con Google anda, ya está hecho
 
 Consola de Firebase > **Authentication** > pestaña **Settings** > **Authorized
 domains** > *Add domain*:
