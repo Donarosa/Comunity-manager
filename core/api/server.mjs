@@ -12,6 +12,31 @@ import * as firestore from '../store/firestore.mjs'
 import * as admin from './admin.mjs'
 import { QuotaError } from '../quota/ledger.mjs'
 import { DATA_DIR, esperarEscrituras } from '../store/store.mjs'
+
+/* Se espera una sola vez por instancia y se recuerda el resultado.
+ *
+ * Además avisa fuerte lo único que no se puede dejar pasar en silencio: correr
+ * como función —con el disco en /tmp, que se borra entre invocaciones— sin base
+ * remota. Ahí cada instancia nueva arranca sin nada y las cuentas de los
+ * clientes se pierden solas. Vale más un renglón gritando en el log que un
+ * cliente descubriendo que su marca no está. */
+let almacenListo = null
+function asegurarAlmacenInicializado() {
+  if (!almacenListo) {
+    almacenListo = firestore.asegurarInicializado().then(r => {
+      if (!firestore.estaActivo() && process.env.VERCEL) {
+        console.error(
+          '\n[ALMACÉN] Corriendo como función sin Firestore: los datos van a /tmp y se\n' +
+          '           borran entre invocaciones. Las cuentas de los clientes se van a\n' +
+          '           perder. Revisar las variables de Firebase en el panel.\n' +
+          (firestore.detalleError() ? `           Motivo: ${firestore.detalleError()}\n` : '')
+        )
+      }
+      return r
+    }).catch(() => null)
+  }
+  return almacenListo
+}
 import { esServerless } from '../render/engine.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
@@ -193,6 +218,24 @@ const urlDePieza = ruta => '/piezas/' + relative(PIEZAS, ruta).split(sep).join('
  */
 export async function manejador(req, res) {
   try {
+    /* Antes de tocar un solo dato, saber si hay Firestore.
+     *
+     * `inicializarFirebase()` arranca sola al cargar el módulo y tarda: hasta
+     * que resuelve, `estaActivo()` devuelve falso. Y lo consultan sincrónicamente
+     * dieciséis lugares del almacén, así que en el primer pedido de una
+     * instancia nueva todos creían que no había base.
+     *
+     * Eso, en una función, es pérdida de datos y no un detalle: el disco
+     * arranca vacío en cada instancia, `hidratarCuenta()` se rendía sin
+     * preguntarle a Firestore, `altaCuenta()` no encontraba la cuenta y creaba
+     * una nueva encima. El cliente volvía al rato —cuando la instancia anterior
+     * ya se había enfriado— y su marca no estaba: entraba al alta con todos los
+     * campos en blanco. Y lo que escribía después tampoco llegaba a Firestore,
+     * por el mismo motivo.
+     *
+     * Se espera una vez por instancia; de la segunda en adelante ya está
+     * resuelta y no cuesta nada. */
+    await asegurarAlmacenInicializado()
     return await despachar(req, res)
   } finally {
     try { await esperarEscrituras() } catch { /* ya se reportó adentro */ }

@@ -23,7 +23,7 @@ import { temasLocales } from '../core/content/temas.mjs'
 import { esquemaParaGemini, costoUSD, MODEL, textoDe, usoDe } from '../core/ai/gemini.mjs'
 import { valorGenerado, REFERENCIA } from '../core/valor.mjs'
 import { intercalar, estadoBanco, guardarDelBanco } from '../core/media/imagenes.mjs'
-import { altaCuenta, subirLogo, renderizarPieza } from '../core/service.mjs'
+import { altaCuenta, subirLogo, renderizarPieza, configurarMarca, estadoCuenta } from '../core/service.mjs'
 import { MODULOS_WEB, obtenerUsuarioAutenticado } from '../core/api/server.mjs'
 import { hayAlmacen as estaActivoElAlmacen } from '../core/store/firestore.mjs'
 
@@ -1679,6 +1679,101 @@ test('el selector de la web deriva la paleta con el color en su lugar', () => {
   const color = readFileSync(join(RAIZ, 'web/js/color.js'), 'utf8')
   assert.match(color, /derivar: hex => \{/, 'el selector volvió a derivar el color suelto')
   assert.match(color, /d\.paletas\[editando\]/)
+})
+
+
+/* ── Que editar la marca no borre la marca ───────────────────────────────── */
+
+// El reporte era "vuelvo a editar mis datos y está casi todo en blanco". La
+// causa: la API mandaba la marca recortada a siete campos y el editor precarga
+// sus formularios de ahí. Lo que no viajaba, volvía vacío — y si se guardaba,
+// el vacío se escribía encima. Perdía el rubro, la ciudad, qué vende, a quién
+// le vende, su diferencial, la tipografía, el tratamiento del logotipo, los
+// colores y el logo subido.
+test('la API le manda al navegador la marca entera, no un resumen', () => {
+  const id = 'prueba_marca_' + Math.random().toString(36).slice(2, 8)
+  altaCuenta({ id, nombre: 'Piletas SOL', email: 'x@y.z' })
+  configurarMarca(id, {
+    nombre: 'Piletas SOL', handle: 'piletassol',
+    rubro: 'piletas de fibra', ciudad: 'Córdoba',
+    queVende: 'piletas e instalación', publico: 'familias', diferencial: 'fabricación propia',
+    color: '#0076B3', colorSecundario: '#E8873D', tipografia: 'calido',
+    logotipoTratamiento: 'pastilla', logotipoFuente: 'bloque',
+    logo: { viewBox: '0 0 100 100', inner: '<path d="M 10 10 L 90 90"/>', strokeWidth: 8, origen: 'usuario' },
+  })
+  const m = estadoCuenta(id).cuenta.marca
+  try {
+    // Lo que precarga cada campo del editor de negocio.
+    assert.equal(m.negocio.rubro, 'piletas de fibra')
+    assert.equal(m.negocio.ciudad, 'Córdoba')
+    assert.equal(m.negocio.queVende, 'piletas e instalación')
+    assert.equal(m.negocio.publico, 'familias')
+    assert.equal(m.negocio.diferencial, 'fabricación propia')
+    // Y lo que se perdía sin que nadie lo pidiera.
+    assert.equal(m.fonts.preset, 'calido', 'la tipografía volvía al valor de fábrica')
+    assert.equal(m.fonts.logo.preset, 'bloque', 'la fuente del logotipo volvía a "mismo"')
+    assert.equal(m.logotipo.tratamiento, 'pastilla')
+    assert.deepEqual(m.meta.colores, ['#0076B3', '#E8873D'])
+    // El logo tiene que ser el objeto: como cadena, al guardar se reemplazaba
+    // por el genérico y el negocio perdía el que había subido.
+    assert.equal(typeof m.logo, 'object', 'el logo volvió a viajar como cadena')
+    assert.ok(m.logo.inner, 'el logo viajó sin su dibujo')
+  } finally {
+    rmSync(join(RAIZ, 'data/cuentas', `${id}.json`), { force: true })
+  }
+})
+
+// La otra mitad: el editor manda sólo el módulo que se tocó. Mandando el estado
+// entero, cualquier falla de precarga se convierte en borrado — guardar el
+// color borraba el rubro.
+test('cada módulo del editor de marca guarda solo lo suyo', () => {
+  const wizard = readFileSync(join(RAIZ, 'web/js/wizard.js'), 'utf8')
+  const i = wizard.indexOf('const CAMPOS_POR_MODULO')
+  assert.ok(i > -1, 'el editor volvió a mandar el estado entero al guardar')
+  const mapa = wizard.slice(i, wizard.indexOf('const guardarYVolver', i))
+  assert.ok(!/\.\.\.st\.negocio/.test(mapa.slice(mapa.indexOf('color:'))),
+    'el módulo de color volvió a mandar los datos del negocio')
+  for (const m of ['negocio', 'color', 'tipografia', 'firma', 'disposicion']) {
+    assert.ok(mapa.includes(`${m}:`), `falta el módulo ${m} en el mapa`)
+  }
+})
+
+test('guardar un módulo no le borra nada a los demás', () => {
+  const id = 'prueba_modulo_' + Math.random().toString(36).slice(2, 8)
+  altaCuenta({ id, nombre: 'Tostado Café', email: 'x@y.z' })
+  configurarMarca(id, {
+    nombre: 'Tostado Café', rubro: 'café de especialidad', ciudad: 'Rosario',
+    queVende: 'café de origen', color: '#7A4522', tipografia: 'calido',
+    logotipoTratamiento: 'filete',
+    logo: { viewBox: '0 0 100 100', inner: '<path d="M 10 10 L 90 90"/>', strokeWidth: 8, origen: 'usuario' },
+  })
+  try {
+    configurarMarca(id, { color: '#8C1D2F' })          // como el módulo de color
+    const m = estadoCuenta(id).cuenta.marca
+    assert.equal(m.negocio.rubro, 'café de especialidad')
+    assert.equal(m.negocio.queVende, 'café de origen')
+    assert.equal(m.fonts.preset, 'calido')
+    assert.equal(m.logotipo.tratamiento, 'filete')
+    assert.equal(m.logo.origen, 'usuario')
+    assert.equal(m.meta.colorOriginal, '#8C1D2F')
+  } finally {
+    rmSync(join(RAIZ, 'data/cuentas', `${id}.json`), { force: true })
+  }
+})
+
+// Y la causa del "pasa un rato": Firebase se inicializa sola y tarda, y hasta
+// que resuelve `estaActivo()` miente. Como el almacén la consulta
+// sincrónicamente en dieciséis lugares, en el primer pedido de una instancia
+// nueva —o sea cada vez que la función se enfría— nadie iba a buscar la cuenta
+// a Firestore, el disco estaba vacío, y `altaCuenta()` creaba una nueva encima.
+test('el servidor espera el almacén antes de atender nada', () => {
+  const server = readFileSync(join(RAIZ, 'core/api/server.mjs'), 'utf8')
+  const i = server.indexOf('export async function manejador')
+  const cuerpo = server.slice(i, i + 1600)
+  const espera = cuerpo.indexOf('await asegurarAlmacenInicializado()')
+  const despacha = cuerpo.indexOf('await despachar(')
+  assert.ok(espera > -1, 'el manejador dejó de esperar la inicialización del almacén')
+  assert.ok(espera < despacha, 'la espera tiene que ir antes de despachar, no después')
 })
 
 // El resumen va último: si se agrega un bloque abajo, tiene que contarlo.

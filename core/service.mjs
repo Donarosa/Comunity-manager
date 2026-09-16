@@ -151,20 +151,24 @@ function resumen(c) {
     foto: c.foto || null,
     plan: c.plan,
     estado: c.estado,
-    marca: c.marca ? {
-      nombre: c.marca.nombre,
-      handle: c.marca.handle,
-      logo: c.marca.logo?.origen || 'default',
-      colores: c.marca.colors || null,
-      colorHex: c.marca.meta?.colorOriginal || null,
-      colores: c.marca.meta?.colores || (c.marca.meta?.colorOriginal ? [c.marca.meta.colorOriginal] : []),
-      tipografia: c.marca.fonts?.preset || null,
-      // La usa el editor para dibujar la tarjeta "La de tu marca" con la
-      // disposición que la marca realmente tiene. Sin esto dibujaba siempre la
-      // clásica, así que a cualquier marca que use otra le mostraba una que no
-      // era la suya.
-      disposicion: c.marca.disposicion || null,
-    } : null,
+    /* La marca va entera.
+     *
+     * Antes salía recortada a siete campos —nombre, handle, un color y poco
+     * más— y eso alcanzaba para pintar el tablero, pero el editor de marca
+     * precarga sus formularios de acá: el rubro, la ciudad, qué vende, a quién
+     * le vende y su diferencial no viajaban, así que al volver a entrar los
+     * campos estaban vacíos y había que escribir todo de nuevo. Peor: si
+     * guardaba desde ahí, los vacíos se escribían encima de lo bueno.
+     *
+     * Y no era sólo el texto. `logo` salía como la cadena `'usuario'` en vez
+     * del objeto, así que al guardar el logo subido se reemplazaba por el
+     * genérico; la tipografía y el tratamiento del logotipo volvían a los
+     * valores por defecto; y los colores al bordó de fábrica. Editar el color
+     * borraba el logo.
+     *
+     * Es la marca del propio dueño de la cuenta: no hay nada acá que no sea
+     * suyo ni que no necesite la pantalla que la edita. */
+    marca: c.marca || null,
   }
 }
 

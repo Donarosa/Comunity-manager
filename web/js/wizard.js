@@ -163,21 +163,21 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, marca = null, mo
       queVende: marca?.negocio?.queVende || '',
       publico: marca?.negocio?.publico || '',
       diferencial: marca?.negocio?.diferencial || '',
-      handle: marca?.handle || '',
+      handle: String(marca?.handle || '').replace(/^@/, ''),
     },
-    tiene: { logo: marca?.logo ? true : null, color: marca?.meta?.colorOriginal ? true : null, tipo: marca?.fonts?.preset ? true : null },
-    logo: marca?.logo || null,
+    tiene: { logo: marca?.logo?.inner ? true : null, color: marca?.meta?.colorOriginal ? true : null, tipo: marca?.fonts?.preset ? true : null },
+    logo: marca?.logo?.inner ? marca.logo : null,
     coloresDelLogo: [],
     // Hasta tres. El primero manda; los otros dos son de quien los tenga.
     colores: (marca?.meta?.colores?.length
       ? marca.meta.colores
-      : [marca?.colors?.accent?.bg || marca?.meta?.colorOriginal || '#A83A1C']).slice(0, 3),
+      : [marca?.meta?.colorOriginal || '#A83A1C']).slice(0, 3),
     tipografia: marca?.fonts?.preset || 'moderno',
     disposicion: marca?.disposicion || 'clasica',
     logotipoTipo: marca?.logotipo?.tipo || 'palabra-simbolo',
     logotipoTratamiento: marca?.logotipo?.tratamiento || 'linea',
     logotipoEscudo: marca?.logotipo?.escudo || 'circulo',
-    logotipoFuente: marca?.logotipo?.fuente || 'mismo',
+    logotipoFuente: marca?.fonts?.logo?.preset || 'mismo',
     sugerencia: null,
     paso: 0,
     modoEdicion: Boolean(modoEdicion || (marca && marca.nombre)),
@@ -359,21 +359,38 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, marca = null, mo
     const wrapper = el('div.card', { style: 'max-width:820px;margin:0 auto;' })
     cont.append(wrapper)
 
-    const guardarYVolver = async (nombreModulo) => {
+    /* Cada módulo guarda lo suyo y nada más.
+     *
+     * Antes mandaba el estado entero —el negocio, el color, la tipografía, el
+     * logo y la firma— cada vez que se tocaba Guardar en cualquiera de ellos.
+     * Mientras todo esté bien cargado da igual; el problema es que convierte
+     * cualquier falla de precarga en pérdida de datos: si el rubro llegó vacío
+     * por lo que sea, guardar el color lo borra. Mandando sólo el módulo que se
+     * editó, el resto lo reconstruye `configurarMarca()` desde lo guardado.
+     *
+     * Lo que va por módulo es lo que ese módulo tiene en pantalla, y nada más
+     * que eso; si alguna vez un módulo pasa a editar otro campo, se agrega acá. */
+    const CAMPOS_POR_MODULO = {
+      negocio: () => ({ ...st.negocio }),
+      color: () => ({
+        color: st.colores[0] || undefined,
+        colorSecundario: st.colores[1] || null,
+        colorTerciario: st.colores[2] || null,
+      }),
+      tipografia: () => ({ tipografia: st.tipografia || undefined }),
+      firma: () => ({
+        logo: st.logo || undefined,
+        logotipoTipo: st.logotipoTipo,
+        logotipoTratamiento: st.logotipoTratamiento,
+        logotipoEscudo: st.logotipoEscudo,
+        logotipoFuente: st.logotipoFuente,
+      }),
+      disposicion: () => ({ disposicion: st.disposicion || undefined }),
+    }
+
+    const guardarYVolver = async nombreModulo => {
       try {
-        await api.guardarMarca(st.cuentaId, {
-          ...st.negocio,
-          color: st.colores[0] || undefined,
-          colorSecundario: st.colores[1] || null,
-          colorTerciario: st.colores[2] || null,
-          tipografia: st.tipografia || undefined,
-          disposicion: st.disposicion || undefined,
-          logotipoTipo: st.logotipoTipo,
-          logotipoTratamiento: st.logotipoTratamiento,
-          logotipoEscudo: st.logotipoEscudo,
-          logotipoFuente: st.logotipoFuente,
-          logo: st.logo || undefined,
-        })
+        await api.guardarMarca(st.cuentaId, CAMPOS_POR_MODULO[modulo]())
         st.subModuloActivo = null
         st.mensajeExito = `✓ Cambios guardados con éxito en ${nombreModulo}.`
         pintar()
@@ -620,8 +637,8 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, marca = null, mo
           await api.guardarMarca(st.cuentaId, {
             ...st.negocio,
             color: st.colores[0] || undefined,
-          colorSecundario: st.colores[1] || null,
-          colorTerciario: st.colores[2] || null,
+            colorSecundario: st.colores[1] || null,
+            colorTerciario: st.colores[2] || null,
             tipografia: st.tipografia || undefined,
             logotipoTipo: st.logotipoTipo,
             logotipoTratamiento: st.logotipoTratamiento,
