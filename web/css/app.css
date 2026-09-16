@@ -141,6 +141,14 @@ button { font: inherit; background: none; border: 0; padding: 0; cursor: pointer
   border: 1px solid var(--color-rule);
   border-radius: var(--r-pill);
   white-space: nowrap;
+  max-width: 100%;
+}
+
+/* Una pastilla larga en un teléfono chico: antes que salirse de la pantalla,
+   que use dos renglones. Queda menos prolija y se lee, que es el orden
+   correcto. */
+@media (max-width: 380px) {
+  .eyebrow, .rotulo { white-space: normal; }
 }
 
 .eyebrow__dot {
@@ -3262,7 +3270,10 @@ input:focus, select:focus, textarea:focus {
 
 .tira {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  /* Seis columnas cuando entran; de a tres cuando no. Con `repeat(6, 1fr)` el
+     código hexadecimal de adentro imponía el ancho mínimo y la tira se salía
+     de la pantalla en un teléfono chico. */
+  grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
   border-radius: 16px;
   overflow: hidden;
   border: 1.5px solid var(--color-rule);
@@ -3271,6 +3282,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .tira > div {
+  min-width: 0;
   padding: 16px 6px;
   text-align: center;
   font-family: var(--font-label);
@@ -3295,9 +3307,34 @@ input:focus, select:focus, textarea:focus {
   gap: 14px;
 }
 
+/* El encabezado de la vista previa: el rótulo y el "usando tu logo".
+   En un teléfono no entran en la misma línea, y sin permiso para bajar el
+   segundo se apilaba letra por letra contra el borde derecho, afuera de la
+   tarjeta. */
+.firma-preview-cab {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+}
+
 .firma-preview-duo {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* Dos columnas cuando entran, una cuando no.
+     La firma mide lo que mide: el nombre del negocio no se puede encoger sin
+     que deje de parecerse a la placa que va a bajar, que es lo único que esta
+     vista previa tiene que mostrar. Así que en un teléfono lo correcto es
+     apilar las dos muestras, no achicarlas. Con `1fr 1fr` fijo, la columna se
+     quedaba corta, el contenido no cedía —una celda de grid no baja de su
+     ancho mínimo salvo que se le diga— y la muestra oscura se salía de la
+     tarjeta y de la pantalla. */
+     El piso va envuelto en `min()`: `minmax(230px, 1fr)` a secas no baja de
+     230 aunque el contenedor mida menos, y en una pantalla de 320 eso hacía
+     que la muestra se saliera de su propia tarjeta. Con `min(230px, 100%)` el
+     piso es el que sea más chico, así que la columna se achica y el nombre se
+     acomoda en dos renglones, igual que en la placa. */
+  grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr));
   gap: 14px;
 }
 
@@ -3309,6 +3346,11 @@ input:focus, select:focus, textarea:focus {
   justify-content: center;
   min-height: 85px;
   transition: background-color 0.25s ease;
+  /* `min-width: 0` es lo que deja que la celda se achique; el scroll es la red
+     de abajo, para un nombre de negocio largo: que se corra adentro de su
+     propia caja y no empuje la página entera. */
+  min-width: 0;
+  overflow-x: auto;
 }
 .firma-caja-muestra.clara {
   background: #FAF7F0;
@@ -3374,6 +3416,16 @@ input:focus, select:focus, textarea:focus {
   transform-origin: 0 0;
   transform: scale(0.2777);
   border: none;
+}
+
+/* En pantallas angostas la muestra baja a 240×300. La escala del iframe va a
+   mano y no en porcentaje porque `transform: scale()` no acepta unidades
+   relativas: 240/1080 y 300/1350 dan los dos 0,2222, así que la placa sigue
+   entrando justa. Si alguna vez cambia el tamaño del lienzo, hay que mover los
+   dos números juntos. */
+@media (max-width: 380px) {
+  .disposicion-preview-card .lienzo { width: 240px; height: 300px; }
+  .disposicion-preview-card .lienzo iframe { transform: scale(0.2222); }
 }
 
 /* ══════════════════════════════════════════════════════════

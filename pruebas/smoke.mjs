@@ -1815,5 +1815,39 @@ test('sin credenciales, el ingreso explica en vez de prometer', () => {
   assert.match(modal, /if \(ok \|\| enMaquina/)
 })
 
+
+/* ── Que el editor de marca entre en un teléfono ─────────────────────────── */
+
+// Medido con Chrome a 320, 360, 390 y 430: las cinco pantallas del editor sin
+// un solo elemento fuera del ancho. Lo que sigue fija las tres reglas que lo
+// rompían, porque todas son de la misma familia y el error se vuelve a cometer
+// solo: una celda de grid no baja de su ancho mínimo salvo que se le diga, así
+// que el contenido termina definiendo el ancho de la página.
+test('las grillas del editor pueden achicarse en un teléfono', () => {
+  const css = readFileSync(join(RAIZ, 'web/css/app.css'), 'utf8')
+  // Sin sacar los comentarios, la prueba se lee a sí misma: adentro de la regla
+  // está explicado por qué `1fr 1fr` estaba mal, y eso alcanzaba para fallar.
+  const regla = nombre => {
+    const i = css.indexOf(nombre + ' {')
+    assert.ok(i > -1, `se fue la regla ${nombre}`)
+    return css.slice(i, css.indexOf('}', i)).replace(/\/\*[\s\S]*?\*\//g, '')
+  }
+
+  // Las dos muestras de la firma miden lo que mide la firma: en un teléfono se
+  // apilan. Con dos columnas fijas, la oscura se salía de la pantalla.
+  const duo = regla('.firma-preview-duo')
+  assert.ok(!/repeat\(2,|1fr 1fr/.test(duo), '.firma-preview-duo volvió a dos columnas fijas')
+  assert.match(duo, /minmax\(min\(/, 'sin min\(\) el piso del minmax no deja achicar la columna')
+  assert.match(regla('.firma-caja-muestra'), /min-width: 0/)
+
+  // La tira de la paleta: seis columnas fijas con un código hexadecimal adentro.
+  const tira = regla('.tira')
+  assert.ok(!/repeat\(6, 1fr\)/.test(tira), '.tira volvió a seis columnas fijas')
+
+  // Y ninguna pastilla puede empujar la página de costado.
+  const i = css.indexOf('.eyebrow, .rotulo {')
+  assert.match(css.slice(i, css.indexOf('}', i)), /max-width: 100%/)
+})
+
 // El resumen va último: si se agrega un bloque abajo, tiene que contarlo.
 console.log(`\n${ok} pruebas OK${process.exitCode ? ' — con fallas' : ''}\n`)

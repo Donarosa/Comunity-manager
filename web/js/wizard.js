@@ -823,8 +823,8 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, marca = null, mo
 
     function refrescarMuestra() {
       vaciar(tarjetaPreview).append(
-        el('div', { style: 'display:flex;justify-content:space-between;align-items:center;' },
-          el('span.rotulo', {}, 'Vista previa en vivo de tu firma'),
+        el('div.firma-preview-cab', {},
+          el('span.rotulo', {}, 'Vista previa en vivo'),
           el('span.apunte.chico', {}, st.logo ? '✓ Usando tu logo subido' : '✓ Usando monograma de autor')
         ),
         el('div.firma-preview-duo', {},
@@ -1065,7 +1065,7 @@ export function iniciarWizard({ contenedor, catalogo, cuentaId, marca = null, mo
     lienzo.append(marco)
 
     const previewBox = el('div.disposicion-preview-card', {},
-      el('span.rotulo', { style: 'margin-bottom:2px' }, 'Vista previa en tiempo real'),
+      el('span.rotulo', { style: 'margin-bottom:2px' }, 'Vista previa'),
       lienzo
     )
 
