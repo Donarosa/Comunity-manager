@@ -317,6 +317,9 @@ async function despachar(req, res) {
     if (m === 'GET' && (url.pathname === '/ejemplos-logos-marcas.html' || url.pathname === '/ejemplos-logos-marcas' || url.pathname === '/ejemplos')) {
       return servirArchivo(res, WEB, 'ejemplos-logos-marcas.html')
     }
+    if (m === 'GET' && (url.pathname === '/ejemplos-sellos-circulares.html' || url.pathname === '/sellos' || url.pathname === '/sellos-circulares')) {
+      return servirArchivo(res, WEB, 'ejemplos-sellos-circulares.html')
+    }
     if (m === 'GET' && (partes[0] === 'css' || partes[0] === 'js' || partes[0] === 'img' || partes[0] === 'capturas')) {
       return servirArchivo(res, WEB, partes.join('/'))
     }

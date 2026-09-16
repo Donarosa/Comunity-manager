@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Explorador de Sellos Circulares con Profundidad · Community Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,800;1,9..144,400&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Playfair+Display:ital,wght@0,700;1,600&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0F1215;
+      --panel: #181C20;
+      --card-bg: #1F2429;
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text: #F1F3F5;
+      --text-muted: #8E98A0;
+      --brand: #A83A1C;
+      --brand-light: #FF7B54;
+      --depth-intensity: 1;
+    }
+
+    body.light-theme {
+      --bg: #F4F6F5;
+      --panel: #FFFFFF;
+      --card-bg: #FFFFFF;
+      --card-border: #DCE2E0;
+      --text: #13171A;
+      --text-muted: #5A656B;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 30px 20px 80px;
+      transition: background 0.25s ease, color 0.25s ease;
+    }
+
+    .container {
+      max-width: 1240px;
+      margin: 0 auto;
+    }
+
+    header {
+      margin-bottom: 28px;
+      text-align: center;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--brand-light);
+      background: rgba(168, 58, 28, 0.15);
+      border: 1px solid rgba(168, 58, 28, 0.3);
+      padding: 4px 14px;
+      border-radius: 999px;
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-size: clamp(1.8rem, 3.2vw, 2.5rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+    }
+    header p {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    /* Barra de controles */
+    .controls-panel {
+      background: var(--panel);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 20px 24px;
+      margin-bottom: 34px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+    }
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+      min-width: 180px;
+    }
+    .control-group label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+    .control-group input[type="text"] {
+      background: rgba(125, 125, 125, 0.08);
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 9px 12px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .control-group input[type="text"]:focus {
+      border-color: var(--brand);
+    }
+
+    .color-presets {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .color-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+    .color-dot:hover {
+      transform: scale(1.15);
+    }
+    .color-dot.active {
+      border-color: #FFFFFF;
+      box-shadow: 0 0 0 2px var(--brand);
+    }
+    input[type="color"] {
+      -webkit-appearance: none;
+      border: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      background: none;
+    }
+    input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+    input[type="color"]::-webkit-color-swatch { border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); }
+
+    .toggle-btn {
+      background: rgba(125, 125, 125, 0.1);
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      padding: 9px 16px;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .toggle-btn:hover {
+      background: rgba(125, 125, 125, 0.18);
+    }
+
+    /* Grilla de Opciones */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 26px;
+      margin-bottom: 48px;
+    }
+    .option-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 12px 36px rgba(0,0,0,0.1);
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    }
+    .option-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(255,255,255,0.2);
+      box-shadow: 0 18px 45px rgba(0,0,0,0.22);
+    }
+
+    .canvas-preview {
+      height: 250px;
+      background: #121518;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      background-image: 
+        radial-gradient(circle at 50% 50%, rgba(255,255,255,0.03) 0%, transparent 70%),
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 100% 100%, 20px 20px, 20px 20px;
+      transition: background 0.25s;
+    }
+    body.light-theme .canvas-preview {
+      background: #F8FAF9;
+      background-image: 
+        radial-gradient(circle at 50% 50%, rgba(0,0,0,0.02) 0%, transparent 70%),
+        linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px);
+      background-size: 100% 100%, 20px 20px, 20px 20px;
+    }
+
+    .card-info {
+      padding: 22px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .card-title-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+    .card-tag {
+      font-size: 0.72rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: rgba(125,125,125,0.12);
+      color: var(--text-muted);
+    }
+    .card-desc {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+    .features-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .feature-chip {
+      font-size: 0.76rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      color: var(--text);
+    }
+    body.light-theme .feature-chip {
+      background: rgba(0,0,0,0.04);
+      border-color: rgba(0,0,0,0.06);
+    }
+
+    /* Sección de Comparación en Placa Real */
+    .comparison-section {
+      background: var(--panel);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 34px;
+      margin-top: 50px;
+    }
+    .comparison-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .comparison-header h2 {
+      font-size: 1.6rem;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+    }
+    .mock-post {
+      background: #111417;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      aspect-ratio: 4/5;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 24px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.3);
+    }
+    .mock-post.light-post {
+      background: #FFFFFF;
+      border-color: #E2E6E5;
+      color: #111417;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.08);
+    }
+    .mock-header {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      opacity: 0.6;
+    }
+    .mock-content {
+      font-size: 1.4rem;
+      font-weight: 800;
+      line-height: 1.25;
+      letter-spacing: -0.02em;
+    }
+    .mock-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .mock-cta {
+      font-size: 0.78rem;
+      font-weight: 700;
+      opacity: 0.8;
+    }
+
+    /* ESTILOS DE SVG Y FILTROS DE PROFUNDIDAD */
+    .sello-wrapper {
+      display: inline-block;
+      transition: transform 0.2s ease;
+    }
+    .sello-wrapper:hover {
+      transform: scale(1.04);
+    }
+
+    /* Clases de profundidad */
+    .depth-glow {
+      filter: drop-shadow(0 10px 22px rgba(0,0,0,0.38)) drop-shadow(0 4px 8px rgba(0,0,0,0.22));
+    }
+    .depth-emboss {
+      filter: drop-shadow(0 14px 28px rgba(0,0,0,0.45)) drop-shadow(0 2px 4px rgba(0,0,0,0.25));
+    }
+    .depth-layered {
+      filter: drop-shadow(0 16px 32px rgba(0,0,0,0.5)) drop-shadow(0 4px 10px rgba(0,0,0,0.3));
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="badge">Rediseño de Identidad Visual</div>
+      <h1>Explorador de Sellos Circulares</h1>
+      <p>Exploración de alternativas para el logo circular con sensación de volumen, jerarquía tipográfica y sombras de profundidad 3D.</p>
+    </header>
+
+    <!-- Barra interactiva de configuración -->
+    <div class="controls-panel">
+      <div class="control-group">
+        <label>Nombre del Negocio</label>
+        <input type="text" id="input-nombre" value="Café Botánico">
+      </div>
+
+      <div class="control-group">
+        <label>Rubro o Bajada</label>
+        <input type="text" id="input-rubro" value="Especialidad & Tostado">
+      </div>
+
+      <div class="control-group">
+        <label>Color de Marca</label>
+        <div class="color-presets">
+          <div class="color-dot active" style="background:#A83A1C" data-color="#A83A1C" title="Terracota"></div>
+          <div class="color-dot" style="background:#2D6A4F" data-color="#2D6A4F" title="Esmeralda Botánico"></div>
+          <div class="color-dot" style="background:#1B3B6F" data-color="#1B3B6F" title="Azul Noche"></div>
+          <div class="color-dot" style="background:#800E13" data-color="#800E13" title="Borgoña"></div>
+          <div class="color-dot" style="background:#D4A373" data-color="#D4A373" title="Arena / Oro"></div>
+          <div class="color-dot" style="background:#212529" data-color="#212529" title="Carbón Puro"></div>
+          <input type="color" id="picker-color" value="#A83A1C" title="Personalizado">
+        </div>
+      </div>
+
+      <div class="control-group" style="flex:0 0 auto; min-width:auto">
+        <label>Fondo de Muestra</label>
+        <button class="toggle-btn" id="btn-toggle-theme">
+          <span id="theme-icon">☀️</span> <span id="theme-text">Fondo Claro</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Las 6 Opciones de Sello Circular -->
+    <div class="cards-grid" id="cards-container">
+      <!-- Se inyectan dinámicamente con JavaScript -->
+    </div>
+
+    <!-- Comparación en Piezas Reales de Instagram -->
+    <div class="comparison-section">
+      <div class="comparison-header">
+        <h2>Cómo se estampa al pie de una publicación real</h2>
+        <p style="color:var(--text-muted);font-size:0.92rem">Visualización de los sellos aplicados en la esquina de una placa de Instagram (1080×1350)</p>
+      </div>
+
+      <div class="comparison-grid" id="mockup-grid">
+        <!-- Generado dinámicamente -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const state = {
+      nombre: 'Café Botánico',
+      rubro: 'Especialidad & Tostado',
+      color: '#A83A1C',
+      modoOscuro: true,
+    };
+
+    function obtenerIniciales(nombre) {
+      const palabras = (nombre || '').trim().split(/\s+/).filter(Boolean);
+      if (!palabras.length) return 'CB';
+      if (palabras.length === 1) return palabras[0].slice(0, 2).toUpperCase();
+      return (palabras[0][0] + palabras[palabras.length - 1][0]).toUpperCase();
+    }
+
+    /* ── GENERADORES DE SVG PARA CADA ESTILO ── */
+
+    // 1. MEDALLÓN 3D / MONEDA EN RELIEVE
+    function svgMedallon3D({ nombre, rubro, color, id = 'med1' }) {
+      const ini = obtenerIniciales(nombre);
+      const nom = (nombre || '').toUpperCase();
+      const rub = (rubro || '').toUpperCase();
+      return `
+      <svg class="sello-wrapper depth-emboss" width="136" height="136" viewBox="0 0 120 120">
+        <defs>
+          <radialGradient id="grad-${id}" cx="45%" cy="40%" r="60%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.22"/>
+            <stop offset="65%" stop-color="${color}" stop-opacity="0.95"/>
+            <stop offset="100%" stop-color="#000000" stop-opacity="0.55"/>
+          </radialGradient>
+          <filter id="f-shadow-${id}" x="-20%" y="-20%" width="150%" height="150%">
+            <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#000000" flood-opacity="0.45"/>
+            <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#000000" flood-opacity="0.3"/>
+          </filter>
+          <path id="arc-top-${id}" d="M 18,60 A 42,42 0 1,1 102,60" fill="none"/>
+          <path id="arc-bot-${id}" d="M 22,60 A 38,38 0 0,0 98,60" fill="none"/>
+        </defs>
+        <!-- Borde moneda punteado -->
+        <circle cx="60" cy="60" r="56" fill="none" stroke="${color}" stroke-width="1.8" stroke-dasharray="2, 2.5" opacity="0.65"/>
+        <!-- Capa exterior elevada con gradiente -->
+        <circle cx="60" cy="60" r="51" fill="url(#grad-${id})" filter="url(#f-shadow-${id})"/>
+        <!-- Anillo metálico interior -->
+        <circle cx="60" cy="60" r="50" fill="none" stroke="#ffffff" stroke-opacity="0.28" stroke-width="0.8"/>
+        <!-- Texto superior arqueado -->
+        <text font-family="'Plus Jakarta Sans', sans-serif" font-size="7.4" font-weight="800" letter-spacing="1.8" fill="#ffffff">
+          <textPath href="#arc-top-${id}" startOffset="50%" text-anchor="middle">${nom}</textPath>
+        </text>
+        <!-- Texto inferior arqueado -->
+        <text font-family="'Plus Jakarta Sans', sans-serif" font-size="5.8" font-weight="700" letter-spacing="1.4" fill="#ffffff" opacity="0.88">
+          <textPath href="#arc-bot-${id}" startOffset="50%" text-anchor="middle">${rub}</textPath>
+        </text>
+        <!-- Separadores decorativos laterales -->
+        <circle cx="20" cy="60" r="1.5" fill="#ffffff" opacity="0.8"/>
+        <circle cx="100" cy="60" r="1.5" fill="#ffffff" opacity="0.8"/>
+        <!-- Monograma central en pastilla flotante con sombra propia -->
+        <circle cx="60" cy="60" r="21" fill="${color}" stroke="#ffffff" stroke-width="1.2" stroke-opacity="0.4" filter="url(#f-shadow-${id})"/>
+        <text x="60" y="60.5" text-anchor="middle" dominant-baseline="central" font-family="'Syne', 'Inter', sans-serif" font-size="${ini.length > 1 ? 16 : 20}" font-weight="800" fill="#ffffff" letter-spacing="-0.04em">${ini}</text>
+      </svg>`;
+    }
+
+    // 2. SELLO FLOTANTE MINIMALISTA (Clean Floating Badge)
+    function svgMinimalFlotante({ nombre, rubro, color, id = 'min1' }) {
+      const ini = obtenerIniciales(nombre);
+      const nom = (nombre || '').toUpperCase();
+      const rub = (rubro || '').toUpperCase();
+      return `
+      <svg class="sello-wrapper depth-glow" width="136" height="136" viewBox="0 0 120 120">
+        <defs>
+          <filter id="glow-${id}" x="-30%" y="-30%" width="160%" height="160%">
+            <feDropShadow dx="0" dy="8" stdDeviation="7" flood-color="${color}" flood-opacity="0.36"/>
+            <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000000" flood-opacity="0.25"/>
+          </filter>
+          <path id="arc-top-${id}" d="M 17,60 A 43,43 0 1,1 103,60" fill="none"/>
+          <path id="arc-bot-${id}" d="M 23,60 A 37,37 0 0,0 97,60" fill="none"/>
+        </defs>
+        <!-- Disco central con sombra de color proyectada -->
+        <circle cx="60" cy="60" r="54" fill="${color}" filter="url(#glow-${id})"/>
+        <!-- Filete fino interior blanco -->
+        <circle cx="60" cy="60" r="49" fill="none" stroke="#ffffff" stroke-width="1" stroke-opacity="0.3"/>
+        <!-- Anillo secundario muy sutil -->
+        <circle cx="60" cy="60" r="27" fill="none" stroke="#ffffff" stroke-width="0.75" stroke-opacity="0.25"/>
+        <!-- Texto superior arqueado -->
+        <text font-family="'Plus Jakarta Sans', sans-serif" font-size="7.6" font-weight="800" letter-spacing="2.2" fill="#ffffff">
+          <textPath href="#arc-top-${id}" startOffset="50%" text-anchor="middle">${nom}</textPath>
+        </text>
+        <!-- Texto inferior arqueado -->
+        <text font-family="'Plus Jakarta Sans', sans-serif" font-size="5.5" font-weight="600" letter-spacing="1.6" fill="#ffffff" opacity="0.85">
+          <textPath href="#arc-bot-${id}" startOffset="50%" text-anchor="middle">${rub}</textPath>
+        </text>
+        <!-- Separadores estrella -->
+        <text x="19" y="62.5" font-size="7" fill="#ffffff" opacity="0.75" text-anchor="middle">✦</text>
+        <text x="101" y="62.5" font-size="7" fill="#ffffff" opacity="0.75" text-anchor="middle">✦</text>
+        <!-- Iniciales de autor ultra limpias -->
+        <text x="60" y="60.5" text-anchor="middle" dominant-baseline="central" font-family="'Inter', sans-serif" font-size="${ini.length > 1 ? 16 : 22}" font-weight="800" fill="#ffffff" letter-spacing="-0.03em">${ini}</text>
+      </svg>`;
+    }
+
+    // 3. SELLO VINTAGE HERITAGE / ATELIER
+    function svgVintageHeritage({ nombre, rubro, color, id = 'her1' }) {
+      const ini = obtenerIniciales(nombre);
+      const nom = (nombre || '').toUpperCase();
+      const rub = (rubro || '').toUpperCase();
+      return `
+      <svg class="sello-wrapper depth-layered" width="136" height="136" viewBox="0 0 120 120">
+        <defs>
+          <filter id="shadow-her-${id}" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="7" stdDeviation="5" flood-color="#000000" flood-opacity="0.38"/>
+          </filter>
+          <path id="arc-top-${id}" d="M 19,60 A 41,41 0 1,1 101,60" fill="none"/>
+          <path id="arc-bot-${id}" d="M 23,60 A 37,37 0 0,0 97,60" fill="none"/>
+        </defs>
+        <!-- Anillo externo doble con sombra -->
+        <circle cx="60" cy="60" r="55" fill="none" stroke="${color}" stroke-width="2.5" filter="url(#shadow-her-${id})"/>
+        <circle cx="60" cy="60" r="51" fill="none" stroke="${color}" stroke-width="0.8"/>
+        <circle cx="60" cy="60" r="30" fill="none" stroke="${color}" stroke-width="1.2" stroke-dasharray="4, 2"/>
+        <!-- Textos clásicos -->
+        <text font-family="'Cinzel', serif" font-size="7.5" font-weight="700" letter-spacing="2.6" fill="${color}">
+          <textPath href="#arc-top-${id}" startOffset="50%" text-anchor="middle">${nom}</textPath>
+        </text>
+        <text font-family="'Inter', sans-serif" font-size="5.2" font-weight="700" letter-spacing="1.8" fill="${color}" opacity="0.85">
+          <textPath href="#arc-bot-${id}" startOffset="50%" text-anchor="middle">${rub}</textPath>
+        </text>
+        <!-- Estrellitas -->
+        <text x="18" y="62.5" font-size="8" fill="${color}" text-anchor="middle">★</text>
+        <text x="102" y="62.5" font-size="8" fill="${color}" text-anchor="middle">★</text>
+        <!-- Monograma Serif Clásico -->
+        <text x="60" y="60.5" text-anchor="middle" dominant-baseline="central" font-family="'Playfair Display', serif" font-size="${ini.length > 1 ? 18 : 24}" font-weight="700" font-style="italic" fill="${color}">${ini}</text>
+      </svg>`;
+    }
+
+    // 4. TOKEN BI-TONAL CON SOMBRA DE CORTE (OFFSET 3D)
+    function svgOffsetShadow({ nombre, rubro, color, id = 'off1' }) {
+      const ini = obtenerIniciales(nombre);
+      const nom = (nombre || '').toUpperCase();
+      const rub = (rubro || '').toUpperCase();
+      return `
+      <svg class="sello-wrapper" width="136" height="136" viewBox="0 0 120 120">
+        <defs>
+          <path id="arc-top-${id}" d="M 21,60 A 39,39 0 1,1 99,60" fill="none"/>
+          <path id="arc-bot-${id}" d="M 25,60 A 35,35 0 0,0 95,60" fill="none"/>
+        </defs>
+        <!-- Sombra sólida dura con desfase estilo sticker/token 3D -->
+        <circle cx="64" cy="64" r="51" fill="rgba(0,0,0,0.4)"/>
+        <!-- Base de color -->
+        <circle cx="60" cy="60" r="51" fill="${color}" stroke="#ffffff" stroke-width="2" stroke-opacity="0.85"/>
+        <!-- Marco interior punteado -->
+        <circle cx="60" cy="60" r="46" fill="none" stroke="#ffffff" stroke-width="1.2" stroke-dasharray="1, 3"/>
+        <circle cx="60" cy="60" r="23" fill="#ffffff" fill-opacity="0.15" stroke="#ffffff" stroke-width="1.4"/>
+        <!-- Textos en alto contraste blanco -->
+        <text font-family="'Syne', sans-serif" font-size="7.6" font-weight="800" letter-spacing="2" fill="#ffffff">
+          <textPath href="#arc-top-${id}" startOffset="50%" text-anchor="middle">${nom}</textPath>
+        </text>
+        <text font-family="'Plus Jakarta Sans', sans-serif" font-size="5.6" font-weight="700" letter-spacing="1.4" fill="#ffffff" opacity="0.9">
+          <textPath href="#arc-bot-${id}" startOffset="50%" text-anchor="middle">${rub}</textPath>
+        </text>
+        <!-- Monograma potente -->
+        <text x="60" y="60.5" text-anchor="middle" dominant-baseline="central" font-family="'Plus Jakarta Sans', sans-serif" font-size="${ini.length > 1 ? 16 : 22}" font-weight="800" fill="#ffffff">${ini}</text>
+      </svg>`;
+    }
+
+    // 5. LACRE / STAMP CON RELIEVE Y BISEL (Wax Seal Premium)
+    function svgWaxSeal({ nombre, rubro, color, id = 'wax1' }) {
+      const ini = obtenerIniciales(nombre);
+      const nom = (nombre || '').toUpperCase();
+      const rub = (rubro || '').toUpperCase();
+      return `
+      <svg class="sello-wrapper depth-layered" width="136" height="136" viewBox="0 0 120 120">
+        <defs>
+          <filter id="bevel-${id}">
+            <feDropShadow dx="0" dy="7" stdDeviation="5" flood-color="#000000" flood-opacity="0.48"/>
+          </filter>
+          <path id="arc-top-${id}" d="M 21,60 A 39,39 0 1,1 99,60" fill="none"/>
+          <path id="arc-bot-${id}" d="M 25,60 A 35,35 0 0,0 95,60" fill="none"/>
+        </defs>
+        <!-- Borde biselado con efecto relieve -->
+        <circle cx="60" cy="60" r="53" fill="${color}" filter="url(#bevel-${id})"/>
+        <!-- Resaltado de luz cenital superior -->
+        <circle cx="60" cy="59" r="51" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-opacity="0.32"/>
+        <circle cx="60" cy="61" r="51" fill="none" stroke="#000000" stroke-width="1.5" stroke-opacity="0.25"/>
+        <circle cx="60" cy="60" r="45" fill="none" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.35"/>
+        <!-- Texto superior e inferior con leve relieve -->
+        <text font-family="'Fraunces', serif" font-size="7.8" font-weight="800" letter-spacing="1.8" fill="#ffffff">
+          <textPath href="#arc-top-${id}" startOffset="50%" text-anchor="middle">${nom}</textPath>
+        </text>
+        <text font-family="'Inter', sans-serif" font-size="5.2" font-weight="700" letter-spacing="1.8" fill="#ffffff" opacity="0.85">
+          <textPath href="#arc-bot-${id}" startOffset="50%" text-anchor="middle">${rub}</textPath>
+        </text>
+        <!-- Centro elevado -->
+        <circle cx="60" cy="60" r="22" fill="${color}" stroke="#ffffff" stroke-width="1.4" stroke-opacity="0.4"/>
+        <circle cx="60" cy="59" r="20.5" fill="none" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.3"/>
+        <text x="60" y="60.5" text-anchor="middle" dominant-baseline="central" font-family="'Fraunces', serif" font-size="${ini.length > 1 ? 16 : 22}" font-weight="800" font-style="italic" fill="#ffffff">${ini}</text>
+      </svg>`;
+    }
+
+    // 6. ACTUAL REFINADO (Versión pulida del actual con sombra 3D)
+    function svgActualMejorado({ nombre, rubro, color, id = 'act1' }) {
+      const ini = obtenerIniciales(nombre);
+      const nom = (nombre || '').toUpperCase();
+      const rub = (rubro || '').toUpperCase();
+      return `
+      <svg class="sello-wrapper depth-glow" width="136" height="136" viewBox="0 0 120 120">
+        <defs>
+          <filter id="f-act-${id}">
+            <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#000000" flood-opacity="0.35"/>
+          </filter>
+          <path id="arc-top-${id}" d="M 18,60 A 42,42 0 1,1 102,60" fill="none"/>
+          <path id="arc-bot-${id}" d="M 23,60 A 37,37 0 0,0 97,60" fill="none"/>
+        </defs>
+        <!-- Anillo exterior grueso de anclaje con sombra -->
+        <circle cx="60" cy="60" r="54" fill="none" stroke="${color}" stroke-width="2.5" filter="url(#f-act-${id})"/>
+        <!-- Filetes de contención limpios -->
+        <circle cx="60" cy="60" r="48" fill="none" stroke="${color}" stroke-width="0.8" opacity="0.6"/>
+        <circle cx="60" cy="60" r="28" fill="none" stroke="${color}" stroke-width="0.8" opacity="0.6"/>
+        <!-- Textos con tipografía moderna -->
+        <text font-family="'Plus Jakarta Sans', sans-serif" font-size="7.5" font-weight="800" letter-spacing="1.8" fill="${color}">
+          <textPath href="#arc-top-${id}" startOffset="50%" text-anchor="middle">${nom}</textPath>
+        </text>
+        <text font-family="'Plus Jakarta Sans', sans-serif" font-size="5.5" font-weight="700" letter-spacing="1.5" fill="${color}" opacity="0.85">
+          <textPath href="#arc-bot-${id}" startOffset="50%" text-anchor="middle">${rub}</textPath>
+        </text>
+        <!-- Rombo separador -->
+        <text x="18" y="62" font-size="6" fill="${color}" text-anchor="middle">◆</text>
+        <text x="102" y="62" font-size="6" fill="${color}" text-anchor="middle">◆</text>
+        <!-- Monograma central -->
+        <text x="60" y="60.5" text-anchor="middle" dominant-baseline="central" font-family="'Plus Jakarta Sans', sans-serif" font-size="${ini.length > 1 ? 18 : 24}" font-weight="800" fill="${color}">${ini}</text>
+      </svg>`;
+    }
+
+    /* ── CATÁLOGO DE OPCIONES ── */
+    const OPCIONES = [
+      {
+        id: 'medallon-3d',
+        nombre: '1. Medallón 3D / Moneda en Relieve',
+        tag: 'Volumen & Tacto',
+        desc: 'Sensación de moneda o condecoración física. Fondo con gradiente e iluminación cenital, micro-punteado perimetral y pastilla central flotante.',
+        chips: ['Gradiente Radial', 'Sombra Multicapa', 'Borde Moneda', 'Alta Presencia'],
+        render: svgMedallon3D
+      },
+      {
+        id: 'minimal-flotante',
+        nombre: '2. Sello Flotante Minimalista',
+        tag: 'Moderno & Limpio',
+        desc: 'Disco pleno de color con sombra suave proyectada (glow de color de marca). Ideal para marcas modernas, cosmética, diseño y café contemporáneo.',
+        chips: ['Fondo Pleno', 'Sombra Flotante Glow', 'Estrellas ✦', 'Contraste Alto'],
+        render: svgMinimalFlotante
+      },
+      {
+        id: 'lacre-wax',
+        nombre: '3. Lacre / Timbre Artesanal',
+        tag: 'Premium & Autor',
+        desc: 'Efecto estampa de lacre con bisel de relieve superior. Combina tipografía serif de diseño (Fraunces) con iniciales itálicas en el núcleo elevado.',
+        chips: ['Bisel de Luz', 'Relieve 3D', 'Serif Exclusiva', 'Artesanal'],
+        render: svgWaxSeal
+      },
+      {
+        id: 'offset-3d',
+        nombre: '4. Token con Sombra Desfasada',
+        tag: 'Gráfico & Dinámico',
+        desc: 'Sombra sólida con corte rígido (desfase 3D de 4px) combinada con marco perimetral blanco. Estilo sticker/insignia con mucha fuerza gráfica.',
+        chips: ['Sombra Sólida Offset', 'Look Neo-Brutalist', 'Geométrico', 'Muy Visible'],
+        render: svgOffsetShadow
+      },
+      {
+        id: 'vintage-heritage',
+        nombre: '5. Insignia Heritage / Atelier',
+        tag: 'Tradición & Legado',
+        desc: 'Estructura concéntrica de doble aro con línea punteada, tipografía romana clásica (Cinzel) y monograma en serif itálica de alta gama.',
+        chips: ['Trazo Clásico', 'Línea Punteada', 'Tipografía Romana', 'Elegante'],
+        render: svgVintageHeritage
+      },
+      {
+        id: 'actual-refinado',
+        nombre: '6. Sello Concéntrico Refinado',
+        tag: 'Evolución del Actual',
+        desc: 'Versión corregida del sello actual: mayor peso en el trazo exterior para que no se pierda, separadores laterales en rombo y sombra proyectada de anclaje.',
+        chips: ['Trazo Exterior 2.5px', 'Rombo Lateral', 'Sombra Sutil', 'Calado'],
+        render: svgActualMejorado
+      }
+    ];
+
+    function pintarCards() {
+      const container = document.getElementById('cards-container');
+      container.innerHTML = '';
+
+      OPCIONES.forEach((op, idx) => {
+        const card = document.createElement('div');
+        card.className = 'option-card';
+        card.innerHTML = `
+          <div class="canvas-preview">
+            ${op.render({ nombre: state.nombre, rubro: state.rubro, color: state.color, id: `card-${idx}` })}
+          </div>
+          <div class="card-info">
+            <div class="card-title-row">
+              <span class="card-title">${op.nombre}</span>
+              <span class="card-tag">${op.tag}</span>
+            </div>
+            <p class="card-desc">${op.desc}</p>
+            <div class="features-list">
+              ${op.chips.map(c => `<span class="feature-chip">${c}</span>`).join('')}
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+
+      pintarMockups();
+    }
+
+    function pintarMockups() {
+      const grid = document.getElementById('mockup-grid');
+      grid.innerHTML = '';
+
+      // Mostramos las primeras 3 opciones en contexto de placa real
+      const seleccionadas = [OPCIONES[0], OPCIONES[1], OPCIONES[2]];
+
+      seleccionadas.forEach((op, idx) => {
+        const mock = document.createElement('div');
+        const esClara = idx === 1;
+        mock.className = `mock-post ${esClara ? 'light-post' : ''}`;
+        mock.innerHTML = `
+          <div class="mock-header">NUEVA COLECCIÓN · EDICIÓN LIMITADA</div>
+          <div class="mock-content">El detalle que transforma lo simple en algo extraordinario.</div>
+          <div class="mock-footer">
+            <div class="mock-cta">Deslizá para descubrir →</div>
+            <div>
+              ${op.render({ nombre: state.nombre, rubro: state.rubro, color: state.color, id: `mock-${idx}` })}
+            </div>
+          </div>
+        `;
+        // Ajustamos tamaño del sello dentro del mock
+        const svg = mock.querySelector('svg');
+        if (svg) {
+          svg.setAttribute('width', '84');
+          svg.setAttribute('height', '84');
+        }
+        grid.appendChild(mock);
+      });
+    }
+
+    // Eventos
+    document.getElementById('input-nombre').addEventListener('input', e => {
+      state.nombre = e.target.value;
+      pintarCards();
+    });
+
+    document.getElementById('input-rubro').addEventListener('input', e => {
+      state.rubro = e.target.value;
+      pintarCards();
+    });
+
+    document.querySelectorAll('.color-dot').forEach(dot => {
+      dot.addEventListener('click', () => {
+        document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+        dot.classList.add('active');
+        state.color = dot.dataset.color;
+        document.getElementById('picker-color').value = state.color;
+        pintarCards();
+      });
+    });
+
+    document.getElementById('picker-color').addEventListener('input', e => {
+      document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+      state.color = e.target.value;
+      pintarCards();
+    });
+
+    document.getElementById('btn-toggle-theme').addEventListener('click', () => {
+      document.body.classList.toggle('light-theme');
+      const isLight = document.body.classList.contains('light-theme');
+      document.getElementById('theme-icon').textContent = isLight ? '🌙' : '☀️';
+      document.getElementById('theme-text').textContent = isLight ? 'Fondo Oscuro' : 'Fondo Claro';
+    });
+
+    // Arranque inicial
+    pintarCards();
+  </script>
+</body>
+</html>
