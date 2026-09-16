@@ -6,12 +6,31 @@ let authInstance = null
 let dbInstance = null
 let configActiva = null
 
+/* Lo que ya se está haciendo, no lo que ya se hizo.
+ *
+ * Las dos funciones de abajo se llaman desde varios lugares a la vez —cuatro
+ * en `auth.js`— y las dos guardaban el resultado recién al terminar. Mientras
+ * la primera estaba esperando, la segunda veía el cajón vacío y arrancaba de
+ * nuevo: cuatro pedidos de `/config/firebase` y otras tantas inicializaciones
+ * del SDK por cada carga de la página. Se recuerda la promesa desde el primer
+ * llamado, así el segundo se cuelga de la que ya está en vuelo.
+ *
+ * Es exactamente el mismo error que tenía el arranque de Firebase en el
+ * servidor, y da el mismo tipo de resultado: todos creen que no hay nada
+ * porque preguntaron antes de tiempo. */
+let promesaConfig = null
+let promesaCliente = null
+
 /**
  * Consulta la configuración de Firebase desde el servidor o localStorage.
  */
-export async function obtenerConfiguracionFirebase() {
-  if (configActiva) return configActiva
+export function obtenerConfiguracionFirebase() {
+  if (configActiva) return Promise.resolve(configActiva)
+  if (!promesaConfig) promesaConfig = buscarConfiguracion()
+  return promesaConfig
+}
 
+async function buscarConfiguracion() {
   // 1. Verificar si hay configuración inyectada en window
   if (window.__FIREBASE_CONFIG__ && window.__FIREBASE_CONFIG__.apiKey) {
     configActiva = window.__FIREBASE_CONFIG__
@@ -45,9 +64,17 @@ export async function obtenerConfiguracionFirebase() {
 /**
  * Inicializa los módulos de Firebase si la configuración está disponible.
  */
-export async function inicializarFirebaseClient() {
-  if (firebaseApp) return { app: firebaseApp, auth: authInstance, db: dbInstance, listo: true }
+export function inicializarFirebaseClient() {
+  if (firebaseApp) return Promise.resolve({ app: firebaseApp, auth: authInstance, db: dbInstance, listo: true })
+  if (!promesaCliente) {
+    // Si falla, se olvida: un corte de red no tiene por qué dejar la sesión
+    // rota para siempre; el próximo llamado vuelve a intentar.
+    promesaCliente = arrancarCliente().catch(e => { promesaCliente = null; throw e })
+  }
+  return promesaCliente
+}
 
+async function arrancarCliente() {
   const config = await obtenerConfiguracionFirebase()
   if (!config || !config.apiKey) {
     return { app: null, auth: null, db: null, listo: false, modo: 'demo_local' }

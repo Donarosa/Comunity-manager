@@ -1776,5 +1776,24 @@ test('el servidor espera el almacén antes de atender nada', () => {
   assert.ok(espera < despacha, 'la espera tiene que ir antes de despachar, no después')
 })
 
+
+// Un memo que se marca DESPUÉS del await no memoriza nada: mientras el primer
+// llamado espera, el segundo ve el cajón vacío y arranca de nuevo. Con la
+// sesión abierta eran cuatro pedidos de `/config/firebase` y tres de
+// `/catalogo` por carga. Se recuerda la promesa, no el resultado.
+test('lo que se pide una sola vez, se pide una sola vez', () => {
+  const fb = readFileSync(join(RAIZ, 'web/js/firebase-config.js'), 'utf8')
+  assert.match(fb, /let promesaConfig = null/, 'volvió a memorizar el resultado y no la promesa')
+  assert.match(fb, /if \(!promesaConfig\) promesaConfig = buscarConfiguracion\(\)/)
+  assert.match(fb, /if \(!promesaCliente\)/, 'el arranque del cliente de Firebase volvió a duplicarse')
+  // Y si falla se olvida: un corte de red no puede dejar la sesión rota para
+  // siempre.
+  assert.match(fb, /promesaCliente = null; throw e/)
+
+  const app = readFileSync(join(RAIZ, 'web/js/app.js'), 'utf8')
+  assert.match(app, /let pidiendoCatalogo = null/, 'el catálogo volvió a pedirse una vez por pantalla')
+  assert.match(app, /await pidiendoCatalogo/)
+})
+
 // El resumen va último: si se agrega un bloque abajo, tiene que contarlo.
 console.log(`\n${ok} pruebas OK${process.exitCode ? ' — con fallas' : ''}\n`)

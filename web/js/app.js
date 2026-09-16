@@ -97,9 +97,21 @@ function actualizarNavUsuario(u) {
  * queda con el color solo, sin ningún error a la vista. Se reintenta antes de
  * abrir las pantallas que lo necesitan.
  */
+/* El catálogo se pide una vez, aunque lo pidan tres pantallas juntas.
+ *
+ * `catalogo` se llenaba recién al volver el pedido, así que dos llamados
+ * seguidos —abrir el editor mientras el tablero todavía está cargando— salían
+ * los dos a buscarlo. Se recuerda la promesa, no el resultado. */
+let pidiendoCatalogo = null
 async function asegurarCatalogo() {
   if (catalogo?.tipografias?.length && catalogo?.logotipos) return
-  try { catalogo = await api.catalogo() } catch { /* lo avisa la pantalla */ }
+  if (!pidiendoCatalogo) {
+    pidiendoCatalogo = api.catalogo()
+      .then(c => { catalogo = c })
+      .catch(() => { /* lo avisa la pantalla */ })
+      .finally(() => { pidiendoCatalogo = null })
+  }
+  await pidiendoCatalogo
 }
 
 /* ── la flecha de volver del navegador ─────────────────────
