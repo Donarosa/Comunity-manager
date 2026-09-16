@@ -107,10 +107,30 @@ test('sin usuario de IG no se inventa uno', () => {
   assert.ok(!brand.site.includes('instagram.com'))
   assert.ok(warnings.some(w => /usuario de Instagram/i.test(w)))
 })
-test('con usuario de IG el pie es el perfil', () => {
+// El pie es el perfil, escrito como lo escribe la gente: `@ferresur`. La URL
+// entera ocupaba casi medio ancho de la placa y no decía nada más —nadie la
+// tipea en la barra del navegador— y en vector además repetía palabra por
+// palabra lo que ya estaba en la otra punta del mismo pie.
+test('con usuario de IG el pie es el perfil, en arroba', () => {
   const { brand } = normalizeBrand({ nombre: 'Ferretería Sur', handle: '@ferresur' })
   assert.equal(brand.handle, '@ferresur')
-  assert.equal(brand.site, 'instagram.com/ferresur')
+  assert.equal(brand.site, '@ferresur')
+})
+test('si pegó la URL de su Instagram, se escribe igual que si hubiera puesto el usuario', () => {
+  const { brand } = normalizeBrand({
+    nombre: 'Ferretería Sur', handle: 'ferresur', sitio: 'https://www.instagram.com/ferresur/',
+  })
+  assert.equal(brand.site, '@ferresur')
+})
+// Y una marca guardada antes del cambio sale corta sin que su dueño toque nada:
+// el motor aplica la misma función al armar el contexto.
+test('una marca vieja con la URL adentro igual sale en arroba', () => {
+  const { brand } = normalizeBrand({ nombre: 'Ferretería Sur', handle: 'ferresur' })
+  brand.site = 'instagram.com/ferresur'          // como quedó guardada
+  brand.altSite = 'instagram.com/ferresur'
+  const html = htmlFor({ name: 'x', style: 'flat', type: 'body', title: 'Hola', body: 'Texto' }, brand, 'feed')
+  assert.ok(html.includes('@ferresur'), 'el pie salió sin acortar')
+  assert.ok(!html.includes('instagram.com/ferresur'), 'quedó la URL larga en la placa')
 })
 test('el sitio propio le gana al usuario', () => {
   const { brand } = normalizeBrand({ nombre: 'Ferretería Sur', handle: 'ferresur', sitio: 'https://ferresur.com.ar' })

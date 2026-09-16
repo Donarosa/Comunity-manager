@@ -4,6 +4,8 @@
 // currentColor, así sirve cualquier SVG hecho de <path> y <circle> y toma el
 // color correcto en fondo claro y oscuro.
 
+import { direccionCorta } from '../brand/schema.mjs'
+
 export function brandContext(B = {}) {
   const F = B.fonts || {}
   const LOGO = B.logo || { viewBox: '0 0 100 100', inner: '', strokeWidth: 8, strokeWidthSmall: 7 }
@@ -28,6 +30,13 @@ export function brandContext(B = {}) {
     F.logo.tracking = F.logo.tracking || '-.02em'
     F.logo.mono = F.logo.mono || { escala: 1, tracking: '-.04em' }
   }
+  /* Las marcas guardadas antes de este cambio tienen `instagram.com/usuario`
+   * escrito adentro, y `normalizeBrand()` solo corre al guardar. Se acorta acá
+   * para que una marca vieja salga bien sin que su dueño tenga que entrar a
+   * tocar nada. La regla es la misma función, no una copia. */
+  if (B.site) B.site = direccionCorta(B.site)
+  if (B.altSite) B.altSite = direccionCorta(B.altSite)
+
   if (!B.disposicion) B.disposicion = 'clasica'
   if (!B.logotipo) {
     B.logotipo = { tipo: 'monograma', tratamiento: 'linea', escudo: 'cuadrado' }

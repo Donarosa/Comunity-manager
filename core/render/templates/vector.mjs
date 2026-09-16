@@ -13,6 +13,15 @@ export function vectorHTML(s, ctx, fmt) {
   // Vector es un estilo de una sola pieza —una frase sobre color pleno— así que
   // recibe una versión reducida de la disposición: escala del titular y
   // alineación. No tendría sentido meterle un kicker en bloque o una ficha.
+  /* Abajo a la izquierda va el usuario; abajo a la derecha, la insignia con el
+   * sitio. Si son lo mismo, la insignia no se dibuja: desde que la dirección de
+   * Instagram se escribe `@usuario` —y no `instagram.com/usuario`— las dos
+   * puntas del pie decían exactamente lo mismo. Pasaba también con las marcas
+   * sin usuario cargado, donde las dos caían al nombre del negocio. */
+  const alPie = s.handle || B.handle || B.nombre
+  const sitio = s.site || B.site
+  const insignia = sitio && sitio !== alPie ? sitio : ''
+
   const disp = resolverDisposicion(s.disposicion || B.disposicion)
   const centrado = disp.id === 'centrada'
   const extra = centrado
@@ -43,5 +52,5 @@ ${extra}
 </style></head><body class="dark ${clasesDeLogotipo(B)}"><div class="slide"><div class="topo"></div>
 <div class="firma">${lockupHTML(ctx, 38)}</div>
 <div class="content">${s.eyebrow ? `<div class="eyebrow">${s.eyebrow}</div>` : ''}<h1 class="headline">${s.headline || ''}</h1></div>
-${B.scene || ''}<div class="handle">${s.handle || B.handle || B.nombre}</div><div class="badge">${s.site || B.site}</div></div></body></html>`
+${B.scene || ''}<div class="handle">${alPie}</div>${insignia ? `<div class="badge">${insignia}</div>` : ''}</div></body></html>`
 }

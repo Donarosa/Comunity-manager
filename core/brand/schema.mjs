@@ -83,6 +83,25 @@ export function deriveWordmark(nombre) {
   return { base: partes.slice(0, -1).join(' ') + ' ', accent: partes[partes.length - 1] }
 }
 
+/**
+ * Cómo se escribe una dirección en el pie de una placa.
+ *
+ * Una dirección de Instagram se escribe `@usuario`, no `instagram.com/usuario`.
+ * La URL entera ocupa casi medio ancho de una placa de 1080 y no agrega nada:
+ * nadie la escribe en la barra del navegador, se busca el arroba.
+ *
+ * Vale para las dos formas de llegar: la que se deriva del usuario del alta y
+ * la que el cliente pegó a mano en el campo del sitio. Si pegó su Instagram,
+ * quiso decir su Instagram. Un sitio propio —`panaderiamendieta.com.ar`— no se
+ * toca, y volver a pasarle un `@usuario` no lo cambia: es idempotente, que es
+ * lo que la deja usar tanto en el alta como al renderizar una marca vieja.
+ */
+export function direccionCorta(valor) {
+  const limpio = String(valor ?? '').trim().replace(/^https?:\/\//, '')
+  const m = limpio.match(/^(?:www\.)?instagram\.com\/([A-Za-z0-9._]+)\/?$/i)
+  return m ? '@' + m[1] : limpio
+}
+
 const slugify = s =>
   String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, '').slice(0, 24)
@@ -129,9 +148,9 @@ export function normalizeBrand(input = {}) {
   if (!handle && !input.sitio) {
     warnings.push('Sin usuario de Instagram: las placas cierran con el nombre del negocio. Cargalo y pasan a cerrar con el usuario.')
   }
-  const site = String(
+  const site = direccionCorta(
     input.sitio || (handle ? `instagram.com/${handle.slice(1)}` : nombre)
-  ).replace(/^https?:\/\//, '')
+  )
 
   const wordmark = input.wordmark?.base ? input.wordmark : deriveWordmark(nombre)
 
@@ -152,7 +171,7 @@ export function normalizeBrand(input = {}) {
     logotipo,
     handle,
     site,
-    altSite: input.altSitio ? String(input.altSitio).replace(/^https?:\/\//, '') : site,
+    altSite: input.altSitio ? direccionCorta(input.altSitio) : site,
     logo,
     fonts,
     disposicion,
