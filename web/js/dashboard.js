@@ -64,9 +64,82 @@ function renderizarHome({
   const panel = el('div.dashboard-usuario')
   contenedor.append(panel)
 
+  /* ── Notificación de retorno desde Mercado Pago ── */
+  const paramsUrl = new URLSearchParams(window.location.search)
+  if (paramsUrl.get('pago') === 'completado') {
+    panel.append(el('div.banner-pago-exito', {
+      style: 'background:#ecfdf5;border:1px solid #10b981;border-radius:12px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;'
+    },
+      el('div', {},
+        el('strong', { style: 'color:#065f46;display:block;font-size:1rem;' }, '🎉 ¡Suscripción en proceso con Mercado Pago!'),
+        el('span', { style: 'color:#047857;font-size:0.88rem;' }, 'Mercado Pago está confirmando tu débito automático mensual. Tu cuenta se actualizará en segundos.')
+      ),
+      el('button.btn.chico', {
+        style: 'background:#10b981;color:#fff;border:none;',
+        onclick: () => {
+          window.history.replaceState({}, document.title, window.location.pathname)
+          location.reload()
+        }
+      }, 'Actualizar datos')
+    ))
+  }
+
   /* ── 1. Cabecera de Usuario ── */
   const avatarUrl = cuenta.foto || usuarioAuth?.foto ||
     `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(cuenta.nombre || 'Usuario')}&backgroundColor=A83A1C&textColor=FAF7F0`
+
+  const sub = cuenta.suscripcion
+  const subActiva = Boolean(sub?.activa)
+  const precioMp = catalogo?.mercadopago?.precioMensualARS || 15000
+
+  // Badge de suscripción
+  const badgeSub = subActiva
+    ? el('span.badge-estado.badge-suscripcion-activa', {
+        title: sub.proximoCobro ? `Próximo cobro: ${new Date(sub.proximoCobro).toLocaleDateString('es-AR')}` : 'Suscripción mensual activa',
+        style: 'background:#dcfce7;color:#15803d;border:1px solid #86efac;font-weight:700;'
+      }, '✓ Suscripción Activa')
+    : el('span.badge-estado', {}, `Plan ${cuenta.plan || 'Único'}`)
+
+  // Botón para suscribirse o cancelar
+  let ctaSuscripcion = null
+  if (!subActiva && cuenta.plan !== 'interno') {
+    ctaSuscripcion = el('button.btn.chico.btn-mp-suscripcion', {
+      style: 'background:#009ee3;color:#ffffff;border:none;font-weight:700;display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;cursor:pointer;',
+      onclick: async (e) => {
+        const btn = e.currentTarget
+        const original = btn.textContent
+        btn.disabled = true
+        btn.textContent = 'Conectando con Mercado Pago...'
+        try {
+          const res = await api.crearSuscripcion(window.location.origin + '/?pago=completado')
+          if (res?.init_point) {
+            window.location.href = res.init_point
+          } else {
+            throw new Error('No se recibió la URL de pago de Mercado Pago')
+          }
+        } catch (err) {
+          btn.disabled = false
+          btn.textContent = original
+          aviso(`Error al iniciar suscripción: ${err.message}`, 'error')
+        }
+      }
+    }, `💳 Suscribirme ($${precioMp.toLocaleString('es-AR')}/mes)`)
+  } else if (subActiva) {
+    ctaSuscripcion = el('button.btn.fantasma.chico', {
+      style: 'font-size:0.8rem;color:#dc2626;border-color:#fca5a5;',
+      onclick: async () => {
+        if (confirm('¿Deseás cancelar tu suscripción mensual? Podrás continuar usando tu plan hasta el final del ciclo.')) {
+          try {
+            await api.cancelarSuscripcion()
+            aviso('Suscripción cancelada correctamente.', 'exito')
+            setTimeout(() => location.reload(), 1000)
+          } catch (err) {
+            aviso(`Error al cancelar: ${err.message}`, 'error')
+          }
+        }
+      }
+    }, 'Dar de baja suscripción')
+  }
 
   const cabecera = el('div.dash-header', {},
     el('div.dash-usuario-info', {},
@@ -74,7 +147,7 @@ function renderizarHome({
       el('div', {},
         el('div', { style: 'display:flex;align-items:center;gap:10px;flex-wrap:wrap;' },
           el('h1', { style: 'font-size:1.65rem;margin:0;font-weight:800;' }, marca?.nombre || cuenta.nombre),
-          el('span.badge-estado', {}, `Plan ${cuenta.plan || 'Único'}`)
+          badgeSub
         ),
         el('p.apunte', { style: 'margin:2px 0 0;' },
           cuenta.email || 'Usuario registrado',
@@ -82,7 +155,8 @@ function renderizarHome({
         )
       )
     ),
-    el('div.dash-acciones-top', {},
+    el('div.dash-acciones-top', { style: 'display:flex;align-items:center;gap:10px;flex-wrap:wrap;' },
+      ctaSuscripcion,
       el('button.btn.fantasma.chico', {
         onclick: async () => {
           if (confirm('¿Deseás cerrar la sesión actual?')) {

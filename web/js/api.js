@@ -95,4 +95,9 @@ export const api = {
     pedir(`/imagenes/buscar?q=${encodeURIComponent(q)}&pagina=${pagina}&orientacion=${orientacion}`),
   traerDelBanco: (id, imagenId) => pedir(`/cuentas/${id}/imagenes/banco`, { metodo: 'POST', cuerpo: { id: imagenId } }),
   subirImagen: (id, datos) => pedir(`/cuentas/${id}/imagenes/subir`, { metodo: 'POST', cuerpo: datos }),
+
+  // Suscripciones con Mercado Pago
+  crearSuscripcion: backUrl => pedir('/suscripcion/crear', { metodo: 'POST', cuerpo: { backUrl } }),
+  estadoSuscripcion: () => pedir('/suscripcion/estado'),
+  cancelarSuscripcion: () => pedir('/suscripcion/cancelar', { metodo: 'POST' }),
 }

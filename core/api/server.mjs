@@ -446,9 +446,39 @@ async function despachar(req, res) {
      */
     if (m === 'GET' && url.pathname === '/catalogo') return json(res, 200, svc.catalogo())
 
+    /* — webhook de Mercado Pago (público) —
+     * Mercado Pago envía notificaciones aquí cuando se crea, autoriza,
+     * pausa o cancela una suscripción, y en cada cobro mensual recurrente.
+     * Siempre se responde 200 OK de inmediato para evitar reintentos.
+     */
+    if (m === 'POST' && (url.pathname === '/mercadopago/webhook' || url.pathname === '/webhook/mercadopago')) {
+      const body = await leerBody(req)
+      svc.procesarWebhookMercadoPago(body).catch(err =>
+        console.error('[MercadoPago Webhook Error]:', err.message)
+      )
+      return json(res, 200, { recibido: true })
+    }
+
     /* — de acá para abajo hay que identificarse — */
     const usuario = await obtenerUsuarioAutenticado(req)
     if (!usuario) return json(res, 401, { error: 'hace falta iniciar sesión', codigo: 'sin_sesion' })
+
+    /* — suscripciones con Mercado Pago — */
+    if (m === 'POST' && url.pathname === '/suscripcion/crear') {
+      const body = await leerBody(req)
+      const resSub = await svc.iniciarSuscripcionParaCuenta(usuario.uid, body)
+      return json(res, 200, resSub)
+    }
+
+    if (m === 'GET' && url.pathname === '/suscripcion/estado') {
+      const resEstado = await svc.obtenerEstadoSuscripcion(usuario.uid)
+      return json(res, 200, resEstado)
+    }
+
+    if (m === 'POST' && url.pathname === '/suscripcion/cancelar') {
+      const resCancel = await svc.cancelarSuscripcionDeCuenta(usuario.uid)
+      return json(res, 200, resCancel)
+    }
 
     /* — entrar con la cuenta de Firebase —
      *

@@ -5273,3 +5273,42 @@ html.con-sesion .arranque { display: block; }
    cerrar es del teléfono, donde esto se abre como pantalla completa. */
 .editor-salida { width: 100%; }
 .salida-cerrar { display: none; }
+
+/* Suscripciones Mercado Pago */
+.banner-pago-exito {
+  background: #ecfdf5;
+  border: 1px solid #10b981;
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.badge-suscripcion-activa {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
+  font-weight: 700;
+}
+
+.btn-mp-suscripcion {
+  background: #009ee3;
+  color: #ffffff;
+  border: none;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 158, 227, 0.3);
+}
+
+.btn-mp-suscripcion:hover {
+  background: #0081bb;
+}
+

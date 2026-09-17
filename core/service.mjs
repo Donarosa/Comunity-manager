@@ -30,6 +30,7 @@ import { FONT_PRESETS, LOGO_FONTS } from './brand/fonts.mjs'
 import { FORMATS } from './render/formats.mjs'
 import { catalogoDisposiciones } from './render/disposiciones.mjs'
 import { catalogoLogotipos, tratamientosPara } from './brand/logotipo.mjs'
+import * as mp from './pagos/mercadopago.mjs'
 
 export {
   listarCuentas, leerCuenta, leerCuentaAsync,
@@ -49,6 +50,10 @@ export const catalogo = () => ({
   bancos: estadoBanco(),
   firebase: {
     activo: firestore.estaActivo(),
+  },
+  mercadopago: {
+    activo: mp.estaConfigurado(),
+    precioMensualARS: mp.precioMensualARS(),
   },
 })
 
@@ -169,6 +174,7 @@ function resumen(c) {
      * Es la marca del propio dueño de la cuenta: no hay nada acá que no sea
      * suyo ni que no necesite la pantalla que la edita. */
     marca: c.marca || null,
+    suscripcion: c.suscripcion || null,
   }
 }
 
@@ -867,3 +873,143 @@ export async function renderizarPieza(cuentaId, { canal = 'feed', placas = [], n
     estado: estadoCompleto(cuenta),
   }
 }
+
+/* ── Suscripciones con Mercado Pago ───────────────────────── */
+
+export async function iniciarSuscripcionParaCuenta(cuentaId, { backUrl } = {}) {
+  await hidratarCuenta(cuentaId)
+  const cuenta = leerCuenta(cuentaId)
+  const email = cuenta.email
+  if (!email) {
+    throw new Error('La cuenta necesita tener un email configurado para suscribirse')
+  }
+
+  const suscripcion = await mp.crearSuscripcionPreapproval({
+    cuentaId: cuenta.id,
+    email,
+    backUrl,
+    nombre: cuenta.marca?.nombre || cuenta.nombre || 'Plan Community',
+  })
+
+  cuenta.suscripcion = {
+    id: suscripcion.id,
+    activa: false,
+    estado: 'pending',
+    monto: suscripcion.monto,
+    moneda: suscripcion.moneda,
+    iniciada: new Date().toISOString(),
+  }
+  guardarCuenta(cuenta)
+  registrarEventoEstadistica(cuenta.id, 'suscripcion_iniciada', { id: suscripcion.id, monto: suscripcion.monto })
+
+  return {
+    ...suscripcion,
+    cuenta: resumen(cuenta),
+  }
+}
+
+export async function cancelarSuscripcionDeCuenta(cuentaId) {
+  await hidratarCuenta(cuentaId)
+  const cuenta = leerCuenta(cuentaId)
+  const preapprovalId = cuenta.suscripcion?.id
+
+  if (preapprovalId) {
+    try {
+      await mp.cancelarSuscripcion(preapprovalId)
+    } catch (err) {
+      console.warn('[MercadoPago] Error cancelando en MP:', err.message)
+    }
+  }
+
+  if (cuenta.suscripcion) {
+    cuenta.suscripcion.activa = false
+    cuenta.suscripcion.estado = 'cancelled'
+    cuenta.suscripcion.cancelada = new Date().toISOString()
+  }
+  guardarCuenta(cuenta)
+  registrarEventoEstadistica(cuenta.id, 'suscripcion_cancelada', { id: preapprovalId })
+
+  return {
+    ok: true,
+    cuenta: resumen(cuenta),
+    estado: estadoCompleto(cuenta),
+  }
+}
+
+export async function obtenerEstadoSuscripcion(cuentaId) {
+  await hidratarCuenta(cuentaId)
+  const cuenta = leerCuenta(cuentaId)
+  const sub = cuenta.suscripcion || null
+
+  // Si tenemos un ID pero no está actualizado recientemente, podemos consultar MP
+  if (sub?.id && mp.estaConfigurado()) {
+    try {
+      const remota = await mp.consultarSuscripcion(sub.id)
+      if (remota && remota.status !== sub.estado) {
+        sub.estado = remota.status
+        sub.activa = remota.status === 'authorized'
+        if (remota.next_payment_date) sub.proximoCobro = remota.next_payment_date
+        guardarCuenta(cuenta)
+      }
+    } catch { /* si falla la consulta remota, devolvemos el estado local */ }
+  }
+
+  return {
+    suscripcion: sub,
+    configurado: mp.estaConfigurado(),
+    precioMensualARS: mp.precioMensualARS(),
+  }
+}
+
+export async function procesarWebhookMercadoPago(cuerpoWebhook) {
+  const evento = await mp.procesarNotificacionWebhook(cuerpoWebhook)
+  if (evento.ignorado) return evento
+
+  if (evento.tipo === 'suscripcion') {
+    let cuenta = null
+    if (evento.cuentaId) {
+      try {
+        await hidratarCuenta(evento.cuentaId)
+        cuenta = leerCuenta(evento.cuentaId)
+      } catch { /* ignora */ }
+    }
+
+    // Si no vino cuentaId en external_reference, buscar entre las cuentas por preapprovalId o email
+    if (!cuenta) {
+      const todas = await listarCuentasAsync()
+      for (const c of todas) {
+        try {
+          await hidratarCuenta(c.id)
+          const candidata = leerCuenta(c.id)
+          if (candidata.suscripcion?.id === evento.preapprovalId || (evento.payerEmail && candidata.email === evento.payerEmail)) {
+            cuenta = candidata
+            break
+          }
+        } catch { /* ignora */ }
+      }
+    }
+
+    if (cuenta) {
+      cuenta.suscripcion = {
+        ...(cuenta.suscripcion || {}),
+        id: evento.preapprovalId,
+        activa: evento.status === 'authorized',
+        estado: evento.status,
+        proximoCobro: evento.proximoCobro,
+        fechaActualizada: new Date().toISOString(),
+      }
+      if (evento.status === 'authorized') {
+        cuenta.estado = 'activa'
+        cuenta.plan = 'unico'
+        registrarEventoEstadistica(cuenta.id, 'suscripcion_autorizada', { id: evento.preapprovalId })
+      } else if (evento.status === 'cancelled' || evento.status === 'paused') {
+        registrarEventoEstadistica(cuenta.id, `suscripcion_${evento.status}`, { id: evento.preapprovalId })
+      }
+      guardarCuenta(cuenta)
+      return { ok: true, cuentaId: cuenta.id, status: evento.status }
+    }
+  }
+
+  return { ok: true, evento }
+}
+
