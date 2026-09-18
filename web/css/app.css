@@ -5273,3 +5273,410 @@ html.con-sesion .arranque { display: block; }
    cerrar es del teléfono, donde esto se abre como pantalla completa. */
 .editor-salida { width: 100%; }
 .salida-cerrar { display: none; }
+
+/* ══════════════════════════════════════════════════════════════════════
+ * SECCIÓN CÓMO SE USA · REPRODUCTOR SMARTPHONE VIDEO VIRAL
+ * ══════════════════════════════════════════════════════════════════════ */
+
+.seccion--como-se-usa {
+  background: var(--color-paper);
+  position: relative;
+  overflow: hidden;
+  padding: clamp(3.5rem, 6vw, 6rem) 0;
+  border-top: 1px solid var(--color-rule);
+}
+
+.como-se-usa-grid {
+  display: grid;
+  grid-template-columns: minmax(290px, 360px) 1fr;
+  gap: clamp(2.5rem, 6vw, 5rem);
+  align-items: center;
+  margin-top: 1rem;
+}
+
+/* ── Envoltorio del teléfono ────────────────────────────────────────── */
+.video-container-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.video-phone-frame {
+  position: relative;
+  width: 100%;
+  max-width: 340px;
+  aspect-ratio: 9 / 16;
+  background: #0d1117;
+  border-radius: 44px;
+  border: 11px solid #14181C;
+  box-shadow: 0 28px 65px -14px rgba(0, 0, 0, 0.45),
+              0 0 45px -12px oklch(80% 0.16 150 / 0.3),
+              inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+  user-select: none;
+}
+
+/* Isla dinámica / notch superior */
+.phone-dynamic-island {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90px;
+  height: 20px;
+  background: #000;
+  border-radius: 20px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 12px;
+  gap: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+  pointer-events: none;
+}
+
+.phone-camera-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #111a2e;
+  border: 1px solid #1d2b45;
+}
+
+.phone-sensor-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #0a1120;
+}
+
+/* Pantalla del video */
+.video-screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  border-radius: 33px;
+  overflow: hidden;
+}
+
+.video-player {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  cursor: pointer;
+  background: #000;
+}
+
+/* Overlay play central */
+.video-overlay-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(20, 24, 28, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 2px solid oklch(80% 0.16 150);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45),
+              0 0 25px oklch(80% 0.16 150 / 0.4);
+  z-index: 15;
+}
+
+.video-overlay-play:hover {
+  transform: translate(-50%, -50%) scale(1.08);
+  background: rgba(20, 24, 28, 0.95);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.55),
+              0 0 35px oklch(80% 0.16 150 / 0.6);
+}
+
+.video-overlay-play.is-playing {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0.85);
+}
+
+.play-icon-triangle {
+  width: 0;
+  height: 0;
+  margin-left: 5px;
+  border-top: 13px solid transparent;
+  border-bottom: 13px solid transparent;
+  border-left: 20px solid #fff;
+}
+
+/* Barra de controles inferior */
+.video-controls-layer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 14px 14px 16px;
+  background: linear-gradient(to top, rgba(5, 7, 14, 0.92) 0%, rgba(5, 7, 14, 0.65) 60%, transparent 100%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 16;
+  transition: opacity 0.25s ease;
+}
+
+.vctrl-btn {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: color 0.2s ease, transform 0.15s ease;
+  line-height: 1;
+}
+
+.vctrl-btn:hover {
+  color: var(--color-mint);
+  transform: scale(1.1);
+}
+
+.vctrl-progress-bar {
+  flex: 1;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+  transition: height 0.15s ease;
+}
+
+.vctrl-progress-bar:hover {
+  height: 8px;
+}
+
+.vctrl-progress-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0%;
+  background: var(--color-mint);
+  border-radius: 999px;
+  box-shadow: 0 0 10px oklch(80% 0.16 150 / 0.7);
+  transition: width 0.1s linear;
+}
+
+.vctrl-timer {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.85);
+  white-space: nowrap;
+  letter-spacing: 0.04em;
+}
+
+/* Badge de sonido */
+.video-sound-badge {
+  margin-top: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-label);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-ink-2);
+  background: var(--color-paper-2);
+  border: 1px solid var(--color-rule);
+  padding: 6px 14px;
+  border-radius: 999px;
+}
+
+.sound-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-mint-deep);
+  box-shadow: 0 0 0 3px oklch(80% 0.16 150 / 0.35);
+  display: inline-block;
+  animation: pulsoSonido 2s infinite ease-in-out;
+}
+
+@keyframes pulsoSonido {
+  0%, 100% { transform: scale(1); opacity: 0.85; }
+  50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 0 6px oklch(80% 0.16 150 / 0.15); }
+}
+
+/* ── Tarjetas de pasos ────────────────────────────────────────────── */
+.como-se-usa-pasos {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.paso-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25rem;
+  padding: 1.35rem 1.6rem;
+  background: var(--color-paper-2);
+  border: 1.5px solid var(--color-rule);
+  border-radius: var(--r-card);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.paso-card:hover {
+  background: #ffffff;
+  border-color: var(--color-rule-2);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px -10px oklch(20% 0.012 250 / 0.1);
+}
+
+.paso-card.is-active {
+  background: #ffffff;
+  border-color: var(--color-mint-deep);
+  box-shadow: 0 16px 36px -12px oklch(80% 0.16 150 / 0.32),
+              0 2px 6px oklch(20% 0.012 250 / 0.04);
+  transform: translateX(6px);
+}
+
+.paso-card__num {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--color-paper-3);
+  border: 1px solid var(--color-rule);
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 1.05rem;
+  display: grid;
+  place-items: center;
+  transition: all 0.3s ease;
+}
+
+.paso-card.is-active .paso-card__num {
+  background: var(--color-mint);
+  border-color: var(--color-mint-deep);
+  color: var(--color-ink);
+  transform: scale(1.05);
+}
+
+.paso-card__body {
+  flex: 1;
+}
+
+.paso-card__tag {
+  font-family: var(--font-label);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  margin-bottom: 0.25rem;
+  transition: color 0.2s ease;
+}
+
+.paso-card.is-active .paso-card__tag {
+  color: var(--color-mint-deep);
+}
+
+.paso-card__title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-ink);
+  margin: 0 0 0.4rem;
+  line-height: 1.3;
+}
+
+.paso-card__text {
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--color-neutral);
+  margin: 0 0 0.6rem;
+}
+
+.paso-card__jump {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-label);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--color-mint-deep);
+  opacity: 0.85;
+  transition: all 0.2s ease;
+}
+
+.paso-card:hover .paso-card__jump,
+.paso-card.is-active .paso-card__jump {
+  opacity: 1;
+  transform: translateX(3px);
+}
+
+.como-se-usa-cta {
+  margin-top: 0.75rem;
+  padding-top: 0.5rem;
+}
+
+.cta-microcopy {
+  margin-top: 0.65rem;
+  font-size: 0.82rem;
+  color: var(--color-muted);
+  text-align: center;
+  font-weight: 500;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────── */
+@media (max-width: 880px) {
+  .como-se-usa-grid {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 3rem;
+  }
+  .como-se-usa-pasos {
+    width: 100%;
+    max-width: 580px;
+  }
+  .video-phone-frame {
+    max-width: 320px;
+  }
+  .paso-card.is-active {
+    transform: translateY(-3px);
+  }
+}
+
+@media (max-width: 540px) {
+  .video-phone-frame {
+    max-width: 280px;
+    border-width: 9px;
+    border-radius: 38px;
+  }
+  .paso-card {
+    padding: 1.15rem 1.25rem;
+    gap: 1rem;
+  }
+  .paso-card__num {
+    width: 36px;
+    height: 36px;
+    font-size: 0.92rem;
+  }
+  .paso-card__title {
+    font-size: 1.05rem;
+  }
+  .paso-card__text {
+    font-size: 0.86rem;
+  }
+}
+

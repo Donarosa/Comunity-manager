@@ -741,6 +741,7 @@ async function arrancar() {
   }
 
   iniciarCarruselPantallas()
+  iniciarVideoDemo()
 }
 
 /* ── Carrusel dinámico de pantallas de salida ──────────────── */
@@ -849,6 +850,145 @@ function iniciarCarruselPantallas() {
   }, 150)
 }
 
+/* ── Reproductor de demostración en video viral ─────────────── */
+
+function iniciarVideoDemo() {
+  const video = $('#video-viral')
+  if (!video) return
+
+  const btnOverlayPlay = $('#video-overlay-play')
+  const btnPlay = $('#vctrl-play')
+  const iconPlay = btnPlay?.querySelector('.icon-play')
+  const iconPause = btnPlay?.querySelector('.icon-pause')
+  const progressBar = $('#vctrl-progress-bar')
+  const progressFill = $('#vctrl-progress-fill')
+  const timerDisplay = $('#vctrl-timer')
+  const btnMute = $('#vctrl-mute')
+  const iconUnmuted = btnMute?.querySelector('.icon-unmuted')
+  const iconMuted = btnMute?.querySelector('.icon-muted')
+  const btnFs = $('#vctrl-fs')
+  const pasoCards = Array.from(document.querySelectorAll('.paso-card'))
+
+  function formatearTiempo(segundos) {
+    if (isNaN(segundos) || segundos < 0) return '0:00'
+    const m = Math.floor(segundos / 60)
+    const s = Math.floor(segundos % 60)
+    return `${m}:${s < 10 ? '0' : ''}${s}`
+  }
+
+  function actualizarEstadoPlay(reproduciendo) {
+    if (reproduciendo) {
+      btnOverlayPlay?.classList.add('is-playing')
+      iconPlay?.classList.add('oculto')
+      iconPause?.classList.remove('oculto')
+    } else {
+      btnOverlayPlay?.classList.remove('is-playing')
+      iconPlay?.classList.remove('oculto')
+      iconPause?.classList.add('oculto')
+    }
+  }
+
+  function togglePlay() {
+    if (video.paused || video.ended) {
+      video.play().catch(() => {})
+    } else {
+      video.pause()
+    }
+  }
+
+  video.addEventListener('play', () => actualizarEstadoPlay(true))
+  video.addEventListener('pause', () => actualizarEstadoPlay(false))
+  video.addEventListener('click', togglePlay)
+  btnOverlayPlay?.addEventListener('click', togglePlay)
+  btnPlay?.addEventListener('click', togglePlay)
+
+  // Barra de progreso y sincronización de tarjetas de pasos
+  video.addEventListener('timeupdate', () => {
+    const actual = video.currentTime
+    const total = video.duration || 39.5
+    const pct = Math.min(100, (actual / total) * 100)
+    if (progressFill) progressFill.style.width = `${pct}%`
+    if (timerDisplay) {
+      timerDisplay.textContent = `${formatearTiempo(actual)} / ${formatearTiempo(total)}`
+    }
+
+    // Momentos clave según viral.mp4:
+    // 01: 13s (Negocio y copy)
+    // 02: 21s (Identidad visual)
+    // 03: 27s (Multi-formato y fotos)
+    // 04: 32s (Publicación y resultados)
+    let pasoActivo = 0
+    if (actual >= 32) pasoActivo = 3
+    else if (actual >= 27) pasoActivo = 2
+    else if (actual >= 21) pasoActivo = 1
+    else if (actual >= 12.5) pasoActivo = 0
+
+    pasoCards.forEach((card, idx) => {
+      card.classList.toggle('is-active', idx === pasoActivo)
+    })
+  })
+
+  // Clic en la barra de progreso
+  progressBar?.addEventListener('click', e => {
+    const rect = progressBar.getBoundingClientRect()
+    const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
+    const total = video.duration || 39.5
+    video.currentTime = pos * total
+  })
+
+  // Control de sonido (Mute / Unmute)
+  function actualizarEstadoMute() {
+    if (video.muted) {
+      iconUnmuted?.classList.add('oculto')
+      iconMuted?.classList.remove('oculto')
+      btnMute.title = 'Activar sonido'
+    } else {
+      iconUnmuted?.classList.remove('oculto')
+      iconMuted?.classList.add('oculto')
+      btnMute.title = 'Silenciar sonido'
+    }
+  }
+
+  btnMute?.addEventListener('click', () => {
+    video.muted = !video.muted
+    actualizarEstadoMute()
+  })
+
+  // Pantalla completa
+  btnFs?.addEventListener('click', () => {
+    if (!document.fullscreenElement) {
+      if (video.requestFullscreen) video.requestFullscreen()
+      else if (video.webkitRequestFullscreen) video.webkitRequestFullscreen()
+    } else {
+      if (document.exitFullscreen) document.exitFullscreen()
+      else if (document.webkitExitFullscreen) document.webkitExitFullscreen()
+    }
+  })
+
+  // Clic en tarjetas de pasos para saltar al momento exacto en el video
+  pasoCards.forEach(card => {
+    card.addEventListener('click', () => {
+      const tiempo = parseFloat(card.dataset.tiempo || 0)
+      video.currentTime = tiempo
+      if (video.paused) {
+        video.play().catch(() => {})
+      }
+      pasoCards.forEach(c => c.classList.toggle('is-active', c === card))
+    })
+  })
+
+  // IntersectionObserver: pausa el video si la sección sale de la pantalla
+  if ('IntersectionObserver' in window) {
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting && !video.paused) {
+          video.pause()
+        }
+      })
+    }, { threshold: 0.2 })
+    observer.observe(video)
+  }
+}
 
 arrancar()
 

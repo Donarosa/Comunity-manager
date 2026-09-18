@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=JetBrains+Mono:wght@400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,800;1,9..144,400&family=Alex+Brush&family=Cinzel:wght@600;800&family=Syne:wght@700;800&family=Playfair+Display:ital,wght@0,700;1,600&family=Bebas+Neue&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/app.css?v=2.1">
+<link rel="stylesheet" href="/css/app.css?v=2.3">
 <script>
 // Antes del primer pintado, y a propósito.
 //
@@ -38,6 +38,7 @@ try {
       Alquimia
     </div>
     <nav>
+      <a href="#como-se-usa" class="apunte" data-solo-landing>Cómo se usa</a>
       <a href="#etapas" class="apunte" data-solo-landing>El método</a>
       <a href="#impacto" class="apunte" data-solo-landing>El impacto</a>
       <a href="#precios" class="apunte" data-solo-landing>Precios</a>
@@ -83,7 +84,7 @@ try {
 
         <div class="acciones" style="margin-top:2rem;">
           <button class="btn grande" data-ir="wizard">Empezar con Alquimia <span class="btn__arrow">→</span></button>
-          <a href="#etapas" class="btn btn--outline btn--mint grande">Ver el método <span class="btn__arrow">→</span></a>
+          <a href="#como-se-usa" class="btn btn--outline btn--mint grande">Ver cómo se usa <span class="btn__arrow">↓</span></a>
         </div>
       </div>
 
@@ -262,7 +263,119 @@ try {
     </div>
   </section>
 
-  <!-- ── 2. SECCIÓN NARRATIVA DE ETAPAS (BUBBLE STAGES) ── -->
+  <!-- ── 2. SECCIÓN CÓMO SE USA (DEMOSTRACIÓN EN VIDEO VIRAL) ── -->
+  <section class="seccion seccion--como-se-usa" id="como-se-usa">
+    <div class="marco">
+      <header class="seccion-cabecera" style="margin-bottom:3rem;text-align:center;">
+        <span class="eyebrow"><span class="eyebrow__dot eyebrow__dot--mint"></span> En video · 40 segundos</span>
+        <h2>Cómo se usa Alquimia</h2>
+        <p class="apunte" style="font-size:1.15rem;max-width:58ch;margin:0.75rem auto 0;line-height:1.55;">
+          Mirá el flujo de principio a fin: cargás tu negocio, se aplica tu identidad y bajás todo el contenido listo para publicar en Instagram.
+        </p>
+      </header>
+
+      <div class="como-se-usa-grid">
+        <!-- Columna Izquierda: Video en Mockup de Smartphone -->
+        <div class="video-container-wrap">
+          <div class="video-phone-frame">
+            <div class="phone-dynamic-island">
+              <span class="phone-camera-dot"></span>
+              <span class="phone-sensor-dot"></span>
+            </div>
+            <div class="video-screen">
+              <video
+                id="video-viral"
+                class="video-player"
+                src="/video/viral.mp4"
+                poster="/video/poster.jpg"
+                playsinline
+                preload="metadata"
+                loop
+                title="Cómo se usa Alquimia — Demostración paso a paso"
+              ></video>
+
+              <!-- Overlay Play central -->
+              <button class="video-overlay-play" id="video-overlay-play" aria-label="Reproducir video demo">
+                <span class="play-icon-triangle"></span>
+              </button>
+
+              <!-- Barra de control inferior integrada -->
+              <div class="video-controls-layer">
+                <button class="vctrl-btn" id="vctrl-play" aria-label="Play / Pausa" title="Reproducir">
+                  <svg class="icon-play" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                  <svg class="icon-pause oculto" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M6 4h4v16H6zm8 0h4v16h-4z"/></svg>
+                </button>
+                <div class="vctrl-progress-bar" id="vctrl-progress-bar" title="Avanzar video">
+                  <div class="vctrl-progress-fill" id="vctrl-progress-fill"></div>
+                </div>
+                <span class="vctrl-timer" id="vctrl-timer">0:00 / 0:39</span>
+                <button class="vctrl-btn" id="vctrl-mute" aria-label="Silenciar / Activar sonido" title="Sonido">
+                  <svg class="icon-unmuted" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                  <svg class="icon-muted oculto" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+                </button>
+                <button class="vctrl-btn" id="vctrl-fs" aria-label="Pantalla completa" title="Pantalla completa">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="video-sound-badge">
+            <span class="sound-dot"></span> Sonido y música original · 39s
+          </div>
+        </div>
+
+        <!-- Columna Derecha: Tarjetas Interactivas de Pasos Sincronizados -->
+        <div class="como-se-usa-pasos">
+          <div class="paso-card is-active" data-tiempo="13">
+            <div class="paso-card__num">01</div>
+            <div class="paso-card__body">
+              <div class="paso-card__tag">Paso 1 · Negocio y Copy</div>
+              <h3 class="paso-card__title">Contás tu negocio y elegís qué decir</h3>
+              <p class="paso-card__text">Ingresás el rubro y la propuesta de tu negocio. La IA redacta titulares claros, ganchos atractivos y copys que conectan con personas reales, sin frases de relleno.</p>
+              <span class="paso-card__jump">▶ Ver en el video (0:13)</span>
+            </div>
+          </div>
+
+          <div class="paso-card" data-tiempo="21">
+            <div class="paso-card__num">02</div>
+            <div class="paso-card__body">
+              <div class="paso-card__tag">Paso 2 · Identidad Visual</div>
+              <h3 class="paso-card__title">Tu firma de marca y colores protegidos</h3>
+              <p class="paso-card__text">Subís tu logotipo o creás una firma tipográfica de autor. Cada plantilla aplica tus tonos con contraste cromático testeado para que siempre se lea impecable.</p>
+              <span class="paso-card__jump">▶ Ver en el video (0:21)</span>
+            </div>
+          </div>
+
+          <div class="paso-card" data-tiempo="27">
+            <div class="paso-card__num">03</div>
+            <div class="paso-card__body">
+              <div class="paso-card__tag">Paso 3 · Multi-formato</div>
+              <h3 class="paso-card__title">Feed, carruseles educativos e historias</h3>
+              <p class="paso-card__text">Elegís entre 7 plantillas optimizadas para conversión: placas de texto, promociones, listas de consejos y fotos reales de banco de imágenes sin derechos.</p>
+              <span class="paso-card__jump">▶ Ver en el video (0:27)</span>
+            </div>
+          </div>
+
+          <div class="paso-card" data-tiempo="32">
+            <div class="paso-card__num">04</div>
+            <div class="paso-card__body">
+              <div class="paso-card__tag">Paso 4 · Resultados</div>
+              <h3 class="paso-card__title">Descargás el PNG en Ultra HD y publicás</h3>
+              <p class="paso-card__text">Bajás placas de 2160×2700 px respetando milimétricamente las zonas seguras de Instagram. Sin marcas de agua, listo para subir desde tu celular o computadora.</p>
+              <span class="paso-card__jump">▶ Ver en el video (0:32)</span>
+            </div>
+          </div>
+
+          <div class="como-se-usa-cta">
+            <button class="btn grande" data-ir="wizard" style="width:100%;">Probar Alquimia ahora <span class="btn__arrow">→</span></button>
+            <p class="cta-microcopy">⚡ 7 días de prueba 100% gratis · Sin tarjeta de crédito</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 3. SECCIÓN NARRATIVA DE ETAPAS (BUBBLE STAGES) ── -->
   <section class="seccion" id="etapas">
     <div class="marco">
       <header style="margin-bottom:3.5rem;text-align:center;">
@@ -527,6 +640,6 @@ try {
 <main id="app" class="oculto"><div class="marco" id="app-cuerpo"></div></main>
 
 <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
-<script type="module" src="/js/app.js?v=2.2"></script>
+<script type="module" src="/js/app.js?v=2.3"></script>
 </body>
 </html>

@@ -184,9 +184,11 @@ const MIME = {
   '.jpeg': 'image/jpeg',
   '.webp': 'image/webp',
   '.ico': 'image/x-icon',
+  '.mp4': 'video/mp4',
+  '.webm': 'video/webm',
 }
 
-function servirArchivo(res, base, rutaRelativa, cache = 'no-cache') {
+function servirArchivo(res, base, rutaRelativa, cache = 'no-cache', req = null) {
   let abs
   try { abs = resolve(base, decodeURIComponent(rutaRelativa)) }
   catch { return json(res, 400, { error: 'ruta mal codificada' }) }
@@ -194,14 +196,38 @@ function servirArchivo(res, base, rutaRelativa, cache = 'no-cache') {
   if (abs !== base && !abs.startsWith(base + sep)) return json(res, 403, { error: 'ruta fuera de alcance' })
   if (!existsSync(abs) || !statSync(abs).isFile()) return json(res, 404, { error: 'no encontrado' })
 
+  const total = statSync(abs).size
+  const mime = MIME[extname(abs).toLowerCase()] || 'application/octet-stream'
+  const range = req?.headers?.range
+
+  if (range) {
+    const partesRange = range.replace(/bytes=/, '').split('-')
+    const inicio = parseInt(partesRange[0], 10)
+    const fin = partesRange[1] ? parseInt(partesRange[1], 10) : total - 1
+    const trozo = (fin - inicio) + 1
+
+    res.writeHead(206, {
+      'content-range': `bytes ${inicio}-${fin}/${total}`,
+      'accept-ranges': 'bytes',
+      'content-length': trozo,
+      'content-type': mime,
+      'cache-control': cache,
+      'access-control-allow-origin': '*',
+    })
+    createReadStream(abs, { start: inicio, end: fin }).pipe(res)
+    return
+  }
+
   res.writeHead(200, {
-    'content-type': MIME[extname(abs).toLowerCase()] || 'application/octet-stream',
-    'content-length': statSync(abs).size,
+    'content-type': mime,
+    'content-length': total,
+    'accept-ranges': 'bytes',
     'cache-control': cache,
     'access-control-allow-origin': '*',
     'access-control-allow-headers': 'authorization, content-type',
     'access-control-allow-methods': 'GET, POST, OPTIONS, PUT, DELETE',
   })
+  if (req?.method === 'HEAD') return res.end()
   createReadStream(abs).pipe(res)
 }
 
@@ -298,30 +324,31 @@ async function despachar(req, res) {
     }
 
     /* — la aplicación web estática — */
-    if (m === 'GET' && (url.pathname === '/' || url.pathname === '/index.html')) {
-      return servirArchivo(res, WEB, 'index.html')
+    const esEstatico = m === 'GET' || m === 'HEAD'
+    if (esEstatico && (url.pathname === '/' || url.pathname === '/index.html')) {
+      return servirArchivo(res, WEB, 'index.html', 'no-cache', req)
     }
-    if (m === 'GET' && (url.pathname === '/user-flow.html' || url.pathname === '/user-flow')) {
-      return servirArchivo(res, WEB, 'user-flow.html')
+    if (esEstatico && (url.pathname === '/user-flow.html' || url.pathname === '/user-flow')) {
+      return servirArchivo(res, WEB, 'user-flow.html', 'no-cache', req)
     }
-    if (m === 'GET' && (url.pathname === '/mapa.html' || url.pathname === '/mapa')) {
-      return servirArchivo(res, WEB, 'mapa.html')
+    if (esEstatico && (url.pathname === '/mapa.html' || url.pathname === '/mapa')) {
+      return servirArchivo(res, WEB, 'mapa.html', 'no-cache', req)
     }
-    if (m === 'GET' && (url.pathname === '/logotipos.html' || url.pathname === '/logotipos' || url.pathname === '/firmas')) {
-      return servirArchivo(res, WEB, 'logotipos.html')
+    if (esEstatico && (url.pathname === '/logotipos.html' || url.pathname === '/logotipos' || url.pathname === '/firmas')) {
+      return servirArchivo(res, WEB, 'logotipos.html', 'no-cache', req)
     }
 
-    if (m === 'GET' && (url.pathname === '/logos-visor.html' || url.pathname === '/logos-visor' || url.pathname === '/logos')) {
-      return servirArchivo(res, WEB, 'logos-visor.html')
+    if (esEstatico && (url.pathname === '/logos-visor.html' || url.pathname === '/logos-visor' || url.pathname === '/logos')) {
+      return servirArchivo(res, WEB, 'logos-visor.html', 'no-cache', req)
     }
-    if (m === 'GET' && (url.pathname === '/ejemplos-logos-marcas.html' || url.pathname === '/ejemplos-logos-marcas' || url.pathname === '/ejemplos')) {
-      return servirArchivo(res, WEB, 'ejemplos-logos-marcas.html')
+    if (esEstatico && (url.pathname === '/ejemplos-logos-marcas.html' || url.pathname === '/ejemplos-logos-marcas' || url.pathname === '/ejemplos')) {
+      return servirArchivo(res, WEB, 'ejemplos-logos-marcas.html', 'no-cache', req)
     }
-    if (m === 'GET' && (url.pathname === '/ejemplos-sellos-circulares.html' || url.pathname === '/sellos' || url.pathname === '/sellos-circulares')) {
-      return servirArchivo(res, WEB, 'ejemplos-sellos-circulares.html')
+    if (esEstatico && (url.pathname === '/ejemplos-sellos-circulares.html' || url.pathname === '/sellos' || url.pathname === '/sellos-circulares')) {
+      return servirArchivo(res, WEB, 'ejemplos-sellos-circulares.html', 'no-cache', req)
     }
-    if (m === 'GET' && (partes[0] === 'css' || partes[0] === 'js' || partes[0] === 'img' || partes[0] === 'capturas')) {
-      return servirArchivo(res, WEB, partes.join('/'))
+    if (esEstatico && (partes[0] === 'css' || partes[0] === 'js' || partes[0] === 'img' || partes[0] === 'capturas' || partes[0] === 'video')) {
+      return servirArchivo(res, WEB, partes.join('/'), 'no-cache', req)
     }
     if (m === 'GET' && partes[0] === 'nucleo') {
       const mod = partes.slice(1).join('/')
