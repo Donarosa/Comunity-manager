@@ -107,6 +107,13 @@ const LOGO_PRESETS = [
     family: null,
   },
   {
+    id: 'geometrica-pesada',
+    label: 'Geométrica pesada',
+    vibe: 'Palo seco geométrico y grueso, de producto digital. Software, servicios, marcas jóvenes.',
+    family: 'Plus Jakarta Sans', weights: '700;800', tracking: '-.03em',
+      monoEscala: 0.96, monoTracking: '-.03em',
+  },
+  {
     id: 'script',
     label: 'Manuscrita con cuerpo',
     vibe: 'Pincel, con peso. Panaderías, cafés, gastronomía, productos artesanales.',

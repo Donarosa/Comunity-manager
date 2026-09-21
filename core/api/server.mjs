@@ -394,6 +394,13 @@ async function despachar(req, res) {
       })
     }
 
+    /* — registro de visitas y clics de la landing (público) — */
+    if (m === 'POST' && (url.pathname === '/landing/evento' || url.pathname === '/api/landing/evento')) {
+      const body = await leerBody(req)
+      const r = svc.registrarEventoDeLanding(body)
+      return json(res, 200, { ok: true, evento: r })
+    }
+
     /* — panel de administración — */
     if (url.pathname.startsWith('/admin')) {
       const subPath = url.pathname.replace(/^\/admin/, '') || '/'
@@ -422,6 +429,11 @@ async function despachar(req, res) {
 
       if (m === 'GET' && subPath === '/analitica') {
         const resultado = await admin.handleAnalitica(svc, firestore, (code, body) => ({ _code: code, _body: body }))
+        return json(res, resultado._code, resultado._body)
+      }
+
+      if (m === 'GET' && (subPath === '/landing' || subPath === '/landing/metricas')) {
+        const resultado = await admin.handleDatosLanding(svc, (code, body) => ({ _code: code, _body: body }))
         return json(res, resultado._code, resultado._body)
       }
 

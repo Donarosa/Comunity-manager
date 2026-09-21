@@ -225,6 +225,12 @@ export function placaToSlide(placa, { nombre, idx = '', formato = 'feed', foto =
   const base = {
     name: nombre, format: formato,
     disposicion: p.disposicion || undefined,
+    // Qué color de marca lleva. Por defecto lo decide la posición en el
+    // carrusel —`paletaDeLaPlaca()`—, pero un carrusel que explica un proceso
+    // se lee mejor entero en el color principal: el cambio de color ahí se
+    // interpreta como cambio de tema, no como variedad. Fijarlo es del
+    // contenido, no del motor.
+    paleta: Number.isInteger(Number(p.paleta)) ? Number(p.paleta) : undefined,
     photo: foto || undefined,
     credito: (foto && p.credito) || undefined,
   }

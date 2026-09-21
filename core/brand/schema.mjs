@@ -159,10 +159,17 @@ export function normalizeBrand(input = {}) {
   // preferencia, no un dato que valga cortar el alta.
   const permitidos = tratamientosPara(wordmark).map(t => t.id)
   const tratPedido = resolverTratamiento(input.logotipoTratamiento).id
+  // Cuánto se agranda la firma en la esquina de la placa. Es preferencia del
+  // cliente, no un número del motor; fuera del rango util vale 1, que es como
+  // salieron siempre las marcas que no lo piden.
+  const escalaPedida = Number(input.logotipoEscala)
   const logotipo = {
     tipo: resolverTipo(input.logotipoTipo).id,
     tratamiento: permitidos.includes(tratPedido) ? tratPedido : permitidos[0],
     escudo: resolverEscudo(input.logotipoEscudo).id,
+    escala: Number.isFinite(escalaPedida) && escalaPedida >= 0.8 && escalaPedida <= 1.8
+      ? escalaPedida
+      : 1,
   }
 
   const brand = {

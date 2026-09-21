@@ -39,7 +39,7 @@ ${markCss('.brand .sw', LOGO.strokeWidth)}
 /* Misma firma que flat y foto. El contenedor se llama .firma y no .wm porque
    lockupCSS() ya usa .wm para el nombre: con las dos cosas llamadas igual, el
    posicionamiento absoluto del contenedor caía también sobre el nombre. */
-${lockupCSS()}
+${lockupCSS(B)}
 .firma{position:absolute;top:64px;left:72px;z-index:6}
 .content{position:relative;z-index:5;padding:${fmt.vectorPadTop}px 80px 0}
 .eyebrow{font-family:'${F.mono}',monospace;font-size:23px;font-weight:600;color:var(--accent);letter-spacing:.10em;text-transform:uppercase;margin-bottom:34px}

@@ -43,7 +43,7 @@ body.con-foto .title,body.con-foto .body{text-shadow:0 3px 14px rgba(0,0,0,.45)}
 ${markCss('.brand .sw', LOGO.strokeWidth)}
 .brand .sw{width:40px;height:40px;color:var(--accent);display:block}
 body.dark .brand .sw{color:#fff}
-${lockupCSS()}
+${lockupCSS(B)}
 .idx{font-family:var(--mono);font-size:20px;font-weight:600;letter-spacing:.1em;color:var(--soft)}
 body.dark .idx{color:rgba(255,255,255,.55)}
 .content{flex:1;display:flex;flex-direction:column;justify-content:center;position:relative;z-index:2}

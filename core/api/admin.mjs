@@ -215,6 +215,13 @@ export async function handleAnalitica(svc, firestore, json) {
 
   actividadReciente.sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
 
+  let metricasLanding = { resumen: { totalVisitas: 0, visitasHoy: 0, totalClicks: 0, clicksHoy: 0, totalUnicos: 0, ctrTotal: 0 } }
+  try {
+    metricasLanding = await svc.metricasLanding()
+  } catch (err) {
+    console.warn('[Admin] Error obteniendo métricas de landing para analítica:', err.message)
+  }
+
   return json(200, {
     resumen: {
       totalUsuarios: usuarios.length,
@@ -227,9 +234,29 @@ export async function handleAnalitica(svc, firestore, json) {
       totalCostoHistoricoUSD: Number(totalCostoHistoricoUSD.toFixed(4)),
       iaActiva: Boolean(process.env.GEMINI_API_KEY),
       mes: mesActual,
+      visitasLanding: metricasLanding.resumen.totalVisitas,
+      visitasLandingHoy: metricasLanding.resumen.visitasHoy,
+      clicksLanding: metricasLanding.resumen.totalClicks,
+      clicksLandingHoy: metricasLanding.resumen.clicksHoy,
+      unicosLanding: metricasLanding.resumen.totalUnicos,
+      ctrLanding: metricasLanding.resumen.ctrTotal,
     },
     actividadReciente: actividadReciente.slice(0, 10),
   })
+}
+
+/**
+ * GET /admin/landing
+ * Métricas detalladas de visitas y clicks de la landing page.
+ */
+export async function handleDatosLanding(svc, json) {
+  try {
+    const metricas = await svc.metricasLanding()
+    return json(200, metricas)
+  } catch (err) {
+    console.error('[Admin Landing Error]:', err)
+    return json(500, { error: 'Error obteniendo datos de landing: ' + err.message })
+  }
 }
 
 /* ── Helpers internos ────────────────────────────────────── */

@@ -131,6 +131,18 @@
   .toast.show{transform:translateY(0);opacity:1}
   .toast.ok{background:var(--green);color:#fff}
   .toast.err{background:var(--red);color:#fff}
+  .badge.visita{background:rgba(99,102,241,.15);color:var(--accent-h)}
+  .badge.click{background:rgba(34,197,94,.15);color:var(--green)}
+  .badge.dispositivo{background:var(--surface2);color:var(--muted);font-size:.68rem}
+  .progress-bar-wrap{width:100%;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-top:5px}
+  .progress-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:3px}
+  .chart-col{flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;position:relative;cursor:pointer}
+  .chart-bars-wrap{width:100%;display:flex;gap:3px;align-items:flex-end;justify-content:center;height:120px}
+  .chart-bar{width:45%;border-radius:3px 3px 0 0;min-height:3px;transition:height .3s,opacity .15s}
+  .chart-bar.visitas{background:var(--accent)}
+  .chart-bar.clicks{background:var(--green)}
+  .chart-col:hover .chart-bar{opacity:.8}
+  .chart-label{font-size:.68rem;color:var(--muted);margin-top:8px;text-align:center;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -163,6 +175,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
       <span>Resumen</span>
     </div>
+    <div class="nav-item" data-page="landing">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14L21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+      <span>Landing</span>
+    </div>
     <div class="nav-item" data-page="users">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       <span>Usuarios</span>
@@ -190,9 +206,102 @@
           <div class="stat-card"><div class="stat-label">Con Marca Config.</div><div class="stat-value" id="s4">—</div></div>
           <div class="stat-card green"><div class="stat-label">Costo IA Mes (USD)</div><div class="stat-value" id="s6">—</div><div class="stat-sub" id="s6-sub">Gemini API</div></div>
           <div class="stat-card"><div class="stat-label">Costo IA Total</div><div class="stat-value" id="s7">—</div><div class="stat-sub">Histórico acumulado</div></div>
+          <div class="stat-card accent" style="cursor:pointer" onclick="navigateTo('landing')"><div class="stat-label">Visitas Landing</div><div class="stat-value" id="s-visitas">—</div><div class="stat-sub" id="s-visitas-sub">Ver detalles →</div></div>
+          <div class="stat-card green" style="cursor:pointer" onclick="navigateTo('landing')"><div class="stat-label">Clicks Landing (CTAs)</div><div class="stat-value" id="s-clicks">—</div><div class="stat-sub" id="s-clicks-sub">Ver detalles →</div></div>
+          <div class="stat-card yellow" style="cursor:pointer" onclick="navigateTo('landing')"><div class="stat-label">Conversión CTR</div><div class="stat-value" id="s-ctr">—</div><div class="stat-sub" id="s-ctr-sub">Clicks / Visitas</div></div>
         </div>
         <div class="section-header"><div class="section-title">Actividad Reciente</div></div>
         <div class="table-wrap" id="activity-list"><div class="loading"><span class="spinner"></span> Cargando…</div></div>
+      </div>
+
+      <div class="page" id="page-landing">
+        <div class="section-header" style="margin-bottom:1.5rem;">
+          <div>
+            <div class="section-title" style="font-size:1.15rem;">Métricas de la Landing Page</div>
+            <p style="color:var(--muted);font-size:.82rem;margin-top:.2rem;">Rendimiento en tiempo real de visitas, clics en llamadas a la acción y tasa de conversión</p>
+          </div>
+          <button class="action-btn resume" id="btn-refresh-landing" onclick="loadLandingData()" style="padding:.45rem .9rem;">
+            <svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px;margin-right:4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            Actualizar
+          </button>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card accent">
+            <div class="stat-label">Total Visitas</div>
+            <div class="stat-value" id="land-visitas"><span class="spinner"></span></div>
+            <div class="stat-sub" id="land-visitas-sub">Cargando…</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-label">Visitantes Únicos</div>
+            <div class="stat-value" id="land-unicos">—</div>
+            <div class="stat-sub" id="land-unicos-sub">—</div>
+          </div>
+          <div class="stat-card yellow">
+            <div class="stat-label">Total Clics en CTAs</div>
+            <div class="stat-value" id="land-clicks">—</div>
+            <div class="stat-sub" id="land-clicks-sub">—</div>
+          </div>
+          <div class="stat-card accent">
+            <div class="stat-label">Conversión (CTR)</div>
+            <div class="stat-value" id="land-ctr">—</div>
+            <div class="stat-sub" id="land-ctr-sub">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Dispositivos</div>
+            <div class="stat-value" style="font-size:1.4rem;" id="land-disp">—</div>
+            <div class="stat-sub" id="land-disp-sub">—</div>
+          </div>
+        </div>
+
+        <!-- Gráfico diario -->
+        <div class="panel-section" style="margin-bottom:2rem;">
+          <div class="section-header">
+            <div class="section-title">Evolución Diaria (Últimos 14 Días)</div>
+            <div style="font-size:.78rem;color:var(--muted);display:flex;gap:1.25rem;align-items:center;">
+              <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;background:var(--accent);display:inline-block;"></span> Visitas</span>
+              <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;background:var(--green);display:inline-block;"></span> Clics CTAs</span>
+            </div>
+          </div>
+          <div class="table-wrap" style="padding:1.5rem 1.25rem 1rem;" id="chart-container">
+            <div id="chart-bars" style="display:flex;align-items:flex-end;gap:8px;height:160px;">
+              <div class="loading" style="width:100%"><span class="spinner"></span> Cargando gráfica…</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2 Columnas: CTAs y Actividad en Vivo -->
+        <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:1.5rem;align-items:start;">
+          <div>
+            <div class="section-header">
+              <div class="section-title">Clics por Botón / Llamada a la Acción</div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Botón / CTA</th>
+                    <th>Sección</th>
+                    <th>Clics</th>
+                    <th>% Total</th>
+                  </tr>
+                </thead>
+                <tbody id="land-ctas-tbody">
+                  <tr><td colspan="4" class="loading"><span class="spinner"></span> Cargando…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div>
+            <div class="section-header">
+              <div class="section-title">Actividad en Vivo de la Landing</div>
+            </div>
+            <div class="table-wrap" id="land-activity-list" style="max-height:480px;overflow-y:auto;">
+              <div class="loading"><span class="spinner"></span> Cargando eventos…</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="page" id="page-users">
@@ -310,13 +419,17 @@ function showApp() {
   document.getElementById('sidebar-email').textContent = ADMIN_EMAIL_STORED
   navigateTo('overview')
   loadAnalytics()
+  loadLandingData()
   loadUsers()
 }
 
 function navigateTo(page) {
   document.querySelectorAll('.nav-item[data-page]').forEach(el => el.classList.toggle('active', el.dataset.page === page))
   document.querySelectorAll('.page').forEach(el => el.classList.toggle('active', el.id === `page-${page}`))
-  document.getElementById('page-title').textContent = { overview: 'Resumen', users: 'Usuarios' }[page] || page
+  document.getElementById('page-title').textContent = { overview: 'Resumen', landing: 'Landing', users: 'Usuarios' }[page] || page
+  if (page === 'landing') {
+    loadLandingData()
+  }
 }
 
 async function loadAnalytics() {
@@ -332,6 +445,21 @@ async function loadAnalytics() {
     document.getElementById('s6').textContent = `$${Number(r.totalCostoMesUSD || 0).toFixed(4)}`
     document.getElementById('s6-sub').textContent = `${r.iaActiva ? '● Conectada' : '○ Sin clave'} · Gemini`
     document.getElementById('s7').textContent = `$${Number(r.totalCostoHistoricoUSD || 0).toFixed(4)}`
+
+    // Tarjetas de landing en resumen
+    if (r.visitasLanding !== undefined) {
+      document.getElementById('s-visitas').textContent = r.visitasLanding
+      document.getElementById('s-visitas-sub').textContent = `${r.visitasLandingHoy || 0} hoy · ${r.unicosLanding || 0} únicos`
+    }
+    if (r.clicksLanding !== undefined) {
+      document.getElementById('s-clicks').textContent = r.clicksLanding
+      document.getElementById('s-clicks-sub').textContent = `${r.clicksLandingHoy || 0} hoy`
+    }
+    if (r.ctrLanding !== undefined) {
+      document.getElementById('s-ctr').textContent = `${r.ctrLanding}%`
+      document.getElementById('s-ctr-sub').textContent = `${r.clicksLanding || 0} clics / ${r.visitasLanding || 0} visitas`
+    }
+
     const [yr, mo] = (r.mes || '').split('-')
     const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
     document.getElementById('s3-sub').textContent = yr && mo ? `${meses[parseInt(mo)-1]} ${yr}` : '—'
@@ -353,6 +481,132 @@ async function loadAnalytics() {
   } catch (e) {
     if (e.status === 401) { logout(); return }
     document.getElementById('activity-list').innerHTML = `<div class="empty-state">Error: ${esc(e.message)}</div>`
+  }
+}
+
+async function loadLandingData() {
+  try {
+    const data = await api('/admin/landing')
+    const r = data.resumen || {}
+
+    // 1. Tarjetas principales
+    document.getElementById('land-visitas').textContent = r.totalVisitas || 0
+    document.getElementById('land-visitas-sub').textContent = `${r.visitasHoy || 0} hoy · ${r.visitas7Dias || 0} últ. 7 días`
+
+    document.getElementById('land-unicos').textContent = r.totalUnicos || 0
+    document.getElementById('land-unicos-sub').textContent = `${r.unicosHoy || 0} únicos hoy · ${r.unicos7Dias || 0} últ. 7d`
+
+    document.getElementById('land-clicks').textContent = r.totalClicks || 0
+    document.getElementById('land-clicks-sub').textContent = `${r.clicksHoy || 0} clics hoy · ${r.clicks7Dias || 0} últ. 7d`
+
+    document.getElementById('land-ctr').textContent = `${r.ctrTotal || 0}%`
+    document.getElementById('land-ctr-sub').textContent = `Hoy: ${r.ctrHoy || 0}% de conversión`
+
+    const disp = r.dispositivos || {}
+    document.getElementById('land-disp').textContent = `📱 ${disp.pctMobile || 0}% · 💻 ${disp.pctDesktop || 0}%`
+    document.getElementById('land-disp-sub').textContent = `${disp.mobile || 0} móvil · ${disp.desktop || 0} escritorio`
+
+    // Actualizar también en el Resumen
+    const sv = document.getElementById('s-visitas')
+    if (sv) {
+      sv.textContent = r.totalVisitas || 0
+      document.getElementById('s-visitas-sub').textContent = `${r.visitasHoy || 0} hoy · ${r.totalUnicos || 0} únicos`
+    }
+    const sc = document.getElementById('s-clicks')
+    if (sc) {
+      sc.textContent = r.totalClicks || 0
+      document.getElementById('s-clicks-sub').textContent = `${r.clicksHoy || 0} hoy`
+    }
+    const sctr = document.getElementById('s-ctr')
+    if (sctr) {
+      sctr.textContent = `${r.ctrTotal || 0}%`
+      document.getElementById('s-ctr-sub').textContent = `${r.totalClicks || 0} clics / ${r.totalVisitas || 0} visitas`
+    }
+
+    // 2. Gráfico de barras de evolución diaria
+    const chartBars = document.getElementById('chart-bars')
+    const dias = data.dias || []
+    if (!dias.length) {
+      chartBars.innerHTML = '<div class="empty-state" style="width:100%">Sin datos diarios registrados todavía</div>'
+    } else {
+      const maxVal = Math.max(1, ...dias.map(d => Math.max(d.visitas, d.clicks)))
+      chartBars.innerHTML = dias.map(d => {
+        const vH = Math.max(3, Math.round((d.visitas / maxVal) * 115))
+        const cH = Math.max(3, Math.round((d.clicks / maxVal) * 115))
+        const title = `${d.fecha}: ${d.visitas} visitas (${d.unicos} únicos), ${d.clicks} clics (CTR ${d.ctr}%)`
+        return `
+          <div class="chart-col" title="${esc(title)}">
+            <div class="chart-bars-wrap">
+              <div class="chart-bar visitas" style="height:${vH}px" title="${d.visitas} visitas"></div>
+              <div class="chart-bar clicks" style="height:${cH}px" title="${d.clicks} clics"></div>
+            </div>
+            <div class="chart-label">${esc(d.diaNombre)}<br><span style="opacity:.7">${esc(d.fechaCorta)}</span></div>
+          </div>
+        `
+      }).join('')
+    }
+
+    // 3. Tabla de clicks por botón
+    const tbody = document.getElementById('land-ctas-tbody')
+    const ctas = data.clicksPorBoton || []
+    if (!ctas.length) {
+      tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Sin clics registrados todavía. Los clics en los botones de la landing aparecerán aquí automáticamente.</td></tr>'
+    } else {
+      tbody.innerHTML = ctas.map(b => `
+        <tr>
+          <td>
+            <div class="cell-name">${esc(b.texto || b.id)}</div>
+            <div class="cell-email" style="font-family:monospace;font-size:.72rem;">${esc(b.id)}</div>
+          </td>
+          <td><span class="pill">${esc(b.seccion || 'General')}</span></td>
+          <td style="font-weight:700;font-size:1.05rem;">${b.clicks}</td>
+          <td style="min-width:120px;">
+            <div style="display:flex;align-items:center;gap:.6rem;">
+              <span style="font-size:.82rem;font-weight:600;min-width:35px;">${b.pct}%</span>
+              <div class="progress-bar-wrap" style="flex:1;">
+                <div class="progress-bar" style="width:${Math.min(100, Math.max(4, b.pct))}%;"></div>
+              </div>
+            </div>
+          </td>
+        </tr>
+      `).join('')
+    }
+
+    // 4. Feed de actividad en vivo
+    const feedEl = document.getElementById('land-activity-list')
+    const eventos = data.eventosRecientes || []
+    if (!eventos.length) {
+      feedEl.innerHTML = '<div class="empty-state">Sin eventos registrados todavía</div>'
+    } else {
+      feedEl.innerHTML = eventos.map(ev => {
+        const esVisita = ev.tipo === 'visita'
+        const badgeClass = esVisita ? 'visita' : 'click'
+        const badgeLabel = esVisita ? 'Visita' : 'Clic'
+        const dispIcon = ev.dispositivo === 'mobile' ? '📱' : '💻'
+        const desc = esVisita
+          ? `Visita a la landing ${ev.path && ev.path !== '/' ? `(${esc(ev.path)})` : ''}`
+          : `Clic en: <strong>${esc(ev.texto || ev.botonId)}</strong> <span style="opacity:.65">(${esc(ev.seccion || 'General')})</span>`
+
+        return `
+          <div class="activity-item" style="padding:.65rem .9rem;">
+            <div style="display:flex;align-items:center;gap:.6rem;flex:1;min-width:0;">
+              <span class="badge ${badgeClass}" style="min-width:55px;justify-content:center;">${badgeLabel}</span>
+              <div class="activity-info" style="font-size:.84rem;">
+                <div class="activity-name" style="font-size:.84rem;font-weight:500;">${desc}</div>
+                <div class="activity-email" style="display:flex;gap:.5rem;align-items:center;">
+                  <span class="badge dispositivo">${dispIcon} ${ev.dispositivo}</span>
+                  <span style="font-family:monospace;font-size:.7rem;opacity:.7;">${esc(ev.visitanteId ? ev.visitanteId.slice(0, 10) : '—')}</span>
+                </div>
+              </div>
+            </div>
+            <div class="activity-time" style="font-size:.74rem;">${formatRelative(ev.fecha)}</div>
+          </div>
+        `
+      }).join('')
+    }
+  } catch (e) {
+    if (e.status === 401) { logout(); return }
+    toast(`Error cargando datos de landing: ${e.message}`, 'err')
   }
 }
 

@@ -47,6 +47,8 @@ ${bold('cm')} — community manager para micro pymes
   ${bold('node cm.mjs marca')} <cuentaId> --nombre=".." --color="#8C1D2F" [opciones]
       Carga o actualiza la marca. Acepta datos parciales.
       Opciones: --tipografia (moderno|editorial|calido|tecnico|clasico|geometrico)
+                --logotipoFuente (la tipografía de la firma) --logotipoEscala=1.25
+                --logotipoTipo --logotipoTratamiento
                 --handle --sitio --colorSecundario --colorTerciario
                 --rubro --ciudad --publico --queVende --diferencial --tono
                 --noDecir="a,b,c"  --voz="cómo habla el negocio"
@@ -118,19 +120,23 @@ async function main() {
 
     case 'marca': {
       const id = requiereId()
-      const { marca, avisos } = svc.configurarMarca(id, {
+      const { marca, advertencias } = svc.configurarMarca(id, {
         nombre: flags.nombre, handle: flags.handle, sitio: flags.sitio, altSitio: flags.altSitio,
         color: flags.color, colorSecundario: flags.colorSecundario,
         colorTerciario: flags.colorTerciario, tipografia: flags.tipografia,
+        logotipoFuente: flags.logotipoFuente, logotipoEscala: flags.logotipoEscala,
+        logotipoTipo: flags.logotipoTipo, logotipoTratamiento: flags.logotipoTratamiento,
         rubro: flags.rubro, ciudad: flags.ciudad, publico: flags.publico,
         queVende: flags.queVende, diferencial: flags.diferencial, tono: flags.tono,
         voz: flags.voz, noDecir: lista(flags.noDecir),
       })
       console.log(`Marca: ${bold(marca.nombre)}  ${marca.handle}`)
       console.log(`Tipografía: ${marca.fonts.preset} (${marca.fonts.sans} / ${marca.fonts.serif})`)
+  console.log(`Logotipo: ${marca.logotipo.tipo} · ${marca.logotipo.tratamiento} · ` +
+    `${marca.fonts.logo.preset} (${marca.fonts.logo.family}) · escala ${marca.logotipo.escala}`)
       console.log('Paleta derivada:')
       for (const [k, v] of Object.entries(marca.colors.flat)) console.log(`  ${k.padEnd(14)} ${v}`)
-      for (const a of avisos) console.log(dim(`  ! ${a}`))
+      for (const a of advertencias) console.log(dim(`  ! ${a}`))
       return
     }
 

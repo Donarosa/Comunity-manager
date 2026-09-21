@@ -329,6 +329,29 @@ export async function obtenerEstadisticasDeFirestore(cuentaId) {
   return snapshot.docs.map(d => d.data())
 }
 
+/* ── Métricas de Landing (Visitas y Clicks) ──────────────── */
+
+export async function registrarEventoLandingEnFirestore(evento) {
+  if (!db) return null
+  const ref = db.collection('landing_eventos').doc()
+  const datos = {
+    id: ref.id,
+    ...evento,
+    fecha: evento.fecha || new Date().toISOString(),
+  }
+  await ref.set(datos)
+  return datos
+}
+
+export async function obtenerEventosLandingDeFirestore(limite = 100) {
+  if (!db) return []
+  const snapshot = await db.collection('landing_eventos')
+    .orderBy('fecha', 'desc')
+    .limit(limite)
+    .get()
+  return snapshot.docs.map(d => d.data())
+}
+
 /* ── Códigos OTP (Login por Email) ───────────────────────── */
 
 const OTP_COLLECTION = 'otp_codigos'

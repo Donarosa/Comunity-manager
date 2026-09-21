@@ -38,12 +38,12 @@ try {
       Alquimia
     </div>
     <nav>
-      <a href="#como-se-usa" class="apunte" data-solo-landing>Cómo se usa</a>
-      <a href="#etapas" class="apunte" data-solo-landing>El método</a>
-      <a href="#impacto" class="apunte" data-solo-landing>El impacto</a>
-      <a href="#precios" class="apunte" data-solo-landing>Precios</a>
-      <button class="btn fantasma chico" id="btn-login-nav" data-solo-landing>Iniciar sesión</button>
-      <button class="btn chico" id="btn-entrar">Empezar</button>
+      <a href="#como-se-usa" class="apunte" data-solo-landing data-track-cta="nav_como_se_usa" data-track-seccion="Navegación">Cómo se usa</a>
+      <a href="#etapas" class="apunte" data-solo-landing data-track-cta="nav_el_metodo" data-track-seccion="Navegación">El método</a>
+      <a href="#impacto" class="apunte" data-solo-landing data-track-cta="nav_el_impacto" data-track-seccion="Navegación">El impacto</a>
+      <a href="#precios" class="apunte" data-solo-landing data-track-cta="nav_precios" data-track-seccion="Navegación">Precios</a>
+      <button class="btn fantasma chico" id="btn-login-nav" data-solo-landing data-track-cta="nav_login" data-track-seccion="Navegación">Iniciar sesión</button>
+      <button class="btn chico" id="btn-entrar" data-track-cta="nav_empezar" data-track-seccion="Navegación">Empezar</button>
     </nav>
   </div>
 </header>
@@ -83,8 +83,8 @@ try {
         </div>
 
         <div class="acciones" style="margin-top:2rem;">
-          <button class="btn grande" data-ir="wizard">Empezar con Alquimia <span class="btn__arrow">→</span></button>
-          <a href="#como-se-usa" class="btn btn--outline btn--mint grande">Ver cómo se usa <span class="btn__arrow">↓</span></a>
+          <button class="btn grande" data-ir="wizard" data-track-cta="hero_empezar" data-track-seccion="Hero">Empezar con Alquimia <span class="btn__arrow">→</span></button>
+          <a href="#como-se-usa" class="btn btn--outline btn--mint grande" data-track-cta="hero_ver_como_se_usa" data-track-seccion="Hero">Ver cómo se usa <span class="btn__arrow">↓</span></a>
         </div>
       </div>
 
@@ -580,7 +580,7 @@ try {
             <li>Todas las plantillas de feed, historias y carrusel</li>
             <li>Descarga directa en calidad PNG de alta definición</li>
           </ul>
-          <button class="btn btn--outline btn--mint" data-ir="wizard" style="width:100%;">Empezar 7 días gratis</button>
+          <button class="btn btn--outline btn--mint" data-ir="wizard" data-track-cta="precios_plan_prueba" data-track-seccion="Precios" style="width:100%;">Empezar 7 días gratis</button>
         </article>
 
         <!-- PLAN PRO MENSUAL (DESTACADO) -->
@@ -597,7 +597,7 @@ try {
             <li>Descargas en máxima resolución Ultra HD</li>
             <li>Soporte prioritario por WhatsApp</li>
           </ul>
-          <button class="btn grande" data-ir="wizard" style="width:100%;">Probar 1 semana gratis <span class="btn__arrow">→</span></button>
+          <button class="btn grande" data-ir="wizard" data-track-cta="precios_plan_pro" data-track-seccion="Precios" style="width:100%;">Probar 1 semana gratis <span class="btn__arrow">→</span></button>
         </article>
       </div>
     </div>
@@ -611,8 +611,8 @@ try {
         Cargás tu negocio en dos minutos y ya tenés tus primeras placas listas para publicar.
       </p>
       <div style="display:flex;justify-content:center;gap:1rem;flex-wrap:wrap;">
-        <button class="btn grande" data-ir="wizard">Armar mi marca <span class="btn__arrow">→</span></button>
-        <a href="#precios" class="btn btn--outline btn--mint grande">Ver planes</a>
+        <button class="btn grande" data-ir="wizard" data-track-cta="closer_armar_marca" data-track-seccion="Cierre">Armar mi marca <span class="btn__arrow">→</span></button>
+        <a href="#precios" class="btn btn--outline btn--mint grande" data-track-cta="closer_ver_planes" data-track-seccion="Cierre">Ver planes</a>
       </div>
     </div>
   </section>
@@ -639,6 +639,7 @@ try {
 
 <main id="app" class="oculto"><div class="marco" id="app-cuerpo"></div></main>
 
+<script src="/js/landing-tracker.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
 <script type="module" src="/js/app.js?v=2.3"></script>
 </body>

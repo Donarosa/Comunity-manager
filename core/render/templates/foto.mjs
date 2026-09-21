@@ -59,7 +59,7 @@ ${markCss('.brand .sw', LOGO.strokeWidth)}
 /* La firma es la misma que en flat: sale de lockupHTML(), así que respeta el
    tipo, el tratamiento y el símbolo que el cliente eligió en el alta. Antes
    este template la dibujaba a mano y le pasaba por encima a esa elección. */
-${lockupCSS()}
+${lockupCSS(B)}
 .top{position:absolute;top:${fmt.id === 'story' ? 200 : 64}px;left:72px;right:72px;display:flex;align-items:center;justify-content:space-between;color:#fff;z-index:5}
 .top .kick{font-family:var(--mono);font-size:19px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.62)}
 /* Sobre la foto el texto lleva sombra para separarse de cualquier imagen. */

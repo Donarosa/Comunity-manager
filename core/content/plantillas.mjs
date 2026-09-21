@@ -90,7 +90,7 @@ const CLAVES_DE_CAMPO = { imagen: ['foto', 'credito'] }
  * pertenece a ninguna en particular; y su crédito viaja con ella porque una
  * licencia de banco no se puede perder por cambiar de plantilla.
  */
-const EXTRAS = ['disposicion', 'foto', 'credito']
+const EXTRAS = ['disposicion', 'paleta', 'foto', 'credito']
 
 /** Las claves del estado que una plantilla realmente usa. */
 export function clavesDePlantilla(plantilla) {

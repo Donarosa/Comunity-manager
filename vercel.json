@@ -22,6 +22,14 @@
       "destination": "/api"
     },
     {
+      "source": "/admin/landing(.*)",
+      "destination": "/api"
+    },
+    {
+      "source": "/landing/(.*)",
+      "destination": "/api"
+    },
+    {
       "source": "/admin",
       "destination": "/admin.html"
     },

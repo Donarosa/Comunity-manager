@@ -29,6 +29,7 @@ const archivoCuenta = id => join(CUENTAS, `${id}.json`)
 const archivoPubs = id => join(PUBLICACIONES, `${id}.json`)
 const archivoPlanes = id => join(PLANES, `${id}.json`)
 const archivoStats = id => join(ESTADISTICAS, `${id}.json`)
+const archivoLanding = () => join(DATA_DIR, 'landing_metricas.json')
 
 function escribir(ruta, obj) {
   const tmp = `${ruta}.${process.pid}.tmp`
@@ -390,6 +391,229 @@ export function obtenerEstadisticas(cuentaId) {
   if (!idValido(cuentaId)) return []
   asegurarDirs()
   return leerJsonSeguro(archivoStats(cuentaId), [])
+}
+
+/* ── Métricas y Analítica de la Landing (Visitas y Clicks) ─ */
+
+export function registrarEventoLanding({
+  tipo = 'visita',
+  visitanteId = null,
+  sessionId = null,
+  dispositivo = 'desktop',
+  botonId = null,
+  texto = null,
+  seccion = null,
+  path = '/',
+  referrer = '',
+} = {}) {
+  asegurarDirs()
+  const fecha = new Date().toISOString()
+  const dia = fecha.slice(0, 10)
+  const normTipo = tipo === 'click' ? 'click' : 'visita'
+  const normDisp = dispositivo === 'mobile' ? 'mobile' : 'desktop'
+  const vId = visitanteId ? String(visitanteId).slice(0, 64) : randomUUID()
+  const sId = sessionId ? String(sessionId).slice(0, 64) : null
+
+  const ruta = archivoLanding()
+  const datos = leerJsonSeguro(ruta, {
+    totalVisitas: 0,
+    totalClicks: 0,
+    dispositivos: { mobile: 0, desktop: 0 },
+    porDia: {},
+    clicksPorBoton: {},
+    eventos: [],
+  })
+
+  // Asegurar estructura
+  datos.porDia = datos.porDia || {}
+  datos.clicksPorBoton = datos.clicksPorBoton || {}
+  datos.dispositivos = datos.dispositivos || { mobile: 0, desktop: 0 }
+  datos.eventos = datos.eventos || []
+
+  if (!datos.porDia[dia]) {
+    datos.porDia[dia] = { visitas: 0, unicos: [], clicks: 0, dispositivos: { mobile: 0, desktop: 0 } }
+  }
+  const diaActual = datos.porDia[dia]
+  diaActual.unicos = Array.isArray(diaActual.unicos) ? diaActual.unicos : []
+  diaActual.dispositivos = diaActual.dispositivos || { mobile: 0, desktop: 0 }
+
+  const eventoItem = {
+    id: randomUUID(),
+    tipo: normTipo,
+    fecha,
+    dia,
+    visitanteId: vId,
+    sessionId: sId,
+    dispositivo: normDisp,
+    path: String(path || '/').slice(0, 100),
+  }
+
+  if (normTipo === 'visita') {
+    datos.totalVisitas = (datos.totalVisitas || 0) + 1
+    diaActual.visitas = (diaActual.visitas || 0) + 1
+    if (!diaActual.unicos.includes(vId)) {
+      diaActual.unicos.push(vId)
+    }
+    datos.dispositivos[normDisp] = (datos.dispositivos[normDisp] || 0) + 1
+    diaActual.dispositivos[normDisp] = (diaActual.dispositivos[normDisp] || 0) + 1
+    if (referrer) eventoItem.referrer = String(referrer).slice(0, 200)
+  } else if (normTipo === 'click') {
+    datos.totalClicks = (datos.totalClicks || 0) + 1
+    diaActual.clicks = (diaActual.clicks || 0) + 1
+    const bId = botonId ? String(botonId).slice(0, 64) : 'boton_desconocido'
+    const bTexto = texto ? String(texto).slice(0, 100) : bId
+    const bSeccion = seccion ? String(seccion).slice(0, 50) : 'General'
+
+    eventoItem.botonId = bId
+    eventoItem.texto = bTexto
+    eventoItem.seccion = bSeccion
+
+    if (!datos.clicksPorBoton[bId]) {
+      datos.clicksPorBoton[bId] = { id: bId, texto: bTexto, seccion: bSeccion, clicks: 0 }
+    }
+    datos.clicksPorBoton[bId].clicks = (datos.clicksPorBoton[bId].clicks || 0) + 1
+    if (bTexto) datos.clicksPorBoton[bId].texto = bTexto
+    if (bSeccion) datos.clicksPorBoton[bId].seccion = bSeccion
+  }
+
+  datos.eventos.unshift(eventoItem)
+  if (datos.eventos.length > 200) {
+    datos.eventos = datos.eventos.slice(0, 200)
+  }
+
+  escribir(ruta, datos)
+
+  if (firestore.estaActivo()) {
+    enSegundoPlano(firestore.registrarEventoLandingEnFirestore(eventoItem).catch(() => {}))
+  }
+
+  return eventoItem
+}
+
+export async function obtenerMetricasLanding() {
+  asegurarDirs()
+  const ruta = archivoLanding()
+  const datos = leerJsonSeguro(ruta, {
+    totalVisitas: 0,
+    totalClicks: 0,
+    dispositivos: { mobile: 0, desktop: 0 },
+    porDia: {},
+    clicksPorBoton: {},
+    eventos: [],
+  })
+
+  if (firestore.estaActivo()) {
+    try {
+      const remotos = await firestore.obtenerEventosLandingDeFirestore(100)
+      if (remotos?.length && !datos.eventos?.length) {
+        datos.eventos = remotos
+      }
+    } catch (err) {
+      console.warn('[Firestore] Error leyendo eventos de landing:', err.message)
+    }
+  }
+
+  const hoy = new Date().toISOString().slice(0, 10)
+  const porDia = datos.porDia || {}
+  const clicksPorBotonObj = datos.clicksPorBoton || {}
+  const dispositivos = datos.dispositivos || { mobile: 0, desktop: 0 }
+
+  // Calcular visitantes únicos totales
+  const todosUnicos = new Set()
+  for (const k of Object.keys(porDia)) {
+    const unicosDelDia = Array.isArray(porDia[k].unicos) ? porDia[k].unicos : []
+    unicosDelDia.forEach(u => todosUnicos.add(u))
+  }
+  const totalUnicos = todosUnicos.size
+
+  // Métricas de hoy
+  const hoyData = porDia[hoy] || { visitas: 0, unicos: [], clicks: 0 }
+  const visitasHoy = hoyData.visitas || 0
+  const unicosHoy = Array.isArray(hoyData.unicos) ? hoyData.unicos.length : 0
+  const clicksHoy = hoyData.clicks || 0
+  const ctrHoy = visitasHoy > 0 ? Number(((clicksHoy / visitasHoy) * 100).toFixed(1)) : 0
+
+  // Métricas de últimos 7 días
+  let visitas7Dias = 0
+  let clicks7Dias = 0
+  const setUnicos7Dias = new Set()
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+    if (porDia[d]) {
+      visitas7Dias += porDia[d].visitas || 0
+      clicks7Dias += porDia[d].clicks || 0
+      if (Array.isArray(porDia[d].unicos)) {
+        porDia[d].unicos.forEach(u => setUnicos7Dias.add(u))
+      }
+    }
+  }
+
+  // Serie diaria de los últimos 14 días (cronológica: más antiguo -> hoy)
+  const dias = []
+  const NOMBRES_DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000)
+    const dStr = d.toISOString().slice(0, 10)
+    const diaObj = porDia[dStr] || { visitas: 0, unicos: [], clicks: 0 }
+    const v = diaObj.visitas || 0
+    const u = Array.isArray(diaObj.unicos) ? diaObj.unicos.length : 0
+    const c = diaObj.clicks || 0
+    const ctr = v > 0 ? Number(((c / v) * 100).toFixed(1)) : 0
+    dias.push({
+      fecha: dStr,
+      fechaCorta: `${d.getDate()}/${d.getMonth() + 1}`,
+      diaNombre: NOMBRES_DIAS[d.getDay()],
+      visitas: v,
+      unicos: u,
+      clicks: c,
+      ctr,
+    })
+  }
+
+  // Lista de clicks por botón ordenada por cantidad descendente
+  const totalClicks = datos.totalClicks || 0
+  const clicksPorBoton = Object.values(clicksPorBotonObj)
+    .sort((a, b) => (b.clicks || 0) - (a.clicks || 0))
+    .map(b => ({
+      id: b.id,
+      texto: b.texto || b.id,
+      seccion: b.seccion || 'General',
+      clicks: b.clicks || 0,
+      pct: totalClicks > 0 ? Number(((b.clicks / totalClicks) * 100).toFixed(1)) : 0,
+    }))
+
+  // Dispositivos y porcentajes
+  const totalDisp = (dispositivos.mobile || 0) + (dispositivos.desktop || 0)
+  const pctMobile = totalDisp > 0 ? Math.round(((dispositivos.mobile || 0) / totalDisp) * 100) : 0
+  const pctDesktop = totalDisp > 0 ? 100 - pctMobile : 0
+
+  const totalVisitas = datos.totalVisitas || 0
+  const ctrTotal = totalVisitas > 0 ? Number(((totalClicks / totalVisitas) * 100).toFixed(1)) : 0
+
+  return {
+    resumen: {
+      totalVisitas,
+      visitasHoy,
+      visitas7Dias,
+      totalUnicos,
+      unicosHoy,
+      unicos7Dias: setUnicos7Dias.size,
+      totalClicks,
+      clicksHoy,
+      clicks7Dias,
+      ctrTotal,
+      ctrHoy,
+      dispositivos: {
+        mobile: dispositivos.mobile || 0,
+        desktop: dispositivos.desktop || 0,
+        pctMobile,
+        pctDesktop,
+      },
+    },
+    dias,
+    clicksPorBoton,
+    eventosRecientes: (datos.eventos || []).slice(0, 30),
+  }
 }
 
 /* ── Carpeta de Piezas ───────────────────────────────────── */

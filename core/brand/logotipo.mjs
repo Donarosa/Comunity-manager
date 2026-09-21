@@ -363,19 +363,40 @@ body.dark .sello{color:var(--accent-dark)}
  * el tratamiento que eligió el cliente.
  */
 
+/**
+ * Cuánto se agranda la firma respecto del tamaño base.
+ *
+ * Es un dato de la marca y no un número del motor: una firma de tres letras y
+ * una de dos palabras largas no piden el mismo cuerpo en la misma esquina, y
+ * quien lo sabe es el cliente mirando su placa. Fuera de rango o sin cargar
+ * vale 1, así que toda marca que no lo pida sale exactamente como antes.
+ */
+export function escalaLogotipo(brand) {
+  const e = Number(brand?.logotipo?.escala)
+  return Number.isFinite(e) && e >= 0.8 && e <= 1.8 ? e : 1
+}
+
 /** CSS de todos los tratamientos. Se inyecta siempre; la clase del body elige. */
-export function lockupCSS() {
+export function lockupCSS(brand) {
+  const k = escalaLogotipo(brand)
+  const px = n => Math.round(n * k)
   return selloCSS() + `
-.brand{display:flex;align-items:center;gap:13px}
+/* El símbolo se alinea con el NOMBRE, no con la columna entera. Centrado
+   contra el bloque completo, la bajada tira el símbolo para abajo y queda
+   colgando por debajo de la línea del nombre: el lockup se lee desparejo y el
+   efecto crece cuanto más larga es la bajada. Se alinea arriba y el símbolo se
+   centra contra la caja de la primera línea. */
+.brand{display:flex;align-items:flex-start;gap:${px(13)}px}
+.brand .marca{display:flex;align-items:center;min-height:${px(34)}px;flex:none}
 /* El nombre y su bajada son una unidad: van en columna, y el símbolo al lado
    de las dos. De ahí el wrapper .nom en vez de colgar la bajada del .brand. */
-.brand .nom{display:flex;flex-direction:column;gap:4px;min-width:0}
-.brand .bajada{font-family:var(--mono,var(--font));font-size:11px;font-weight:600;
+.brand .nom{display:flex;flex-direction:column;gap:${px(7)}px;min-width:0}
+.brand .bajada{font-family:var(--mono,var(--font));font-size:${px(11)}px;font-weight:600;
   letter-spacing:.19em;text-transform:uppercase;color:var(--muted,#6B7176);white-space:nowrap}
 body.dark .brand .bajada{color:rgba(255,255,255,.62)}
 /* La firma va con la tipografía de logotipo; el resto de la placa con la del
    cuerpo. Si el cliente eligió "la misma", las dos variables valen lo mismo. */
-.brand .wm{font-family:var(--font-logo,var(--font));font-size:31px;font-weight:700;
+.brand .wm{font-family:var(--font-logo,var(--font));font-size:${px(31)}px;font-weight:700;
   letter-spacing:var(--track-logo,-.03em);color:var(--ink)}
 body.lg-caps .brand .wm{text-transform:uppercase}
 .brand .wm .acc{color:var(--accent)}
@@ -383,7 +404,7 @@ body.dark .brand .wm{color:#fff} body.dark .brand .wm .acc{color:var(--accent-da
 
 /* Apilado: dos renglones pegados. El interlineado corto es lo que lo hace
    leer como una unidad y no como dos palabras sueltas. */
-body.lg-apilado .brand .wm{display:flex;flex-direction:column;line-height:.92;letter-spacing:-.045em;font-size:26px}
+body.lg-apilado .brand .wm{display:flex;flex-direction:column;line-height:.92;letter-spacing:-.045em;font-size:${px(26)}px}
 body.lg-apilado .brand .wm .acc{font-weight:800}
 
 /* Una línea con pesos contrastados: la primera palabra liviana, la segunda
@@ -399,18 +420,19 @@ body.lg-linea .brand .wm .acc{font-weight:800}
 body.lg-filete .brand{display:grid;grid-template-columns:auto auto;justify-content:start;align-items:center;gap:6px 11px}
 body.lg-filete .brand::before{content:'';grid-column:1/-1;width:38px;height:3px;background:var(--accent);border-radius:2px}
 body.lg-filete.dark .brand::before{background:var(--accent-dark)}
-body.lg-filete .brand .wm{font-size:27px;font-weight:500;letter-spacing:0}
+body.lg-filete .brand .wm{font-size:${px(27)}px;font-weight:500;letter-spacing:0}
 body.lg-filete .brand .wm .acc{font-weight:700}
 
 /* Pastilla: el nombre entero dentro de un bloque de color, con la bajada
    adentro. Es el registro de OXO y LEGO — máxima legibilidad a distancia,
    porque el contraste lo da el bloque y no la letra. */
+body.lg-pastilla .brand{align-items:center}
 body.lg-pastilla .brand .nom{
   background:var(--accent);border-radius:999px;padding:11px 26px 12px;gap:2px;align-items:center;
 }
-body.lg-pastilla .brand .nom .wm{color:#fff;font-size:27px;font-weight:800;letter-spacing:.01em;text-transform:uppercase}
+body.lg-pastilla .brand .nom .wm{color:#fff;font-size:${px(27)}px;font-weight:800;letter-spacing:.01em;text-transform:uppercase}
 body.lg-pastilla .brand .nom .wm .acc{color:#fff}
-body.lg-pastilla .brand .bajada{color:rgba(255,255,255,.82);font-size:10px;letter-spacing:.22em}
+body.lg-pastilla .brand .bajada{color:rgba(255,255,255,.82);font-size:${px(10)}px;letter-spacing:.22em}
 body.lg-pastilla.dark .brand .nom{background:var(--accent-dark)}
 body.lg-pastilla.dark .brand .nom .wm,body.lg-pastilla.dark .brand .nom .wm .acc{color:var(--dark-bg)}
 body.lg-pastilla.dark .brand .bajada{color:rgba(0,0,0,.55)}
@@ -450,9 +472,12 @@ export function clasesDeLogotipo(brand) {
  * @param {object} ctx  contexto de marca (mark, wordmarkHTML)
  * @param {number} px   tamaño del símbolo
  */
-export function lockupHTML(ctx, px = 40) {
+export function lockupHTML(ctx, pxBase = 40) {
   const { B, mark, wordmarkHTML } = ctx
   const lg = B.logotipo || {}
+  // El símbolo crece con la firma: si el nombre sube y la marca queda igual,
+  // el lockup se desbalancea y parece que el símbolo se encogió.
+  const px = Math.round(pxBase * escalaLogotipo(B))
   const tipo = resolverTipo(lg.tipo).id
 
   // El sello reemplaza el lockup entero: no lleva nombre al lado porque el

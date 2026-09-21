@@ -1,6 +1,12 @@
 <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
 <g clip-path="url(#clip0_29_131)">
 <path d="M512 0H0V512H512V0Z" fill="#E2F0DB"/>
+
+<!-- Burbujas de fondo translúcidas en el aire -->
+<circle cx="160" cy="142" r="12" fill="#E6DFA8" fill-opacity="0.38" stroke="#B8AD72" stroke-opacity="0.55" stroke-width="3"/>
+<circle cx="410" cy="-2" r="22" fill="#7E9E94" fill-opacity="0.28" stroke="#4C6860" stroke-opacity="0.45" stroke-width="3.5"/>
+
+<!-- Matraz y líquido -->
 <path d="M256 194C279.196 194 298 187.732 298 180C298 172.268 279.196 166 256 166C232.804 166 214 172.268 214 180C214 187.732 232.804 194 256 194Z" fill="white" stroke="#18191F" stroke-width="14"/>
 <path d="M218 185V215C166 238.333 140 290 140 370C140 385.913 146.321 401.174 157.574 412.426C168.826 423.679 184.087 430 200 430H312C327.913 430 343.174 423.679 354.426 412.426C365.679 401.174 372 385.913 372 370C372 290 346 238.333 294 215V185" fill="white"/>
 <path d="M218 185V215C166 238.333 140 290 140 370C140 385.913 146.321 401.174 157.574 412.426C168.826 423.679 184.087 430 200 430H312C327.913 430 343.174 423.679 354.426 412.426C365.679 401.174 372 385.913 372 370C372 290 346 238.333 294 215V185" stroke="#18191F" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
@@ -12,6 +18,44 @@
 <path d="M130 330C170 316.667 212 320 256 340C298.667 360 340 355 380 325V345C340 375 298.667 380 256 360C212 340 170 336.667 130 350V330Z" fill="#5CBA68"/>
 </g>
 <path d="M170 310C163.333 343.333 166.667 371.667 180 395" stroke="white" stroke-width="10" stroke-linecap="round"/>
+
+<!-- Burbujas superiores en el aire (saliendo del matraz) -->
+<g id="burbuja-celeste">
+  <circle cx="352" cy="46" r="21" fill="#5ED6DC" stroke="#18191F" stroke-width="5.5"/>
+  <circle cx="345" cy="39" r="4.2" fill="#FFFFFF"/>
+</g>
+<g id="burbuja-lila-superior">
+  <circle cx="248" cy="72" r="14" fill="#B4A8FA" stroke="#18191F" stroke-width="5"/>
+  <circle cx="243" cy="67" r="2.8" fill="#FFFFFF"/>
+</g>
+
+<!-- Burbuja rosa central flotando dentro del matraz -->
+<g id="burbuja-rosa">
+  <circle cx="256" cy="298" r="17" fill="#F2938F" stroke="#18191F" stroke-width="5"/>
+  <circle cx="250" cy="292" r="3.2" fill="#FFFFFF"/>
+</g>
+
+<!-- Burbuja translúcida en la ola bajo la burbuja rosa -->
+<circle cx="248" cy="336" r="11" fill="#FFFFFF" fill-opacity="0.4" stroke="#FFFFFF" stroke-opacity="0.75" stroke-width="2.2"/>
+
+<!-- Burbuja naranja/ámbar en la superficie del líquido -->
+<g id="burbuja-amarilla">
+  <circle cx="313" cy="363" r="13.5" fill="#EFAF3F" stroke="#18191F" stroke-width="5"/>
+  <circle cx="308" cy="358" r="2.8" fill="#FFFFFF"/>
+</g>
+
+<!-- Burbuja verde sumergida abajo a la derecha -->
+<circle cx="300" cy="402" r="14" fill="#74C389" fill-opacity="0.6" stroke="#469559" stroke-opacity="0.7" stroke-width="3.5"/>
+
+<!-- Burbuja violeta sumergida en el líquido abajo a la izquierda -->
+<g id="burbuja-violeta">
+  <circle cx="200" cy="382" r="18" fill="#9D97F7" stroke="#18191F" stroke-width="5.5"/>
+  <circle cx="193" cy="375" r="3.5" fill="#FFFFFF"/>
+</g>
+
+<!-- Burbujita blanca pequeña cerca del reflejo -->
+<circle cx="158" cy="392" r="5" fill="#FFFFFF"/>
+
 </g>
 <defs>
 <clipPath id="clip0_29_131">

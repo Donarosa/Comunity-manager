@@ -11,6 +11,7 @@ import {
   listarCuentasAsync, eliminarCuentaAsync,
   registrarPublicacion, listarPublicaciones, registrarPlan, listarPlanes,
   registrarEventoEstadistica, obtenerEstadisticas,
+  registrarEventoLanding, obtenerMetricasLanding,
   guardarCodigoOtpLocal, verificarCodigoOtpLocal,
 } from './store/store.mjs'
 import * as firestore from './store/firestore.mjs'
@@ -265,13 +266,20 @@ export function configurarMarca(cuentaId, datos) {
         logotipoTipo: previo.logotipo?.tipo,
         logotipoTratamiento: previo.logotipo?.tratamiento,
         logotipoEscudo: previo.logotipo?.escudo,
+        logotipoEscala: previo.logotipo?.escala,
         logotipoFuente: previo.fonts?.logo?.preset,
         logo: previo.logo,
         ...previo.negocio,
       }
     : {}
 
-  const { brand, warnings } = normalizeBrand({ ...base, ...datos })
+  // Los campos que no vinieron se caen antes de mezclar. Con el spread pelado,
+  // una clave en `undefined` —que es lo que manda la CLI por cada flag que no
+  // se escribió— pisaba el valor anterior, así que tocar un solo dato de la
+  // marca borraba todos los demás. Esto es lo que hace cierto el "acepta datos
+  // parciales" de la ayuda.
+  const pedido = Object.fromEntries(Object.entries(datos).filter(([, v]) => v !== undefined))
+  const { brand, warnings } = normalizeBrand({ ...base, ...pedido })
   cuenta.marca = brand
   guardarCuenta(cuenta)
   registrarEventoEstadistica(cuentaId, 'marca_actualizada', { nombre: brand.nombre })
@@ -866,4 +874,14 @@ export async function renderizarPieza(cuentaId, { canal = 'feed', placas = [], n
     archivosUrls,
     estado: estadoCompleto(cuenta),
   }
+}
+
+/* ── Métricas de Landing ─────────────────────────────────── */
+
+export function registrarEventoDeLanding(datos) {
+  return registrarEventoLanding(datos)
+}
+
+export async function metricasLanding() {
+  return await obtenerMetricasLanding()
 }
