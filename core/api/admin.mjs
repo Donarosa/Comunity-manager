@@ -259,6 +259,24 @@ export async function handleDatosLanding(svc, json) {
   }
 }
 
+/**
+ * Rearma los agregados de la landing desde los eventos crudos.
+ *
+ * Es una operación de reparación, no de uso diario: sirve para recuperar la
+ * historia que se perdió mientras los agregados se guardaban en disco efímero.
+ */
+export async function handleReconstruirLanding(req, leerBody, svc, json) {
+  try {
+    const body = await leerBody(req).catch(() => ({}))
+    const excluirVisitantes = Array.isArray(body?.excluirVisitantes) ? body.excluirVisitantes : []
+    const r = await svc.reconstruirMetricasLanding({ excluirVisitantes })
+    return json(200, { ok: true, ...r })
+  } catch (err) {
+    console.error('[Admin Reconstruir Landing]:', err)
+    return json(500, { error: err.message })
+  }
+}
+
 /* ── Helpers internos ────────────────────────────────────── */
 
 async function listarTodosLosUsuarios(svc, firestore) {

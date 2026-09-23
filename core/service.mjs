@@ -11,7 +11,7 @@ import {
   listarCuentasAsync, eliminarCuentaAsync,
   registrarPublicacion, listarPublicaciones, registrarPlan, listarPlanes,
   registrarEventoEstadistica, obtenerEstadisticas,
-  registrarEventoLanding, obtenerMetricasLanding,
+  registrarEventoLanding, obtenerMetricasLanding, reconstruirAgregadosLandingAsync,
   guardarCodigoOtpLocal, verificarCodigoOtpLocal,
 } from './store/store.mjs'
 import * as firestore from './store/firestore.mjs'
@@ -884,4 +884,15 @@ export function registrarEventoDeLanding(datos) {
 
 export async function metricasLanding() {
   return await obtenerMetricasLanding()
+}
+
+/**
+ * Reconstruye los agregados de la landing a partir de los eventos crudos.
+ *
+ * Hace falta porque los agregados no se guardaban: el evento suelto sí llegaba
+ * a Firestore, pero los totales, la serie por día y el ranking de botones
+ * vivían en un archivo dentro de `/tmp`, que en serverless se borra.
+ */
+export async function reconstruirMetricasLanding({ excluirVisitantes = [] } = {}) {
+  return await reconstruirAgregadosLandingAsync({ excluirVisitantes })
 }

@@ -432,6 +432,11 @@ async function despachar(req, res) {
         return json(res, resultado._code, resultado._body)
       }
 
+      if (m === 'POST' && subPath === '/landing/reconstruir') {
+        const resultado = await admin.handleReconstruirLanding(req, leerBody, svc, (code, body) => ({ _code: code, _body: body }))
+        return json(res, resultado._code, resultado._body)
+      }
+
       if (m === 'GET' && (subPath === '/landing' || subPath === '/landing/metricas')) {
         const resultado = await admin.handleDatosLanding(svc, (code, body) => ({ _code: code, _body: body }))
         return json(res, resultado._code, resultado._body)

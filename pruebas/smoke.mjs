@@ -26,6 +26,7 @@ import { intercalar, estadoBanco, guardarDelBanco } from '../core/media/imagenes
 import { altaCuenta, subirLogo, renderizarPieza, configurarMarca, estadoCuenta } from '../core/service.mjs'
 import { MODULOS_WEB, obtenerUsuarioAutenticado } from '../core/api/server.mjs'
 import { hayAlmacen as estaActivoElAlmacen } from '../core/store/firestore.mjs'
+import { agregarEventosLanding } from '../core/store/store.mjs'
 
 const RAIZ = join(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -1920,4 +1921,70 @@ test('los atajos de las páginas también existen en producción', () => {
 })
 
 // El resumen va último: si se agrega un bloque abajo, tiene que contarlo.
+/* ── agregados de la landing ─────────────────────────────── */
+
+// El panel no dibuja eventos: dibuja totales, la serie por día y el ranking de
+// botones. Esa cuenta estuvo rota y no se notaba, porque un cero se lee como
+// "todavía no entró nadie" y no como "no lo estoy midiendo".
+
+const EVENTOS_DEMO = [
+  { dia: '2026-09-20', tipo: 'visita', visitanteId: 'v1', dispositivo: 'mobile' },
+  { dia: '2026-09-20', tipo: 'visita', visitanteId: 'v1', dispositivo: 'mobile' },
+  { dia: '2026-09-20', tipo: 'visita', visitanteId: 'v2', dispositivo: 'desktop' },
+  { dia: '2026-09-20', tipo: 'click', visitanteId: 'v1', botonId: 'btn_entrar', texto: 'Entrar', seccion: 'hero' },
+  { dia: '2026-09-21', tipo: 'visita', visitanteId: 'v3', dispositivo: 'desktop' },
+  { dia: '2026-09-21', tipo: 'click', visitanteId: 'v3', botonId: 'btn_entrar', texto: 'Entrar', seccion: 'hero' },
+  { dia: '2026-09-21', tipo: 'click', visitanteId: 'v3', botonId: 'btn_precios', texto: 'Ver precios', seccion: 'planes' },
+]
+
+test('los eventos crudos se convierten en los totales que muestra el panel', () => {
+  const { dias, global } = agregarEventosLanding(EVENTOS_DEMO)
+  assert.equal(global.totalVisitas, 4)
+  assert.equal(global.totalClicks, 3)
+  assert.equal(global.dispositivos.mobile, 2)
+  assert.equal(global.dispositivos.desktop, 2)
+  assert.equal(dias.length, 2)
+})
+
+test('el mismo visitante que vuelve cuenta una vez como único, no dos', () => {
+  const { dias } = agregarEventosLanding(EVENTOS_DEMO)
+  const d20 = dias.find(d => d.dia === '2026-09-20')
+  assert.equal(d20.visitas, 3)          // tres visitas
+  assert.equal(d20.unicos.length, 2)    // pero dos personas
+})
+
+test('los días salen ordenados y cada uno con lo suyo', () => {
+  const { dias } = agregarEventosLanding(EVENTOS_DEMO)
+  assert.deepEqual(dias.map(d => d.dia), ['2026-09-20', '2026-09-21'])
+  assert.equal(dias[1].clicks, 2)
+  assert.equal(dias[1].visitas, 1)
+})
+
+test('el ranking de botones acumula por id y guarda su texto', () => {
+  const { global } = agregarEventosLanding(EVENTOS_DEMO)
+  assert.equal(global.botones.btn_entrar.clicks, 2)
+  assert.equal(global.botones.btn_entrar.seccion, 'hero')
+  assert.equal(global.botones.btn_precios.clicks, 1)
+})
+
+test('reconstruir dos veces da lo mismo: son valores absolutos, no incrementos', () => {
+  const a = agregarEventosLanding(EVENTOS_DEMO)
+  const b = agregarEventosLanding(EVENTOS_DEMO)
+  assert.deepEqual(a.dias, b.dias)
+  assert.deepEqual(a.global, b.global)
+})
+
+test('se puede dejar afuera un visitante de prueba', () => {
+  const { global } = agregarEventosLanding(EVENTOS_DEMO, e => e.visitanteId === 'v3')
+  assert.equal(global.totalVisitas, 3)
+  assert.equal(global.totalClicks, 1)
+  assert.equal(global.botones.btn_precios, undefined)
+})
+
+test('un evento sin día no rompe la cuenta: se descarta y se informa', () => {
+  const { global, descartados } = agregarEventosLanding([...EVENTOS_DEMO, { tipo: 'visita' }, null])
+  assert.equal(descartados, 2)
+  assert.equal(global.totalVisitas, 4)
+})
+
 console.log(`\n${ok} pruebas OK${process.exitCode ? ' — con fallas' : ''}\n`)
