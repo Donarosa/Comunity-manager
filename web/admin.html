@@ -220,10 +220,18 @@
             <div class="section-title" style="font-size:1.15rem;">Métricas de la Landing Page</div>
             <p style="color:var(--muted);font-size:.82rem;margin-top:.2rem;">Rendimiento en tiempo real de visitas, clics en llamadas a la acción y tasa de conversión</p>
           </div>
-          <button class="action-btn resume" id="btn-refresh-landing" onclick="loadLandingData()" style="padding:.45rem .9rem;">
-            <svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px;margin-right:4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-            Actualizar
-          </button>
+          <div style="display:flex;gap:.5rem;align-items:center;">
+            <!-- Repara la historia perdida mientras los agregados se guardaban en
+                 disco efímero. No es de uso diario: rehace la cuenta desde los
+                 eventos crudos, así que correrlo dos veces da lo mismo. -->
+            <button class="action-btn" id="btn-rebuild-landing" onclick="rebuildLandingData()" style="padding:.45rem .9rem;" title="Rehace totales, serie diaria y ranking de botones a partir de los eventos guardados">
+              Reconstruir historial
+            </button>
+            <button class="action-btn resume" id="btn-refresh-landing" onclick="loadLandingData()" style="padding:.45rem .9rem;">
+              <svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px;margin-right:4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+              Actualizar
+            </button>
+          </div>
         </div>
 
         <div class="stats-grid">
@@ -481,6 +489,33 @@ async function loadAnalytics() {
   } catch (e) {
     if (e.status === 401) { logout(); return }
     document.getElementById('activity-list').innerHTML = `<div class="empty-state">Error: ${esc(e.message)}</div>`
+  }
+}
+
+/* Rehace los agregados desde los eventos crudos.
+ *
+ * Pide confirmación porque reemplaza los totales en vez de sumarles: si en el
+ * medio se perdieron eventos, los números bajan, y eso tiene que ser una
+ * decisión y no una sorpresa. */
+async function rebuildLandingData() {
+  if (!confirm('Rehace los totales, la serie diaria y el ranking de botones a partir de los eventos guardados.\n\nReemplaza los valores actuales. ¿Seguimos?')) return
+  const btn = document.getElementById('btn-rebuild-landing')
+  const antes = btn.textContent
+  btn.disabled = true
+  btn.textContent = 'Reconstruyendo…'
+  try {
+    const r = await api('/admin/landing/reconstruir', {
+      method: 'POST',
+      // El evento de diagnóstico no es tráfico real y ensucia el día.
+      body: JSON.stringify({ excluirVisitantes: ['v_diagnostico_claude'] }),
+    })
+    toast(`Listo: ${r.eventosLeidos} eventos, ${r.diasReconstruidos} días (${r.desde || '—'} a ${r.hasta || '—'})`, 'ok')
+    await loadLandingData()
+  } catch (e) {
+    toast(`No se pudo reconstruir: ${e.message}`, 'err')
+  } finally {
+    btn.disabled = false
+    btn.textContent = antes
   }
 }
 

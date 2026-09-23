@@ -352,6 +352,118 @@ export async function obtenerEventosLandingDeFirestore(limite = 100) {
   return snapshot.docs.map(d => d.data())
 }
 
+/* Los agregados, que es lo que muestra el panel.
+ *
+ * El evento suelto no alcanza: el panel no dibuja una lista, dibuja totales,
+ * la serie de catorce días y el ranking de botones. Eso vivía únicamente en
+ * `landing_metricas.json`, dentro de DATA_DIR — que en Vercel es `/tmp` y se
+ * borra entre invocaciones. Resultado: la visita se contaba en la instancia que
+ * la recibió y el panel, que caía en otra, leía un archivo que no existía y
+ * mostraba cero. Acá se acumulan con `increment`, que es atómico y no depende
+ * de haber leído antes: dos instancias sumando a la vez no se pisan. */
+
+export async function acumularLandingEnFirestore(evento) {
+  if (!db) return null
+  const { FieldValue } = await import('firebase-admin/firestore')
+  const esVisita = evento.tipo !== 'click'
+  const disp = evento.dispositivo === 'mobile' ? 'mobile' : 'desktop'
+
+  const dia = db.collection('landing_dias').doc(evento.dia)
+  const global = db.collection('landing_agregado').doc('global')
+
+  const porDia = { dia: evento.dia }
+  const porTodo = {}
+  if (esVisita) {
+    porDia.visitas = FieldValue.increment(1)
+    porDia.dispositivos = { [disp]: FieldValue.increment(1) }
+    // Los únicos del día se guardan como conjunto: arrayUnion no suma dos veces
+    // al mismo visitante aunque recargue la página.
+    porDia.unicos = FieldValue.arrayUnion(evento.visitanteId)
+    porTodo.totalVisitas = FieldValue.increment(1)
+    porTodo.dispositivos = { [disp]: FieldValue.increment(1) }
+  } else {
+    porDia.clicks = FieldValue.increment(1)
+    porTodo.totalClicks = FieldValue.increment(1)
+    const id = evento.botonId || 'boton_desconocido'
+    porTodo.botones = {
+      [id]: {
+        id,
+        texto: evento.texto || id,
+        seccion: evento.seccion || 'General',
+        clicks: FieldValue.increment(1),
+      },
+    }
+  }
+
+  await Promise.all([
+    dia.set(porDia, { merge: true }),
+    global.set(porTodo, { merge: true }),
+  ])
+  return { dia: evento.dia, tipo: evento.tipo }
+}
+
+/** Los últimos `dias` documentos diarios, para la serie del panel. */
+export async function obtenerDiasLandingDeFirestore(dias = 30) {
+  if (!db) return []
+  const snapshot = await db.collection('landing_dias')
+    .orderBy('dia', 'desc')
+    .limit(dias)
+    .get()
+  return snapshot.docs.map(d => d.data())
+}
+
+/** Los totales de siempre y el ranking de botones. */
+export async function obtenerAgregadoLandingDeFirestore() {
+  if (!db) return null
+  const doc = await db.collection('landing_agregado').doc('global').get()
+  return doc.exists ? doc.data() : null
+}
+
+/**
+ * Todos los eventos de landing, paginados.
+ *
+ * `obtenerEventosLandingDeFirestore` corta en 100 porque alimenta la lista de
+ * "últimos movimientos". Para reconstruir la historia hacen falta todos, y
+ * traerlos de una sola query revienta con el tiempo: se pagina por cursor.
+ */
+export async function recorrerEventosLandingDeFirestore(porPagina = 500, tope = 50000) {
+  if (!db) return []
+  const todos = []
+  let ultimo = null
+  while (todos.length < tope) {
+    let q = db.collection('landing_eventos').orderBy('fecha', 'asc').limit(porPagina)
+    if (ultimo) q = q.startAfter(ultimo)
+    const snap = await q.get()
+    if (snap.empty) break
+    todos.push(...snap.docs.map(d => d.data()))
+    ultimo = snap.docs[snap.docs.length - 1]
+    if (snap.size < porPagina) break
+  }
+  return todos
+}
+
+/**
+ * Escribe los agregados con valores absolutos, pisando lo que hubiera.
+ *
+ * Es `set` sin merge a propósito: reconstruir es reemplazar. Con merge, un
+ * total viejo más alto sobreviviría al arreglo y nadie se enteraría.
+ */
+export async function escribirAgregadosLandingEnFirestore({ dias = [], global = null }) {
+  if (!db) return { dias: 0, global: false }
+  let escritos = 0
+  // En lotes: Firestore admite 500 operaciones por batch.
+  for (let i = 0; i < dias.length; i += 400) {
+    const lote = db.batch()
+    for (const d of dias.slice(i, i + 400)) {
+      lote.set(db.collection('landing_dias').doc(d.dia), d)
+      escritos++
+    }
+    await lote.commit()
+  }
+  if (global) await db.collection('landing_agregado').doc('global').set(global)
+  return { dias: escritos, global: Boolean(global) }
+}
+
 /* ── Códigos OTP (Login por Email) ───────────────────────── */
 
 const OTP_COLLECTION = 'otp_codigos'

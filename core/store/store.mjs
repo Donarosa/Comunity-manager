@@ -395,6 +395,68 @@ export function obtenerEstadisticas(cuentaId) {
 
 /* ── Métricas y Analítica de la Landing (Visitas y Clicks) ─ */
 
+/**
+ * De eventos crudos a los agregados que muestra el panel.
+ *
+ * Es función pura y por eso vive acá y no dentro del código de Firestore: es la
+ * misma cuenta que hace `registrarEventoLanding()` evento por evento, pero de
+ * una sola pasada sobre una lista. Sirve para reconstruir lo que se perdió
+ * cuando los agregados no se guardaban, y se puede probar sin base.
+ *
+ * Devuelve valores absolutos, no incrementos: volver a correrla sobre los
+ * mismos eventos da el mismo resultado y no duplica nada.
+ *
+ * @param {object[]} eventos
+ * @param {(e:object)=>boolean} [excluir] para dejar afuera eventos de prueba
+ */
+export function agregarEventosLanding(eventos = [], excluir = null) {
+  const dias = {}
+  const global = {
+    totalVisitas: 0,
+    totalClicks: 0,
+    dispositivos: { mobile: 0, desktop: 0 },
+    botones: {},
+  }
+  // Los únicos son un conjunto por día: el mismo visitante que entra tres veces
+  // cuenta una sola, igual que con arrayUnion.
+  const unicos = {}
+  let descartados = 0
+
+  for (const e of eventos) {
+    if (!e || !e.dia) { descartados++; continue }
+    if (excluir && excluir(e)) { descartados++; continue }
+    const dia = e.dia
+    const disp = e.dispositivo === 'mobile' ? 'mobile' : 'desktop'
+    if (!dias[dia]) {
+      dias[dia] = { dia, visitas: 0, clicks: 0, dispositivos: { mobile: 0, desktop: 0 } }
+      unicos[dia] = new Set()
+    }
+
+    if (e.tipo === 'click') {
+      dias[dia].clicks++
+      global.totalClicks++
+      const id = e.botonId || 'boton_desconocido'
+      const b = global.botones[id] || { id, texto: id, seccion: 'General', clicks: 0 }
+      b.clicks++
+      if (e.texto) b.texto = e.texto
+      if (e.seccion) b.seccion = e.seccion
+      global.botones[id] = b
+    } else {
+      dias[dia].visitas++
+      dias[dia].dispositivos[disp]++
+      global.totalVisitas++
+      global.dispositivos[disp]++
+      if (e.visitanteId) unicos[dia].add(e.visitanteId)
+    }
+  }
+
+  for (const dia of Object.keys(dias)) dias[dia].unicos = [...unicos[dia]]
+
+  return { dias: Object.values(dias).sort((a, b) => a.dia.localeCompare(b.dia)), global, descartados }
+}
+
+
+
 export function registrarEventoLanding({
   tipo = 'visita',
   visitanteId = null,
@@ -485,9 +547,39 @@ export function registrarEventoLanding({
 
   if (firestore.estaActivo()) {
     enSegundoPlano(firestore.registrarEventoLandingEnFirestore(eventoItem).catch(() => {}))
+    // El evento suelto sirve para la lista de "últimos movimientos"; los
+    // números del panel salen de los agregados. Sin esto, en serverless se
+    // pierden con `/tmp`.
+    enSegundoPlano(firestore.acumularLandingEnFirestore(eventoItem).catch(() => {}))
   }
 
   return eventoItem
+}
+
+/**
+ * Rearma los agregados de la landing desde los eventos crudos de Firestore.
+ *
+ * Recupera la historia que se perdió mientras los agregados se guardaban solo
+ * en disco: el evento suelto sí llegaba a la base, así que la cuenta se puede
+ * rehacer. Idempotente — escribe valores absolutos, no incrementos.
+ */
+export async function reconstruirAgregadosLandingAsync({ excluirVisitantes = [] } = {}) {
+  if (!firestore.estaActivo()) {
+    throw new Error('Reconstruir necesita Firestore: sin base no hay eventos guardados que recorrer.')
+  }
+  const fuera = new Set(excluirVisitantes)
+  const eventos = await firestore.recorrerEventosLandingDeFirestore()
+  const { dias, global, descartados } = agregarEventosLanding(eventos, e => fuera.has(e.visitanteId))
+  const escrito = await firestore.escribirAgregadosLandingEnFirestore({ dias, global })
+  return {
+    eventosLeidos: eventos.length,
+    descartados,
+    diasReconstruidos: escrito.dias,
+    totalVisitas: global.totalVisitas,
+    totalClicks: global.totalClicks,
+    desde: dias[0]?.dia || null,
+    hasta: dias[dias.length - 1]?.dia || null,
+  }
 }
 
 export async function obtenerMetricasLanding() {
@@ -510,6 +602,34 @@ export async function obtenerMetricasLanding() {
       }
     } catch (err) {
       console.warn('[Firestore] Error leyendo eventos de landing:', err.message)
+    }
+
+    /* Los números vienen de Firestore y le ganan al archivo local: con
+     * Firestore configurado el disco es `/tmp`, que se borra entre
+     * invocaciones, así que lo que haya quedado ahí es un pedazo del día de
+     * una sola instancia. Si Firestore no devuelve nada todavía, se deja lo
+     * local en vez de blanquear el panel. */
+    try {
+      const [remDias, remGlobal] = await Promise.all([
+        firestore.obtenerDiasLandingDeFirestore(30),
+        firestore.obtenerAgregadoLandingDeFirestore(),
+      ])
+      if (remDias?.length) {
+        datos.porDia = Object.fromEntries(remDias.map(d => [d.dia, {
+          visitas: d.visitas || 0,
+          clicks: d.clicks || 0,
+          unicos: Array.isArray(d.unicos) ? d.unicos : [],
+          dispositivos: d.dispositivos || { mobile: 0, desktop: 0 },
+        }]))
+      }
+      if (remGlobal) {
+        datos.totalVisitas = remGlobal.totalVisitas || 0
+        datos.totalClicks = remGlobal.totalClicks || 0
+        datos.dispositivos = remGlobal.dispositivos || { mobile: 0, desktop: 0 }
+        datos.clicksPorBoton = remGlobal.botones || {}
+      }
+    } catch (err) {
+      console.warn('[Firestore] Error leyendo agregados de landing:', err.message)
     }
   }
 
